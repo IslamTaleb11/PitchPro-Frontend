@@ -1,0 +1,28 @@
+{
+  "common": {
+    "login": "تسجيل الدخول",
+    "register": "التسجيل",
+    "submit": "إرسال",
+    "cancel": "إلغاء",
+    "loading": "جارٍ التحميل...",
+    "error": "خطأ",
+    "success": "نجح",
+    "selectLanguage": "اختر اللغة"
+  },
+  "clubRegistration": {
+    "title": "أساسيات النادي",
+    "clubName": "اسم النادي",
+    "contactNumber": "رقم الاتصال",
+    "selectColor": "اختر لون النادي",
+    "uploadCrest": "رفع شعار النادي",
+    "next": "التالي: تسجيل الرئيس"
+  },
+  "presidentRegistration": {
+    "title": "تسجيل الرئيس",
+    "firstName": "الاسم الأول",
+    "lastName": "الاسم الأخير",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "register": "تسجيل الرئيس"
+  }
+}

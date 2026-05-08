@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #ebffe2;
+  --color-primary-container: #00ff41;
+  --color-primary-fixed: #72ff70;
+  --color-background: #111417;
+  --color-surface-container-low: #191c1f;
+  --color-surface-container-high: #272a2e;
+  --color-surface-container-highest: #323538;
+  --color-surface-container-lowest: #0b0e11;
+  --color-on-surface: #e1e2e7;
+  --color-on-surface-variant: #b9ccb2;
+  --color-outline-variant: #3b4b37;
+  --color-on-tertiary-fixed: #291800; /* Dark brown for button text */
+  
+  --font-headline: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-label: "Inter", sans-serif;
+}
+
+/* Custom Tactical Gradient */
+@utility pitch-glow {
+  background: linear-gradient(135deg, #ebffe2 0%, #00ff41 100%);
+}
+
+/* Basic transition for step animation */
+.animate-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Custom style for the select dropdown arrow color for dark mode */
+select {
+    color: var(--color-on-surface); /* Ensure text color is visible */
+}
+
+.pressable {
+  transition: transform 180ms ease, filter 180ms ease, box-shadow 180ms ease;
+}
+
+.pressable:hover {
+  filter: brightness(1.04);
+}
+
+.pressable:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.toast-pop-enter-active,
+.toast-pop-leave-active {
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.toast-pop-enter-from,
+.toast-pop-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.98);
+}

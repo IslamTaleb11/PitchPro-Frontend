@@ -1,0 +1,28 @@
+{
+  "common": {
+    "login": "Login",
+    "register": "Register",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "selectLanguage": "Select Language"
+  },
+  "clubRegistration": {
+    "title": "Club Essentials",
+    "clubName": "CLUB NAME",
+    "contactNumber": "CONTACT NUMBER",
+    "selectColor": "SELECT CLUB COLOR",
+    "uploadCrest": "UPLOAD CLUB CREST",
+    "next": "Next: President Registration"
+  },
+  "presidentRegistration": {
+    "title": "President Registration",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "password": "Password",
+    "register": "Register President"
+  }
+}
