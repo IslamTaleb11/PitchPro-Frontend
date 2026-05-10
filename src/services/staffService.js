@@ -34,5 +34,8 @@ export const staffService = {
         'Content-Type': 'multipart/form-data'
       }
     });
+  },
+  async getStaffCounts() {
+    return await api.get('/staff/counts');
   }
 };
