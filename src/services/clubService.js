@@ -2,6 +2,14 @@ import api from "./axiosConfig";
 
 export const clubService = {
   async completeRegistration(payload) {
+    if (payload instanceof FormData) {
+      return await api.post('/club', payload, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+    }
+
     const requestData = {
       name: payload.name,
       crest: payload.crest,

@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useUiToast } from '../composables/useUiToast'
 import { useI18n } from 'vue-i18n'
 import { toRaw } from 'vue'; // Add this import at the top
+import imageCompression from 'browser-image-compression';
 
 
 const { t } = useI18n()
@@ -117,28 +118,62 @@ function openCrestPicker() {
   crestInputRef.value?.click()
 }
 
-function onCrestChange(event) {
+async function onCrestChange(event) {
   const file = event.target.files?.[0]
   if (!file) return
+
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!validTypes.includes(file.type)) {
+    showToast({
+      title: 'Invalid File',
+      message: 'Only JPG, PNG and WebP formats are allowed.',
+      mode: 'error',
+      duration: 4000
+    })
+    return
+  }
 
   if (file.size > 2 * 1024 * 1024) {
     showToast({
       title: 'Invalid crest file',
       message: 'Crest must be 2MB or smaller.',
-      mode: 'error'
+      mode: 'error',
+      duration: 4000
     })
     return
   }
 
-  crestFile.value = file
-  crestFileName.value = file.name
-  crestPreviewUrl.value = URL.createObjectURL(file)
-  errors.crest = ''
-  showToast({
-    title: 'Club crest uploaded',
-    message: `${file.name} is ready for registration.`,
-    mode: 'success'
-  })
+  try {
+    const options = {
+      maxSizeMB: 0.5, // 500kb
+      maxWidthOrHeight: 1920,
+      useWebWorker: true
+    }
+    const compressedFile = await imageCompression(file, options);
+    
+    crestFile.value = compressedFile
+    crestFileName.value = compressedFile.name
+    crestPreviewUrl.value = URL.createObjectURL(compressedFile)
+    errors.crest = ''
+    showToast({
+      title: 'Club crest uploaded',
+      message: `${compressedFile.name} is ready for registration.`,
+      mode: 'success',
+      duration: 3000
+    })
+  } catch (error) {
+    console.error('Error compressing image:', error);
+    crestFile.value = file
+    crestFileName.value = file.name
+    crestPreviewUrl.value = URL.createObjectURL(file)
+    errors.crest = ''
+    showToast({
+      title: 'Club crest uploaded',
+      message: `${file.name} is ready for registration (uncompressed).`,
+      mode: 'success',
+      duration: 3000
+    })
+  }
 }
 
 function goToLogin() {
@@ -367,13 +402,13 @@ function goToPresidentRegistration() {
                     />
                     <img v-else :src="iconUpload" alt="" class="h-5 w-4" />
                     <span class="font-body text-[10px] tracking-[-0.03em] text-on-surface-variant">
-                      {{ crestFileName || 'SVG OR PNG (MAX 2MB)' }}
+                      {{ crestFileName || 'JPG, PNG OR WEBP (MAX 2MB)' }}
                     </span>
                   </button>
                   <input
                     ref="crestInputRef"
                     type="file"
-                    accept=".svg,.png,image/svg+xml,image/png"
+                    accept=".jpg,.jpeg,.png,.webp"
                     class="sr-only"
                     @change="onCrestChange"
                   />

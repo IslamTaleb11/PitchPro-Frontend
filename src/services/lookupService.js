@@ -14,10 +14,6 @@ export const lookupService = {
   },
 
   getCategories(clubID) {
-    return api.get('/lookups/categories', {
-      params: {
-        clubID
-      }
-    });
+    return api.get(`/lookups/categories/${clubID}`);
   }
 };

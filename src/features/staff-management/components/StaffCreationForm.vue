@@ -1,12 +1,14 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useUiToast } from '../../../composables/useUiToast'
 import { staffService } from '../../../services/staffService'
 import { lookupService } from '../../../services/lookupService'
+import imageCompression from 'browser-image-compression'
 
 defineEmits(['deploy'])
 
 const photoPreview = ref('')
+const photoFile = ref(null)
 const categoryDropdownOpen = ref(false)
 const selectedCategories = ref([])
 const bloodTypes = ref([])
@@ -52,60 +54,124 @@ const passwordChecks = computed(() => {
   }
 })
 
+const filteredClassifications = computed(() => {
+  if (!primaryRoleID.value) return roleClassifications.value;
+  return roleClassifications.value.filter(c => {
+    // Attempt to match the primary role ID property including staffPrimaryRoleID
+    const pRoleId = c.staffPrimaryRoleID ?? c.staffPrimaryRoleId ?? c.primary_role_id ?? c.primaryRoleId ?? c.PrimaryRoleId ?? c.primaryRoleID ?? c.PrimaryRoleID ?? c.roleId ?? c.RoleID;
+    
+    // If the classification has no associated primary role, we might want to include it, 
+    // but based on requirements, we filter strictly if it exists
+    return pRoleId == null || String(pRoleId) === String(primaryRoleID.value);
+  });
+});
+
+watch(filteredClassifications, (newVals) => {
+  if (newVals.length > 0) {
+    if (!newVals.some(c => c.id === roleClassificationID.value)) {
+      roleClassificationID.value = newVals[0].id;
+    }
+  } else {
+    roleClassificationID.value = null;
+  }
+});
+
 onMounted(loadLookups)
 
 function normalizeLookupItem(item) {
-  if (typeof item === 'string') {
-    return { id: item, name: item }
+  if (!item) return { id: 'Unknown', name: 'Unknown' };
+  if (typeof item === 'string' || typeof item === 'number') {
+    return { id: item, name: String(item) }
   }
-  const id = item?.id ?? item?.ID ?? item?.value ?? item?.key ?? item?.lookupId ?? item?.bloodTypeId ?? item?.roleId ?? item?.classificationId ?? item?.categoryId
-  const name = item?.name ?? item?.label ?? item?.title ?? item?.description ?? item?.text ?? item?.value ?? item?.nameAr ?? item?.nameEn ?? item?.bloodTypeName ?? item?.roleName ?? item?.classificationName ?? item?.categoryName
+
+  const idCandidates = ['id', 'Id', 'ID', 'value', 'key', 'lookupId', 'lookupID', 'bloodTypeId', 'bloodTypeID', 'roleId', 'roleID', 'classificationId', 'classificationID', 'categoryId', 'categoryID', 'roleClassificationId', 'roleClassificationID'];
+  const nameCandidates = ['name', 'Name', 'label', 'title', 'description', 'text', 'value', 'nameAr', 'nameEn', 'bloodTypeName', 'roleName', 'classificationName', 'categoryName', 'roleClassificationName'];
+
+  let id = null;
+  let name = null;
+
+  for (const key of idCandidates) {
+    if (item[key] !== undefined && item[key] !== null) {
+      id = item[key];
+      break;
+    }
+  }
+  for (const key of nameCandidates) {
+    if (item[key] !== undefined && item[key] !== null) {
+      name = item[key];
+      break;
+    }
+  }
+
+  if (id === null) {
+    const idKey = Object.keys(item).find(k => k.toLowerCase().endsWith('id'));
+    if (idKey) id = item[idKey];
+  }
+  if (name === null) {
+    const nameKey = Object.keys(item).find(k => k.toLowerCase().endsWith('name'));
+    if (nameKey) name = item[nameKey];
+  }
+
   return {
+    ...item,
     id: id ?? name ?? 'Unknown',
     name: name ?? String(id ?? 'Unknown')
   }
 }
 
-function normalizeLookupArray(array) {
-  if (!Array.isArray(array)) return []
-  return array.map(normalizeLookupItem)
+function normalizeLookupArray(data) {
+  let array = data;
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    array = data.data || data.items || data.result || data.value || data.$values || [];
+  }
+  if (!Array.isArray(array)) {
+    if (data && typeof data === 'object') {
+       const vals = Object.values(data);
+       if (vals.length > 0 && typeof vals[0] === 'object') {
+          array = vals;
+       } else {
+          return [];
+       }
+    } else {
+       return [];
+    }
+  }
+  return array.map(normalizeLookupItem).filter(item => item.id !== 'Unknown')
 }
 
 async function loadLookups() {
-  try {
-    const [bloodRes, roleRes, classificationRes, categoryRes] = await Promise.all([
-      lookupService.getBloodTypes(),
-      lookupService.getPrimaryRoles(),
-      lookupService.getRoleClassifications(),
-      lookupService.getCategories(clubID.value)
-    ])
+  const results = await Promise.allSettled([
+    lookupService.getBloodTypes(),
+    lookupService.getPrimaryRoles(),
+    lookupService.getRoleClassifications(),
+    lookupService.getCategories(clubID.value)
+  ]);
 
-    console.log('API Responses:', { bloodRes, roleRes, classificationRes, categoryRes })
+  if (results[0].status === 'fulfilled') bloodTypes.value = normalizeLookupArray(results[0].value.data);
+  else console.error('Blood types error:', results[0].reason);
 
-    bloodTypes.value = normalizeLookupArray(bloodRes.data)
-    primaryRoles.value = normalizeLookupArray(roleRes.data)
-    roleClassifications.value = normalizeLookupArray(classificationRes.data)
-    categories.value = normalizeLookupArray(categoryRes.data)
+  if (results[1].status === 'fulfilled') primaryRoles.value = normalizeLookupArray(results[1].value.data);
+  else console.error('Roles error:', results[1].reason);
 
-    console.log('Normalized Data:', {
-      bloodTypes: bloodTypes.value,
-      primaryRoles: primaryRoles.value,
-      roleClassifications: roleClassifications.value,
-      categories: categories.value
-    })
+  if (results[2].status === 'fulfilled') roleClassifications.value = normalizeLookupArray(results[2].value.data);
+  else console.error('Classifications error:', results[2].reason);
 
-    if (!primaryRoleID.value && primaryRoles.value.length) {
-      primaryRoleID.value = primaryRoles.value[0].id
-    }
-    if (!roleClassificationID.value && roleClassifications.value.length) {
-      roleClassificationID.value = roleClassifications.value[0].id
-    }
-    if (!bloodTypeID.value && bloodTypes.value.length) {
-      bloodTypeID.value = bloodTypes.value[0].id
-    }
-  } catch (error) {
-    console.error('Lookup load error:', error)
-    showToast({ title: 'Lookup load failed', message: error.message || 'Unable to load lookup values', mode: 'error', duration: 4000 })
+  if (results[3].status === 'fulfilled') categories.value = normalizeLookupArray(results[3].value.data);
+  else console.error('Categories error:', results[3].reason);
+
+  if (!primaryRoleID.value && primaryRoles.value.length) {
+    primaryRoleID.value = primaryRoles.value[0].id;
+  }
+  if (!roleClassificationID.value && filteredClassifications.value.length) {
+    roleClassificationID.value = filteredClassifications.value[0].id;
+  }
+  if (!bloodTypeID.value && bloodTypes.value.length) {
+    bloodTypeID.value = bloodTypes.value[0].id;
+  }
+
+  const failedCount = results.filter(r => r.status === 'rejected').length;
+  if (failedCount > 0) {
+    showToast({ title: 'Partial Load', message: `Failed to load ${failedCount} lookup(s).`, mode: 'error', duration: 4000 });
   }
 }
 
@@ -122,7 +188,7 @@ async function submitForm(event) {
     clubID: clubID.value,
     email: email.value,
     password: password.value,
-    photo: photoPreview.value,
+    photo: photoFile.value,
     phoneNumber: phoneNumber.value,
     address: address.value,
     primaryRoleID: primaryRoleID.value,
@@ -144,7 +210,8 @@ async function submitForm(event) {
     { name: 'Address', value: address.value },
     { name: 'Primary role', value: primaryRoleID.value },
     { name: 'Role classification', value: roleClassificationID.value },
-    { name: 'Photo', value: photoPreview.value }
+    { name: 'Category', value: selectedCategories.value.length > 0 ? 'selected' : '' },
+    { name: 'Photo', value: photoFile.value }
   ];
   const missing = requiredFields.filter(f => !f.value || f.value === '' );
   if (missing.length) {
@@ -172,9 +239,10 @@ async function submitForm(event) {
     return;
   }
     try {
+      showToast({ title: 'Deploying Staff...', message: 'Please wait, uploading data and creating personnel.', mode: 'info', duration: 4000 })
       const response = await staffService.createStaff(data)
       const result = response.data
-      showToast({ title: 'Staff Created', message: `ID ${result.id} created successfully`, mode: 'success', duration: 3000 })
+      showToast({ title: 'Staff Created', message: result.message || 'Staff member created successfully', mode: 'success', duration: 3000 })
       // Reset form fields
       firstName.value = ''
       secondName.value = ''
@@ -185,6 +253,7 @@ async function submitForm(event) {
       email.value = ''
       password.value = ''
       photoPreview.value = ''
+      photoFile.value = null
       phoneNumber.value = ''
       address.value = ''
       primaryRoleID.value = primaryRoles.value?.[0]?.id || null
@@ -212,10 +281,33 @@ function toggleCategory(categoryId) {
   selectedCategories.value.push(categoryId)
 }
 
-function onPhotoChange(event) {
+async function onPhotoChange(event) {
   const file = event.target.files[0];
   if (file) {
-    photoPreview.value = URL.createObjectURL(file);
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      showToast({ title: 'Invalid File', message: 'Only JPG, PNG and WebP formats are allowed.', mode: 'error', duration: 4000 });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      showToast({ title: 'File Too Large', message: 'Image must be less than 2MB.', mode: 'error', duration: 4000 });
+      return;
+    }
+
+    try {
+      const options = {
+        maxSizeMB: 0.5, // 500kb
+        maxWidthOrHeight: 1920,
+        useWebWorker: true
+      }
+      const compressedFile = await imageCompression(file, options);
+      photoFile.value = compressedFile;
+      photoPreview.value = URL.createObjectURL(compressedFile);
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      photoFile.value = file;
+      photoPreview.value = URL.createObjectURL(file);
+    }
   }
 }
 </script>
@@ -242,7 +334,7 @@ function onPhotoChange(event) {
               <span class="material-symbols-outlined text-slate-600 transition-colors group-hover:text-green-400">add_a_photo</span>
               <span class="mt-1 text-[8px] font-bold uppercase text-slate-500">Photo</span>
             </template>
-            <input class="absolute inset-0 cursor-pointer opacity-0" type="file" @change="onPhotoChange" />
+            <input class="absolute inset-0 cursor-pointer opacity-0" type="file" accept=".jpg,.jpeg,.png,.webp" @change="onPhotoChange" />
           </label>
           <div class="flex-1 space-y-4">
             <div class="space-y-1">
@@ -355,7 +447,7 @@ function onPhotoChange(event) {
 <div class="space-y-1">
   <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Classification</label>
   <select class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" v-model="roleClassificationID">
-    <option v-for="item in roleClassifications" :key="item.id" :value="item.id">{{ item.name }}</option>
+    <option v-for="item in filteredClassifications" :key="item.id" :value="item.id">{{ item.name }}</option>
   </select>
 </div>
           </div>

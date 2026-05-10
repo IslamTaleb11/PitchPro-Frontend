@@ -170,23 +170,21 @@ const handleRegistration = async () => {
     return
   }
 
-  const crestBase64 = await fileToBase64(crestFile)
-
-  const combinedPayload = {
-    // Club data
-    name: clubNameValue,
-    contactNumber: contactValue,
-    primaryIdentityColor: colorValue,
-    crest: crestBase64,
-    // President data
-    firstName: form.firstName,
-    secondName: form.secondName,
-    lastName: form.lastName,
-    gender: form.gender,
-    birthDate: form.birthDate,
-    email: form.email,
-    password: form.password
+  const formData = new FormData()
+  formData.append('name', clubNameValue)
+  formData.append('contactNumber', contactValue)
+  formData.append('primaryIdentityColor', colorValue)
+  formData.append('crest', crestFile)
+  
+  formData.append('firstName', form.firstName)
+  if (form.secondName) {
+    formData.append('secondName', form.secondName)
   }
+  formData.append('lastName', form.lastName)
+  formData.append('gender', form.gender === 'male' ? 'true' : 'false')
+  formData.append('birthDate', form.birthDate)
+  formData.append('email', form.email)
+  formData.append('password', form.password)
 
 
   showToast({
@@ -197,7 +195,7 @@ const handleRegistration = async () => {
   })
 
   try {
-    const response = await clubService.completeRegistration(combinedPayload)
+    const response = await clubService.completeRegistration(formData)
     showToast({
       title: 'Registration Successful',
       message: 'Club and president credentials have been registered.',
