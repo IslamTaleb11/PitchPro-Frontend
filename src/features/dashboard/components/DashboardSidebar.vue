@@ -1,4 +1,6 @@
 <script setup>
+import { useRoute } from 'vue-router'
+
 defineProps({
   activeItem: {
     type: String,
@@ -10,12 +12,14 @@ defineProps({
   }
 })
 
+const route = useRoute()
+
 const items = [
-  { key: 'staff-management', icon: 'groups', label: 'Staff Management' },
-  { key: 'players', icon: 'sports_soccer', label: 'Players' },
-  { key: 'finances', icon: 'payments', label: 'Finances' },
-  { key: 'categories', icon: 'category', label: 'Categories' },
-  { key: 'settings', icon: 'settings', label: 'Settings' }
+  { key: 'staff-management', icon: 'groups', label: 'Staff Management', path: '/dashboard/staff-management' },
+  { key: 'players', icon: 'sports_soccer', label: 'Players', path: '/dashboard/players' },
+  { key: 'finances', icon: 'payments', label: 'Finances', path: '/dashboard/finances' },
+  { key: 'categories', icon: 'category', label: 'Categories', path: '/dashboard/categories' },
+  { key: 'settings', icon: 'settings', label: 'Settings', path: '/dashboard/settings' }
 ]
 </script>
 
@@ -44,10 +48,10 @@ const items = [
     </div>
 
     <nav class="flex-1 space-y-1 px-4">
-      <a
+      <router-link
         v-for="item in items"
         :key="item.key"
-        href="#"
+        :to="item.path"
         :class="[
           'pressable flex items-center gap-3 rounded px-4 py-3 text-slate-400 transition-colors',
           item.key === activeItem
@@ -57,7 +61,7 @@ const items = [
       >
         <span class="material-symbols-outlined">{{ item.icon }}</span>
         <span class="text-xs font-bold uppercase tracking-wider">{{ item.label }}</span>
-      </a>
+      </router-link>
     </nav>
 
     <div class="mt-auto px-4">

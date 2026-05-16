@@ -37,5 +37,27 @@ export const staffService = {
   },
   async getStaffCounts() {
     return await api.get('/staff/counts');
+  },
+  async getAllStaff(pageNumber = 1, pageSize = 10) {
+    return await api.get('/staff/all', {
+      params: {
+        pageNumber,
+        pageSize
+      }
+    });
+  },
+  async getStaffByFilter({ pageNumber = 1, pageSize = 100, primaryRoleId, roleClassificationId, categoryIds }) {
+    return await api.get('/staff/filter', {
+      params: {
+        pageNumber,
+        pageSize,
+        ...(primaryRoleId != null && { primaryRoleId }),
+        ...(roleClassificationId != null && { roleClassificationId }),
+        ...(categoryIds && categoryIds.length && { categoryIds })
+      },
+      paramsSerializer: {
+        indexes: null
+      }
+    });
   }
 };

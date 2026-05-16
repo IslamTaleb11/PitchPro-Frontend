@@ -171,12 +171,12 @@ const handleRegistration = async () => {
   }
 
   const formData = new FormData()
-  formData.append('name', clubNameValue)
-  formData.append('contactNumber', contactValue)
-  formData.append('primaryIdentityColor', colorValue)
-  formData.append('crest', crestFile)
+  formData.append('Name', clubNameValue)
+  formData.append('ContactNumber', contactValue)
+  formData.append('PrimaryIdentityColor', colorValue)
+  formData.append('Crest', crestFile, 'crest.png')
   
-  formData.append('firstName', form.firstName)
+  formData.append('FirstName', form.firstName)
   if (form.secondName) {
     formData.append('secondName', form.secondName)
   }

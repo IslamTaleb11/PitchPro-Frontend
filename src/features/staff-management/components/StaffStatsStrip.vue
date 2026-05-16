@@ -18,7 +18,7 @@ onMounted(async () => {
       counts.value = data
     }
   } catch (error) {
-    console.error('Failed to load staff counts', error)
+    console.error('Failed to load staff counts', error?.response?.data || error)
   }
 })
 

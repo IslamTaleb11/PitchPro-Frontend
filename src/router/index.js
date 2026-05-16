@@ -3,6 +3,7 @@ import ClubRegistration from '../views/ClubRegistration.vue'
 import Login from '../views/Login.vue'
 import ClubPresidentRegistration from '../views/ClubPresidentRegistration.vue'
 import StaffManagementDashboard from '../views/StaffManagementDashboard.vue'
+import CategoryManagementDashboard from '../views/CategoryManagementDashboard.vue'
 
 const routes = [
   {
@@ -28,6 +29,11 @@ const routes = [
     path: '/dashboard/staff-management',
     name: 'StaffManagementDashboard',
     component: StaffManagementDashboard
+  },
+  {
+    path: '/dashboard/categories',
+    name: 'CategoryManagementDashboard',
+    component: CategoryManagementDashboard
   }
 ]
 

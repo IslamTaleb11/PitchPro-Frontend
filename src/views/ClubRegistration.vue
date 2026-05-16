@@ -122,7 +122,7 @@ async function onCrestChange(event) {
   const file = event.target.files?.[0]
   if (!file) return
 
-  const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  const validTypes = ['image/jpeg', 'image/png'];
   if (!validTypes.includes(file.type)) {
     showToast({
       title: 'Invalid File',
