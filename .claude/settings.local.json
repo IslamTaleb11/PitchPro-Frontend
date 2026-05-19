@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -k https://localhost:7057/api/dashboard/category)",
+      "Bash(curl -sk https://localhost:7057/api/dashboard/category)",
+      "Bash(curl -sk https://localhost:7057/api/dashboard/category/all)",
+      "Bash(curl -sk https://localhost:7057/api/dashboard/categories)",
+      "Bash(curl -sk https://localhost:7057/api/dashboard/category/list)",
+      "Bash(curl -sk https://localhost:7057/api/dashboard/category?pageNumber=1)",
+      "Bash(pageSize=10 2>&1)",
+      "Bash(curl -sk https://localhost:7057/api/dashboard/category/1)",
+      "Bash(curl -sk -X POST https://localhost:7057/api/dashboard/category/getall)",
+      "Bash(curl -sk -X POST https://localhost:7057/api/dashboard/category/list)",
+      "Bash(curl -sk -X POST https://localhost:7057/api/dashboard/category/all)",
+      "Bash(curl -sk https://localhost:7057/api/dashboard/category/get)",
+      "Bash(curl -sk \"https://localhost:7057/api/categories?page=1&size=10\")",
+      "Bash(curl -sk \"https://localhost:7057/api/categories?pageIndex=0&pageSize=10\")",
+      "Bash(curl -sk -X POST \"https://localhost:7057/api/dashboard/category\" -H \"Content-Type: application/json\" -d \"{\\\\\"name\\\\\":\\\\\"test\\\\\",\\\\\"ageMin\\\\\":6,\\\\\"ageMax\\\\\":12,\\\\\"capacity\\\\\":20,\\\\\"registrationFee\\\\\":0}\")",
+      "Bash(curl -sk \"https://localhost:7057/api/dashboard/category/1\")"
+    ]
+  }
+}

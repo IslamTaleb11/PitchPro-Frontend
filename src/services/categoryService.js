@@ -2,7 +2,7 @@ import api from "./axiosConfig";
 
 export const categoryService = {
   async getAllCategories(pageNumber = 1, pageSize = 10) {
-    return await api.get('/categories', {
+    return await api.get('/dashboard/category', {
       params: {
         pageNumber,
         pageSize
@@ -11,14 +11,14 @@ export const categoryService = {
   },
 
   async createCategory(payload) {
-    return await api.post('/categories', payload);
+    return await api.post('/dashboard/category', payload);
   },
 
   async updateCategory(id, payload) {
-    return await api.put(`/categories/${id}`, payload);
+    return await api.put('/dashboard/category', { ...payload, id });
   },
 
   async deleteCategory(id) {
-    return await api.delete(`/categories/${id}`);
+    return await api.delete(`/dashboard/category/${id}`);
   }
 };

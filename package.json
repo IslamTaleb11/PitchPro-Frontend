@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
+    "@vueform/slider": "^2.1.10",
     "axios": "^1.16.0",
     "browser-image-compression": "^2.0.2",
     "vue": "^3.5.32",

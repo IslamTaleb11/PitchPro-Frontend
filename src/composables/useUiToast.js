@@ -17,9 +17,16 @@ function showToast({ title, message = '', mode = 'info', duration = 1800 }) {
   toastState.mode = mode
   toastState.visible = true
 
-  hideTimer = setTimeout(() => {
-    toastState.visible = false
-  }, duration)
+  if (duration > 0) {
+    hideTimer = setTimeout(() => {
+      toastState.visible = false
+    }, duration)
+  }
+}
+
+function hideToast() {
+  if (hideTimer) clearTimeout(hideTimer)
+  toastState.visible = false
 }
 
 function showLoadingToast({
@@ -46,6 +53,7 @@ export function useUiToast() {
   return {
     toastState,
     showToast,
-    showLoadingToast
+    showLoadingToast,
+    hideToast
   }
 }

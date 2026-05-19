@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@vueform/slider/themes/default.css";
 
 @theme {
   --color-primary: #ebffe2;
@@ -60,4 +61,69 @@ select {
 .toast-pop-leave-to {
   opacity: 0;
   transform: translateY(-10px) scale(0.98);
+}
+
+/* ===== Age Range Slider — Tactical Theme ===== */
+.age-slider-wrapper .slider-target {
+  margin: 0 8px;
+}
+
+.age-slider-wrapper .slider-connect {
+  background: linear-gradient(90deg, #00ff41, #72ff70);
+  box-shadow: 0 0 12px rgba(0, 255, 65, 0.35);
+}
+
+.age-slider-wrapper .slider-base {
+  background: #191c1f;
+  border-radius: 999px;
+  height: 6px;
+}
+
+.age-slider-wrapper .slider-handle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #0b0e11;
+  border: 2.5px solid #00ff41;
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.3), 0 2px 8px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+  transition: box-shadow 200ms ease, transform 150ms ease;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.age-slider-wrapper .slider-handle:hover {
+  box-shadow: 0 0 18px rgba(0, 255, 65, 0.55), 0 2px 10px rgba(0, 0, 0, 0.6);
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.age-slider-wrapper .slider-handle:active,
+.age-slider-wrapper .slider-handle.slider-handle-dragging {
+  cursor: grabbing;
+  box-shadow: 0 0 24px rgba(0, 255, 65, 0.7), 0 2px 12px rgba(0, 0, 0, 0.7);
+  transform: translate(-50%, -50%) scale(1.15);
+}
+
+.age-slider-wrapper .slider-handle:focus {
+  outline: none;
+}
+
+.age-slider-wrapper .slider-handle::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 255, 65, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.age-slider-wrapper .slider-tooltip {
+  background: #00ff41;
+  color: #0b0e11;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }

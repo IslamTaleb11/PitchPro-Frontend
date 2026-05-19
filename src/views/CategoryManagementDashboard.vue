@@ -4,30 +4,52 @@ import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.
 import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
 import { categoryService } from '../services/categoryService'
 import { useUiToast } from '../composables/useUiToast'
+import Slider from '@vueform/slider'
 
 const { showToast } = useUiToast()
 const isSidebarOpen = ref(true)
 
 // Category form state
 const categoryName = ref('')
-const ageMin = ref(6)
-const ageMax = ref(18)
+const ageRange = ref([6, 18])
 const capacity = ref('')
 const registrationFee = ref('')
+
+// Sync individual min/max for the form submission
+const ageMin = computed(() => ageRange.value[0])
+const ageMax = computed(() => ageRange.value[1])
 
 // Category list state
 const categories = ref([])
 const isLoading = ref(false)
+const isRefreshing = ref(false)
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(5)
 const totalCount = ref(0)
+const pageSizeOptions = [5, 10, 25, 50]
 
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize.value)))
+const startIndex = computed(() => totalCount.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1)
+const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totalCount.value))
 
-async function fetchCategories() {
+const showingText = computed(() => {
+  if (totalCount.value === 0) return 'SHOWING 0 OF 0 ENTRIES'
+  return `SHOWING ${startIndex.value}-${endIndex.value} OF ${totalCount.value} ENTRIES`
+})
+
+// Safely extract a field from a category object supporting multiple naming conventions
+function getField(obj, ...keys) {
+  for (const key of keys) {
+    if (obj[key] !== undefined && obj[key] !== null) return obj[key]
+  }
+  return undefined
+}
+
+async function fetchCategories(options = {}) {
   try {
     isLoading.value = true
     const response = await categoryService.getAllCategories(currentPage.value, pageSize.value)
+
     if (response.data && response.data.data) {
       categories.value = response.data.data
     } else {
@@ -36,14 +58,50 @@ async function fetchCategories() {
     if (response.data && typeof response.data.totalCount === 'number') {
       totalCount.value = response.data.totalCount
     } else {
-      totalCount.value = categories.value.length
+      totalCount.value = categories.value.length >= pageSize.value ? categories.value.length + 1 : categories.value.length
+    }
+
+    // If current page is empty and not page 1, go back one page
+    if (categories.value.length === 0 && currentPage.value > 1 && options.fallbackOnEmpty) {
+      currentPage.value--
+      await fetchCategories(options)
+      return
     }
   } catch (error) {
-    const message = error?.response?.data?.message || 'Failed to fetch categories.'
+    const message = error?.response?.data?.message || error?.message || 'Failed to fetch categories.'
     showToast({ title: 'Error', message, mode: 'error' })
+    categories.value = []
+    totalCount.value = 0
   } finally {
     isLoading.value = false
+    isRefreshing.value = false
   }
+}
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+    fetchCategories()
+  }
+}
+
+function prevPage() {
+  if (currentPage.value > 1) {
+    currentPage.value--
+    fetchCategories()
+  }
+}
+
+function handlePageSizeChange(newSize) {
+  pageSize.value = newSize
+  currentPage.value = 1
+  fetchCategories()
+}
+
+function refreshCategories() {
+  isRefreshing.value = true
+  currentPage.value = 1
+  fetchCategories()
 }
 
 async function submitCategory() {
@@ -56,7 +114,7 @@ async function submitCategory() {
     return
   }
   try {
-    showToast({ title: 'Creating Category...', message: 'Please wait.', mode: 'info', duration: 4000 })
+    showToast({ title: 'Creating Category', message: 'Please wait…', mode: 'loading', duration: 0 })
     const payload = {
       name: categoryName.value,
       ageMin: ageMin.value,
@@ -69,8 +127,7 @@ async function submitCategory() {
     categoryName.value = ''
     capacity.value = ''
     registrationFee.value = ''
-    ageMin.value = 6
-    ageMax.value = 18
+    ageRange.value = [6, 18]
     fetchCategories()
   } catch (error) {
     const message = error?.response?.data?.message || error?.message || 'Failed to create category.'
@@ -78,29 +135,125 @@ async function submitCategory() {
   }
 }
 
-async function deleteCategory(id) {
+// Action menu state
+const openMenuId = ref(null)
+const menuPosition = ref({ top: 0, left: 0 })
+
+function toggleMenu(id, event) {
+  if (openMenuId.value === id) {
+    openMenuId.value = null
+    return
+  }
+  openMenuId.value = id
+  const btn = event.currentTarget
+  const rect = btn.getBoundingClientRect()
+  menuPosition.value = {
+    top: rect.bottom + 4,
+    left: rect.right - 144
+  }
+}
+
+function closeMenu() {
+  openMenuId.value = null
+}
+
+// Edit modal state
+const showEditModal = ref(false)
+const isEditing = ref(false)
+const editForm = ref({
+  id: null,
+  name: '',
+  ageMin: 4,
+  ageMax: 18,
+  capacity: '',
+  registrationFee: ''
+})
+
+const editAgeRange = computed({
+  get: () => [editForm.value.ageMin, editForm.value.ageMax],
+  set: (val) => {
+    editForm.value.ageMin = val[0]
+    editForm.value.ageMax = val[1]
+  }
+})
+
+function openEditModal(cat) {
+  editForm.value = {
+    id: getField(cat, 'id', 'categoryId', '_id'),
+    name: getField(cat, 'name', 'categoryName', 'title') ?? '',
+    ageMin: getField(cat, 'ageMin', 'minAge', 'ageFrom') ?? 4,
+    ageMax: getField(cat, 'ageMax', 'maxAge', 'ageTo') ?? 18,
+    capacity: getField(cat, 'capacity', 'maxCapacity', 'maxPlayers') ?? '',
+    registrationFee: getField(cat, 'registrationFee', 'fee', 'price') ?? ''
+  }
+  showEditModal.value = true
+  closeMenu()
+}
+
+async function submitEdit() {
+  if (!editForm.value.name.trim()) {
+    showToast({ title: 'Missing fields', message: 'Please enter a category name.', mode: 'error', duration: 4000 })
+    return
+  }
+  if (!editForm.value.capacity) {
+    showToast({ title: 'Missing fields', message: 'Please enter a capacity.', mode: 'error', duration: 4000 })
+    return
+  }
   try {
+    isEditing.value = true
+    showToast({ title: 'Updating Category', message: 'Saving changes…', mode: 'loading', duration: 0 })
+    const payload = {
+      name: editForm.value.name,
+      ageMin: editForm.value.ageMin,
+      ageMax: editForm.value.ageMax,
+      capacity: Number(editForm.value.capacity),
+      registrationFee: editForm.value.registrationFee ? Number(editForm.value.registrationFee) : 0
+    }
+    const response = await categoryService.updateCategory(editForm.value.id, payload)
+    showToast({ title: 'Category Updated', message: response.data?.message || 'Changes saved successfully.', mode: 'success', duration: 3000 })
+    showEditModal.value = false
+    fetchCategories()
+  } catch (error) {
+    const message = error?.response?.data?.message || error?.message || 'Failed to update category.'
+    showToast({ title: 'Update Failed', message, mode: 'error', duration: 4000 })
+  } finally {
+    isEditing.value = false
+  }
+}
+
+// Delete modal state
+const showDeleteModal = ref(false)
+const isDeleting = ref(false)
+const deleteTarget = ref(null)
+
+function openDeleteModal(cat) {
+  deleteTarget.value = cat
+  showDeleteModal.value = true
+  closeMenu()
+}
+
+async function confirmDelete() {
+  if (!deleteTarget.value) return
+  const id = getField(deleteTarget.value, 'id', 'categoryId', '_id')
+  try {
+    isDeleting.value = true
+    showToast({ title: 'Deleting Category', message: 'Please wait…', mode: 'loading', duration: 0 })
     await categoryService.deleteCategory(id)
     showToast({ title: 'Category Deleted', message: 'Category was removed successfully.', mode: 'success', duration: 2000 })
-    fetchCategories()
+    showDeleteModal.value = false
+    deleteTarget.value = null
+    fetchCategories({ fallbackOnEmpty: true })
   } catch (error) {
     const message = error?.response?.data?.message || error?.message || 'Failed to delete category.'
     showToast({ title: 'Error', message, mode: 'error', duration: 4000 })
+  } finally {
+    isDeleting.value = false
   }
 }
 
-function prevPage() {
-  if (currentPage.value > 1) {
-    currentPage.value--
-    fetchCategories()
-  }
-}
-
-function nextPage() {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
-    fetchCategories()
-  }
+function cancelDelete() {
+  showDeleteModal.value = false
+  deleteTarget.value = null
 }
 
 onMounted(() => {
@@ -165,29 +318,27 @@ onMounted(() => {
               <div class="space-y-4">
                 <div class="flex items-end justify-between">
                   <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Age Range</label>
-                  <span class="text-[10px] font-bold uppercase text-green-400">{{ ageMin }} — {{ ageMax }} yrs</span>
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center rounded bg-green-400/10 px-2 py-0.5 font-headline text-xs font-bold text-green-400">{{ ageMin }}</span>
+                    <span class="text-[10px] font-bold text-slate-600">—</span>
+                    <span class="inline-flex items-center justify-center rounded bg-green-400/10 px-2 py-0.5 font-headline text-xs font-bold text-green-400">{{ ageMax }}</span>
+                    <span class="text-[10px] font-bold uppercase text-slate-500">yrs</span>
+                  </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4 px-2 pt-2">
-                  <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-500">Min</label>
-                    <input
-                      v-model.number="ageMin"
-                      type="number"
-                      min="4"
-                      max="25"
-                      class="w-full rounded border-none bg-surface-container-lowest p-2 text-sm text-white focus:ring-1 focus:ring-green-400/50"
-                    />
-                  </div>
-                  <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-500">Max</label>
-                    <input
-                      v-model.number="ageMax"
-                      type="number"
-                      min="4"
-                      max="25"
-                      class="w-full rounded border-none bg-surface-container-lowest p-2 text-sm text-white focus:ring-1 focus:ring-green-400/50"
-                    />
-                  </div>
+                <div class="age-slider-wrapper px-2 pt-4 pb-2">
+                  <Slider
+                    v-model="ageRange"
+                    :min="4"
+                    :max="25"
+                    :step="1"
+                    :tooltips="false"
+                    :merge="-1"
+                    :lazy="false"
+                  />
+                </div>
+                <div class="flex items-center justify-between px-2">
+                  <span class="text-[9px] font-bold text-slate-600">4</span>
+                  <span class="text-[9px] font-bold text-slate-600">25</span>
                 </div>
               </div>
 
@@ -248,6 +399,15 @@ onMounted(() => {
                 Category Ledger
               </h2>
               <div class="flex gap-2">
+                <button
+                  type="button"
+                  title="Refresh"
+                  :disabled="isLoading"
+                  class="pressable rounded p-2 text-slate-400 transition-colors hover:text-green-400 hover:bg-surface-container-highest disabled:opacity-50"
+                  @click="refreshCategories"
+                >
+                  <span class="material-symbols-outlined text-sm" :class="{ 'animate-spin': isRefreshing }">refresh</span>
+                </button>
                 <button type="button" class="pressable rounded p-2 text-slate-400 transition-colors hover:text-white hover:bg-surface-container-highest">
                   <span class="material-symbols-outlined text-sm">filter_list</span>
                 </button>
@@ -261,67 +421,111 @@ onMounted(() => {
               <table class="w-full border-collapse text-left">
                 <thead>
                   <tr class="border-b border-white/5">
-                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Category Name</th>
-                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Range</th>
+                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Category</th>
+                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Age Range</th>
                     <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Capacity</th>
-                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Fee (DZD)</th>
-                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Staff</th>
+                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Registration Fee</th>
+                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Players</th>
                     <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Status</th>
                     <th class="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Actions</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5">
-                  <tr v-if="isLoading">
-                    <td colspan="7" class="px-6 py-8 text-center text-sm text-slate-400">Loading categories...</td>
+                  <tr v-if="isLoading && !isRefreshing">
+                    <td colspan="7" class="px-6 py-16 text-center">
+                      <div class="flex flex-col items-center gap-3">
+                        <span class="material-symbols-outlined animate-spin text-2xl text-green-400">progress_activity</span>
+                        <span class="text-sm text-slate-500">Loading categories...</span>
+                      </div>
+                    </td>
                   </tr>
                   <tr v-else-if="categories.length === 0">
-                    <td colspan="7" class="px-6 py-8 text-center text-sm text-slate-400">No categories found.</td>
+                    <td colspan="7" class="px-6 py-16 text-center">
+                      <div class="flex flex-col items-center gap-3">
+                        <span class="material-symbols-outlined text-3xl text-slate-600">category</span>
+                        <span class="text-sm text-slate-500">No categories found. Create one to get started.</span>
+                      </div>
+                    </td>
                   </tr>
                   <tr
                     v-for="cat in categories"
-                    :key="cat.id"
+                    :key="cat.id ?? cat.categoryId ?? cat._id"
                     class="group transition-colors hover:bg-surface-container-high/40"
                   >
+                    <!-- Category Name -->
                     <td class="px-6 py-5">
                       <div class="flex items-center gap-3">
                         <div class="flex h-8 w-8 items-center justify-center rounded-sm bg-green-400/10 font-headline text-xs font-bold text-green-400">
-                          {{ cat.name?.substring(0, 3).toUpperCase() || 'CAT' }}
+                          {{ (getField(cat, 'name', 'categoryName', 'title') ?? 'CAT').toString().substring(0, 3).toUpperCase() }}
                         </div>
-                        <span class="font-headline text-sm font-bold text-white">{{ cat.name }}</span>
-                      </div>
-                    </td>
-                    <td class="px-6 py-5 font-headline text-xs font-bold text-slate-400">
-                      {{ cat.ageMin ?? cat.ageRange?.split('-')[0] ?? '—' }} — {{ cat.ageMax ?? cat.ageRange?.split('-')[1] ?? '—' }}
-                    </td>
-                    <td class="px-6 py-5">
-                      <span class="font-headline text-sm font-bold text-white">{{ cat.capacity ?? '—' }}</span>
-                      <span class="block text-[8px] font-bold uppercase tracking-widest text-slate-600">Players</span>
-                    </td>
-                    <td class="px-6 py-5">
-                      <span class="font-headline text-sm font-bold text-white">{{ cat.registrationFee?.toLocaleString() ?? '0.00' }}</span>
-                      <span class="block text-[8px] font-bold uppercase tracking-widest text-slate-600">Quarterly</span>
-                    </td>
-                    <td class="px-6 py-5">
-                      <div class="flex -space-x-2">
-                        <div class="flex h-6 w-6 items-center justify-center rounded-full border border-surface-container-lowest bg-surface-container-highest text-[8px] font-bold text-slate-400">
-                          +{{ cat.staffCount ?? 0 }}
+                        <div>
+                          <span class="font-headline text-sm font-bold text-white">{{ getField(cat, 'name', 'categoryName', 'title') ?? '—' }}</span>
+                          <span v-if="getField(cat, 'code', 'categoryCode', 'slug')" class="ml-2 text-[9px] font-bold text-slate-600">#{{ getField(cat, 'code', 'categoryCode', 'slug') }}</span>
                         </div>
                       </div>
                     </td>
+
+                    <!-- Age Range -->
                     <td class="px-6 py-5">
-                      <span class="rounded-full bg-green-400/10 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-green-400">
-                        Active
+                      <div class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs text-slate-600">cake</span>
+                        <span class="font-headline text-xs font-bold text-slate-300">
+                          {{ getField(cat, 'ageMin', 'minAge', 'ageFrom') ?? '?' }} – {{ getField(cat, 'ageMax', 'maxAge', 'ageTo') ?? '?' }}
+                        </span>
+                        <span class="text-[9px] font-bold text-slate-600">yrs</span>
+                      </div>
+                    </td>
+
+                    <!-- Capacity -->
+                    <td class="px-6 py-5">
+                      <div class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs text-slate-600">groups</span>
+                        <span class="font-headline text-sm font-bold text-white">{{ getField(cat, 'capacity', 'maxCapacity', 'maxPlayers') ?? '—' }}</span>
+                      </div>
+                    </td>
+
+                    <!-- Registration Fee -->
+                    <td class="px-6 py-5">
+                      <div class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs text-slate-600">payments</span>
+                        <span class="font-headline text-sm font-bold text-white">
+                          {{ (getField(cat, 'registrationFee', 'fee', 'price') ?? 0).toLocaleString() }}
+                        </span>
+                        <span class="text-[9px] font-bold text-slate-600">DZD</span>
+                      </div>
+                    </td>
+
+                    <!-- Players Count -->
+                    <td class="px-6 py-5">
+                      <div class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs text-slate-600">person</span>
+                        <span class="font-headline text-sm font-bold text-white">{{ getField(cat, 'playerCount', 'playersCount', 'currentPlayers', 'enrolledCount', 'staffCount') ?? 0 }}</span>
+                      </div>
+                    </td>
+
+                    <!-- Status -->
+                    <td class="px-6 py-5">
+                      <span
+                        :class="[
+                          'rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest',
+                          getField(cat, 'status', 'isActive', 'state') === false || getField(cat, 'status') === 'Inactive'
+                            ? 'bg-red-400/10 text-red-400'
+                            : 'bg-green-400/10 text-green-400'
+                        ]"
+                      >
+                        {{ getField(cat, 'status') === false || getField(cat, 'status') === 'Inactive' ? 'Inactive' : 'Active' }}
                       </span>
                     </td>
+
+                    <!-- Actions -->
                     <td class="px-6 py-5 text-right">
-                      <div class="flex justify-end gap-3 opacity-0 transition-opacity group-hover:opacity-100">
-                        <button type="button" class="pressable p-1.5 text-slate-500 transition-colors hover:text-green-400">
-                          <span class="material-symbols-outlined text-lg">edit_square</span>
-                        </button>
-                        <button type="button" class="pressable p-1.5 text-slate-500 transition-colors hover:text-red-400" @click="deleteCategory(cat.id)">
-                          <span class="material-symbols-outlined text-lg">delete</span>
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        class="pressable p-2 text-slate-500 transition-colors hover:text-white"
+                        @click.stop="toggleMenu(getField(cat, 'id', 'categoryId', '_id'), $event)"
+                      >
+                        <span class="material-symbols-outlined text-lg">more_vert</span>
+                      </button>
                     </td>
                   </tr>
                 </tbody>
@@ -329,41 +533,39 @@ onMounted(() => {
             </div>
 
             <!-- Pagination -->
-            <div class="flex items-center justify-between border-t border-white/5 bg-surface-container-low p-4">
-              <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                Displaying {{ categories.length }} of {{ totalCount }} Entries
+            <div class="flex items-center justify-between border-t border-white/5 p-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              <div class="flex items-center gap-4">
+                <span>{{ showingText }}</span>
+                <div class="flex items-center gap-2">
+                  <label for="category-page-size" class="text-slate-400">Rows per page:</label>
+                  <select
+                    id="category-page-size"
+                    :value="pageSize"
+                    @change="(e) => handlePageSizeChange(Number(e.target.value))"
+                    class="rounded bg-surface-container-lowest px-2 py-1 text-white text-[10px] font-bold transition-colors hover:bg-surface-container-high cursor-pointer border border-white/10"
+                  >
+                    <option v-for="size in pageSizeOptions" :key="size" :value="size">
+                      {{ size }}
+                    </option>
+                  </select>
+                </div>
               </div>
-              <div class="flex gap-1">
+              <div class="flex gap-2">
                 <button
                   type="button"
                   :disabled="currentPage === 1"
                   @click="prevPage"
-                  class="pressable flex h-8 w-8 items-center justify-center rounded bg-surface-container-highest text-slate-400 transition-all hover:bg-green-400 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="pressable rounded bg-surface-container-lowest px-3 py-1 transition-colors hover:bg-surface-container-high disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span class="material-symbols-outlined text-sm">chevron_left</span>
-                </button>
-                <button
-                  type="button"
-                  class="flex h-8 w-8 items-center justify-center rounded bg-green-400 text-xs font-bold text-slate-900"
-                >
-                  {{ currentPage }}
-                </button>
-                <button
-                  v-if="totalPages > 1"
-                  type="button"
-                  :disabled="currentPage >= totalPages"
-                  @click="nextPage"
-                  class="pressable flex h-8 w-8 items-center justify-center rounded bg-surface-container-highest text-xs font-bold text-slate-400 transition-all hover:bg-green-400 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {{ currentPage + 1 }}
+                  PREV
                 </button>
                 <button
                   type="button"
                   :disabled="currentPage >= totalPages"
                   @click="nextPage"
-                  class="pressable flex h-8 w-8 items-center justify-center rounded bg-surface-container-highest text-slate-400 transition-all hover:bg-green-400 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="pressable rounded bg-surface-container-lowest px-3 py-1 transition-colors hover:bg-surface-container-high disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span class="material-symbols-outlined text-sm">chevron_right</span>
+                  NEXT
                 </button>
               </div>
             </div>
@@ -371,5 +573,173 @@ onMounted(() => {
         </section>
       </div>
     </main>
+
+    <!-- Click-away listener to close dropdown -->
+    <div v-if="openMenuId !== null" class="fixed inset-0 z-40" @click="closeMenu"></div>
+
+    <!-- Fixed-position action dropdown (outside table to avoid overflow clipping) -->
+    <Teleport to="body">
+      <div
+        v-if="openMenuId !== null"
+        class="fixed z-50 w-36 rounded-lg bg-surface-container-high border border-white/10 shadow-2xl overflow-hidden"
+        :style="{ top: menuPosition.top + 'px', left: menuPosition.left + 'px' }"
+      >
+        <button
+          type="button"
+          class="flex w-full items-center gap-2 px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 transition-colors hover:bg-surface-container-highest hover:text-green-400"
+          @click="openEditModal(categories.find(c => (getField(c, 'id', 'categoryId', '_id')) === openMenuId))"
+        >
+          <span class="material-symbols-outlined text-sm">edit</span>
+          Edit
+        </button>
+        <button
+          type="button"
+          class="flex w-full items-center gap-2 px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 transition-colors hover:bg-surface-container-highest hover:text-red-400"
+          @click="openDeleteModal(categories.find(c => (getField(c, 'id', 'categoryId', '_id')) === openMenuId))"
+        >
+          <span class="material-symbols-outlined text-sm">delete</span>
+          Delete
+        </button>
+      </div>
+    </Teleport>
+
+    <!-- EDIT MODAL -->
+    <Teleport to="body">
+      <div v-if="showEditModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-background/80 backdrop-blur-md" @click="showEditModal = false"></div>
+        <div class="relative bg-surface-container-low w-full max-w-lg rounded-xl border border-white/10 shadow-2xl overflow-hidden">
+          <div class="p-6 border-b border-white/5 flex items-center justify-between">
+            <div>
+              <div class="text-green-400 text-[10px] font-black tracking-[0.2em] uppercase mb-1">Modify Record</div>
+              <h2 class="text-xl font-black text-white tracking-tight uppercase">Edit Category</h2>
+            </div>
+            <button type="button" class="text-slate-500 hover:text-white transition-colors" @click="showEditModal = false">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <div class="p-8 space-y-6">
+            <div class="space-y-1.5">
+              <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Category Name</label>
+              <input
+                v-model="editForm.name"
+                type="text"
+                placeholder="e.g., U-16 Elite"
+                class="w-full rounded border-none bg-surface-container-lowest p-3 text-sm text-white focus:ring-1 focus:ring-green-400/50"
+              />
+            </div>
+            <div class="space-y-4">
+              <div class="flex items-end justify-between">
+                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Age Range</label>
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center justify-center rounded bg-green-400/10 px-2 py-0.5 font-headline text-xs font-bold text-green-400">{{ editForm.ageMin }}</span>
+                  <span class="text-[10px] font-bold text-slate-600">—</span>
+                  <span class="inline-flex items-center justify-center rounded bg-green-400/10 px-2 py-0.5 font-headline text-xs font-bold text-green-400">{{ editForm.ageMax }}</span>
+                  <span class="text-[10px] font-bold uppercase text-slate-500">yrs</span>
+                </div>
+              </div>
+              <div class="age-slider-wrapper px-2 pt-4 pb-2">
+                <Slider
+                  v-model="editAgeRange"
+                  :min="4"
+                  :max="25"
+                  :step="1"
+                  :tooltips="false"
+                  :merge="-1"
+                  :lazy="false"
+                />
+              </div>
+              <div class="flex items-center justify-between px-2">
+                <span class="text-[9px] font-bold text-slate-600">4</span>
+                <span class="text-[9px] font-bold text-slate-600">25</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-1.5">
+                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Capacity</label>
+                <input
+                  v-model="editForm.capacity"
+                  type="number"
+                  placeholder="25"
+                  class="w-full rounded border-none bg-surface-container-lowest p-3 text-sm text-white focus:ring-1 focus:ring-green-400/50"
+                />
+              </div>
+              <div class="space-y-1.5">
+                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Currency</label>
+                <div class="flex h-[46px] items-center justify-center rounded bg-surface-container-high p-3 text-xs font-bold text-slate-400">
+                  DZD
+                </div>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Registration Fee</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-green-400">د.ج</span>
+                <input
+                  v-model="editForm.registrationFee"
+                  type="number"
+                  placeholder="45,000"
+                  class="w-full rounded border-none bg-surface-container-lowest p-3 pl-10 text-sm text-white focus:ring-1 focus:ring-green-400/50"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="p-6 bg-surface-container-high/50 border-t border-white/5 flex items-center justify-end gap-4">
+            <button
+              type="button"
+              class="px-6 py-3 text-slate-400 font-black text-xs uppercase tracking-widest rounded-md hover:bg-white/5 transition-all"
+              @click="showEditModal = false"
+            >
+              CANCEL
+            </button>
+            <button
+              type="button"
+              :disabled="isEditing"
+              class="px-6 py-3 bg-primary-container text-on-primary-fixed font-black text-xs uppercase tracking-widest rounded-md shadow-lg shadow-green-900/20 hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              @click="submitEdit"
+            >
+              <span v-if="isEditing" class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+              {{ isEditing ? 'UPDATING...' : 'UPDATE CATEGORY' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <Teleport to="body">
+      <div v-if="showDeleteModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-background/80 backdrop-blur-md" @click="cancelDelete"></div>
+        <div class="relative bg-surface-container-low w-full max-w-md rounded-xl border border-white/10 shadow-2xl overflow-hidden">
+          <div class="p-8 text-center">
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-400/10">
+              <span class="material-symbols-outlined text-3xl text-red-400">warning</span>
+            </div>
+            <h2 class="text-lg font-black text-white tracking-tight uppercase mb-2">Delete Category</h2>
+            <p class="text-sm text-slate-400">
+              Are you sure you want to delete
+              <span class="font-bold text-white">{{ deleteTarget ? (getField(deleteTarget, 'name', 'categoryName', 'title') ?? 'this category') : '' }}</span>? This action cannot be undone.
+            </p>
+          </div>
+          <div class="p-6 bg-surface-container-high/50 border-t border-white/5 flex items-center justify-center gap-4">
+            <button
+              type="button"
+              class="flex-1 py-3 text-slate-400 font-black text-xs uppercase tracking-widest rounded-md hover:bg-white/5 transition-all"
+              @click="cancelDelete"
+            >
+              CANCEL
+            </button>
+            <button
+              type="button"
+              :disabled="isDeleting"
+              class="flex-1 py-3 bg-red-500 text-white font-black text-xs uppercase tracking-widest rounded-md shadow-lg shadow-red-900/20 hover:bg-red-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              @click="confirmDelete"
+            >
+              <span v-if="isDeleting" class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+              {{ isDeleting ? 'DELETING...' : 'YES, DELETE' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
