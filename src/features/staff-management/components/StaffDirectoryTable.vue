@@ -1,10 +1,12 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { staffService } from '../../../services/staffService'
 import { lookupService } from '../../../services/lookupService'
 import { useUiToast } from '../../../composables/useUiToast'
 
 const { showToast } = useUiToast()
+const { t: $t } = useI18n()
 
 // 1. State Management
 const staffList = ref([])
@@ -43,8 +45,8 @@ const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, tot
 const paginatedStaff = computed(() => staffList.value)
 
 const showingText = computed(() => {
-  if (totalCount.value === 0) return 'SHOWING 0 OF 0 PERSONNEL'
-  return `SHOWING ${startIndex.value}-${endIndex.value} OF ${totalCount.value} PERSONNEL`
+  if (totalCount.value === 0) return `${$t('common.showing')} 0 ${$t('common.of')} 0 ${$t('staffManagement.personnel')}`
+  return `${$t('common.showing')} ${startIndex.value}-${endIndex.value} ${$t('common.of')} ${totalCount.value} ${$t('staffManagement.personnel')}`
 })
 
 // 6. Normalize lookup helpers
@@ -198,13 +200,13 @@ onMounted(() => {
 <template>
   <div class="overflow-hidden rounded-xl bg-surface-container-low">
     <div class="flex items-center justify-between bg-surface-container-high/50 p-6">
-      <h3 class="text-sm font-black uppercase tracking-wider text-white">Staff Directory</h3>
+      <h3 class="text-sm font-black uppercase tracking-wider text-white">{{ $t('staffManagement.staffDirectory') }}</h3>
       <div class="flex items-center gap-3">
         <button type="button" class="pressable flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-white" @click="toggleFilterModal">
-          <span class="material-symbols-outlined text-sm">filter_list</span> FILTER
+          <span class="material-symbols-outlined text-sm">filter_list</span> {{ $t('common.filter') }}
         </button>
         <button type="button" class="pressable flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-white">
-          <span class="material-symbols-outlined text-sm">download</span> EXPORT
+          <span class="material-symbols-outlined text-sm">download</span> {{ $t('common.export') }}
         </button>
       </div>
     </div>
@@ -212,13 +214,13 @@ onMounted(() => {
       <table class="w-full text-left">
         <thead class="bg-surface-container-low">
           <tr class="border-b border-white/5 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">
-            <th class="px-6 py-4">MEMBER</th><th class="px-6 py-4">STRATEGIC ROLE</th><th class="px-6 py-4">ASSIGNED UNITS</th><th class="px-6 py-4">STATUS</th><th class="px-6 py-4 text-right">ACTION</th>
+            <th class="px-6 py-4">{{ $t('staffManagement.member') }}</th><th class="px-6 py-4">{{ $t('staffManagement.strategicRoleCol') }}</th><th class="px-6 py-4">{{ $t('staffManagement.assignedUnits') }}</th><th class="px-6 py-4">{{ $t('common.status') }}</th><th class="px-6 py-4 text-right">{{ $t('common.actions') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-white/5">
           <tr v-if="staffList.length === 0" class="hover:bg-surface-container-high">
             <td colspan="5" class="px-6 py-8 text-center text-sm text-slate-400">
-              {{ isLoading ? 'Loading staff members...' : 'No staff members found.' }}
+              {{ isLoading ? $t('staffManagement.loadingStaff') : $t('staffManagement.noStaffFound') }}
             </td>
           </tr>
           <tr v-for="staff in paginatedStaff" :key="staff.email" class="group transition-colors hover:bg-surface-container-high">
@@ -248,7 +250,7 @@ onMounted(() => {
             </td>
             <td class="px-6 py-5">
               <span class="inline-flex items-center gap-1.5 rounded-full bg-green-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-green-400">
-                <span class="h-1.5 w-1.5 rounded-full bg-green-400" />Active
+                <span class="h-1.5 w-1.5 rounded-full bg-green-400" />{{ $t('common.active') }}
               </span>
             </td>
             <td class="px-6 py-5 text-right">
@@ -264,7 +266,7 @@ onMounted(() => {
       <div class="flex items-center gap-4">
         <span>{{ showingText }}</span>
         <div class="flex items-center gap-2">
-          <label for="page-size" class="text-slate-400">Rows per page:</label>
+          <label for="page-size" class="text-slate-400">{{ $t('common.rowsPerPage') }}:</label>
           <select
             id="page-size"
             :value="pageSize"
@@ -305,8 +307,8 @@ onMounted(() => {
       <div class="relative bg-surface-container-low w-full max-w-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden">
         <div class="p-6 border-b border-white/5 flex items-center justify-between">
           <div>
-            <div class="text-green-400 text-[10px] font-black tracking-[0.2em] uppercase mb-1">Search Parameters</div>
-            <h2 class="text-xl font-black text-white tracking-tight uppercase">Directory Filters</h2>
+            <div class="text-green-400 text-[10px] font-black tracking-[0.2em] uppercase mb-1">{{ $t('staffManagement.searchParameters') }}</div>
+            <h2 class="text-xl font-black text-white tracking-tight uppercase">{{ $t('staffManagement.directoryFilters') }}</h2>
           </div>
           <button type="button" class="text-slate-500 hover:text-white transition-colors" @click="toggleFilterModal">
             <span class="material-symbols-outlined">close</span>
@@ -317,7 +319,7 @@ onMounted(() => {
           <div class="space-y-4">
             <div class="flex items-center gap-2 mb-2">
               <span class="w-1 h-3 bg-green-400 rounded-full"></span>
-              <h3 class="text-[10px] font-black text-white tracking-widest uppercase">Primary Role</h3>
+              <h3 class="text-[10px] font-black text-white tracking-widest uppercase">{{ $t('staffManagement.primaryRole') }}</h3>
             </div>
             <div class="flex flex-wrap gap-2">
               <button
@@ -341,10 +343,10 @@ onMounted(() => {
           <div class="space-y-4">
             <div class="flex items-center gap-2 mb-2">
               <span class="w-1 h-3 bg-blue-400 rounded-full"></span>
-              <h3 class="text-[10px] font-black text-white tracking-widest uppercase">Classification</h3>
+              <h3 class="text-[10px] font-black text-white tracking-widest uppercase">{{ $t('staffManagement.classification') }}</h3>
             </div>
             <div v-if="filteredClassifications.length === 0" class="text-[10px] text-slate-500 italic">
-              {{ selectedPrimaryRoleId ? 'No classifications for selected role' : 'Select a primary role first' }}
+              {{ selectedPrimaryRoleId ? $t('staffManagement.noClassificationsForRole') : $t('staffManagement.selectPrimaryRoleFirst') }}
             </div>
             <div v-else class="flex flex-wrap gap-2">
               <button
@@ -368,10 +370,10 @@ onMounted(() => {
           <div class="space-y-4">
             <div class="flex items-center gap-2 mb-2">
               <span class="w-1 h-3 bg-orange-400 rounded-full"></span>
-              <h3 class="text-[10px] font-black text-white tracking-widest uppercase">Squad Categories</h3>
+              <h3 class="text-[10px] font-black text-white tracking-widest uppercase">{{ $t('staffManagement.squadCategories') }}</h3>
             </div>
             <div v-if="categories.length === 0" class="text-[10px] text-slate-500 italic">
-              No categories available
+              {{ $t('staffManagement.noCategoriesAvailable') }}
             </div>
             <div v-else class="grid grid-cols-4 gap-2">
               <div v-for="col in 4" :key="col" class="flex flex-col gap-2">
@@ -393,14 +395,14 @@ onMounted(() => {
             class="flex-1 py-4 text-slate-400 font-black text-xs uppercase tracking-widest rounded-md hover:bg-white/5 transition-all"
             @click="resetFilters"
           >
-            RESET FILTERS
+            {{ $t('staffManagement.resetFilters') }}
           </button>
           <button
             type="button"
             class="flex-[2] py-4 bg-primary-container text-on-primary-fixed font-black text-xs uppercase tracking-widest rounded-md shadow-lg shadow-green-900/20 hover:brightness-110 transition-all flex items-center justify-center gap-2"
             @click="applyFilters"
           >
-            APPLY FILTERS
+            {{ $t('staffManagement.applyFilters') }}
             <span class="material-symbols-outlined font-bold text-sm">filter_alt</span>
           </button>
         </div>

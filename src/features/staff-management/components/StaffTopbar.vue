@@ -1,4 +1,7 @@
 <script setup>
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
 defineProps({
   sidebarOpen: {
     type: Boolean,
@@ -7,6 +10,24 @@ defineProps({
 })
 
 defineEmits(['toggle-sidebar'])
+
+const { locale } = useI18n()
+const isLangDropdownOpen = ref(false)
+
+const currentLangLabel = computed(() => {
+  return locale.value === 'ar' ? 'العربية' : 'English'
+})
+
+const currentLangFlag = computed(() => {
+  return locale.value === 'ar' ? '🇩🇿' : '🇬🇧'
+})
+
+function setLanguage(lang) {
+  locale.value = lang
+  isLangDropdownOpen.value = false
+  document.documentElement.lang = lang
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
+}
 </script>
 
 <template>
@@ -24,9 +45,9 @@ defineEmits(['toggle-sidebar'])
       >
         <span class="material-symbols-outlined text-lg">{{ sidebarOpen ? 'close' : 'menu' }}</span>
       </button>
-      <h1 class="text-lg font-black uppercase tracking-widest text-white">STAFF &amp; ROLE CONFIG</h1>
+      <h1 class="text-lg font-black uppercase tracking-widest text-white">{{ $t('topbar.staffAndRoleConfig') }}</h1>
       <span class="rounded border border-green-400/20 bg-green-400/10 px-2 py-0.5 text-[10px] font-bold text-green-400">
-        LIVE OPS
+        {{ $t('topbar.liveOps') }}
       </span>
     </div>
     <div class="flex items-center gap-6">
@@ -34,7 +55,7 @@ defineEmits(['toggle-sidebar'])
         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-500">search</span>
         <input
           type="text"
-          placeholder="Search staff members..."
+          :placeholder="$t('topbar.searchStaff')"
           class="w-64 rounded-lg border-none bg-slate-900 py-2 pl-10 pr-4 text-xs text-white transition-all focus:ring-1 focus:ring-green-400/50"
         />
       </div>
@@ -45,6 +66,52 @@ defineEmits(['toggle-sidebar'])
         <button type="button" class="pressable text-slate-400 transition-opacity hover:text-green-400 active:opacity-80">
           <span class="material-symbols-outlined">analytics</span>
         </button>
+
+        <!-- Language Switcher -->
+        <div class="relative">
+          <button
+            type="button"
+            class="pressable flex items-center gap-2 rounded-lg border border-white/10 bg-surface-container-low px-3 py-1.5 text-xs font-bold text-slate-300 transition-colors hover:border-green-400/30 hover:text-green-400"
+            @click="isLangDropdownOpen = !isLangDropdownOpen"
+          >
+            <span class="text-sm">{{ currentLangFlag }}</span>
+            <span>{{ currentLangLabel }}</span>
+            <span class="material-symbols-outlined text-xs transition-transform" :class="{ 'rotate-180': isLangDropdownOpen }">expand_more</span>
+          </button>
+
+          <div
+            v-if="isLangDropdownOpen"
+            class="absolute right-0 mt-2 w-40 rounded-lg border border-white/10 bg-surface-container-high shadow-2xl overflow-hidden"
+          >
+            <button
+              type="button"
+              :class="[
+                'flex w-full items-center gap-2 px-3 py-2.5 text-xs font-bold transition-colors',
+                locale === 'en'
+                  ? 'bg-green-400/10 text-green-400'
+                  : 'text-slate-400 hover:bg-surface-container-highest hover:text-white'
+              ]"
+              @click="setLanguage('en')"
+            >
+              <span>🇬🇧</span>
+              <span>English</span>
+            </button>
+            <button
+              type="button"
+              :class="[
+                'flex w-full items-center gap-2 px-3 py-2.5 text-xs font-bold transition-colors',
+                locale === 'ar'
+                  ? 'bg-green-400/10 text-green-400'
+                  : 'text-slate-400 hover:bg-surface-container-highest hover:text-white'
+              ]"
+              @click="setLanguage('ar')"
+            >
+              <span>🇩🇿</span>
+              <span>العربية</span>
+            </button>
+          </div>
+        </div>
+
         <div class="h-10 w-10 rounded-full border-2 border-green-400/30 p-0.5">
           <img
             alt="Director Portrait"
@@ -55,4 +122,7 @@ defineEmits(['toggle-sidebar'])
       </div>
     </div>
   </header>
+
+  <!-- Click-away listener for language dropdown -->
+  <div v-if="isLangDropdownOpen" class="fixed inset-0 z-30" @click="isLangDropdownOpen = false"></div>
 </template>

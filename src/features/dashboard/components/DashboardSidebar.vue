@@ -1,5 +1,7 @@
 <script setup>
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+const { t: $t } = useI18n()
 
 defineProps({
   activeItem: {
@@ -15,11 +17,11 @@ defineProps({
 const route = useRoute()
 
 const items = [
-  { key: 'staff-management', icon: 'groups', label: 'Staff Management', path: '/dashboard/staff-management' },
-  { key: 'players', icon: 'sports_soccer', label: 'Players', path: '/dashboard/players' },
-  { key: 'finances', icon: 'payments', label: 'Finances', path: '/dashboard/finances' },
-  { key: 'categories', icon: 'category', label: 'Categories', path: '/dashboard/categories' },
-  { key: 'settings', icon: 'settings', label: 'Settings', path: '/dashboard/settings' }
+  { key: 'staff-management', icon: 'groups', labelKey: 'sidebar.staffManagement', path: '/dashboard/staff-management' },
+  { key: 'players', icon: 'sports_soccer', labelKey: 'sidebar.players', path: '/dashboard/players' },
+  { key: 'finances', icon: 'payments', labelKey: 'sidebar.finances', path: '/dashboard/finances' },
+  { key: 'categories', icon: 'category', labelKey: 'sidebar.categories', path: '/dashboard/categories' },
+  { key: 'settings', icon: 'settings', labelKey: 'sidebar.settings', path: '/dashboard/settings' }
 ]
 </script>
 
@@ -31,7 +33,7 @@ const items = [
     ]"
   >
     <div class="mb-10 px-6">
-      <div class="text-xl font-black tracking-tighter text-green-400">CLUB OPS</div>
+      <div class="text-xl font-black tracking-tighter text-green-400">{{ $t('sidebar.clubOps') }}</div>
       <div class="mt-4 flex items-center gap-3">
         <div class="h-10 w-10 overflow-hidden rounded-lg border border-outline-variant/20 bg-surface-container-high">
           <img
@@ -41,8 +43,8 @@ const items = [
           />
         </div>
         <div>
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">TECHNICAL DIRECTOR</div>
-          <div class="text-xs font-bold uppercase tracking-tight text-white">Elite Performance Unit</div>
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ $t('sidebar.technicalDirector') }}</div>
+          <div class="text-xs font-bold uppercase tracking-tight text-white">{{ $t('sidebar.elitePerformanceUnit') }}</div>
         </div>
       </div>
     </div>
@@ -60,7 +62,7 @@ const items = [
         ]"
       >
         <span class="material-symbols-outlined">{{ item.icon }}</span>
-        <span class="text-xs font-bold uppercase tracking-wider">{{ item.label }}</span>
+        <span class="text-xs font-bold uppercase tracking-wider">{{ $t(item.labelKey) }}</span>
       </router-link>
     </nav>
 
@@ -69,7 +71,7 @@ const items = [
         type="button"
         class="pressable flex w-full items-center justify-center gap-2 rounded bg-green-400 py-4 text-xs font-black uppercase tracking-[0.2em] text-slate-900 transition-all hover:bg-green-300"
       >
-        MATCH PREP
+        {{ $t('sidebar.matchPrep') }}
         <span class="material-symbols-outlined text-sm">bolt</span>
       </button>
     </div>

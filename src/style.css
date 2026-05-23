@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
 @import "tailwindcss";
 @import "@vueform/slider/themes/default.css";
 
@@ -126,4 +127,109 @@ select {
   padding: 3px 8px;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== Arabic / RTL Support ===== */
+:root:lang(ar),
+[dir="rtl"] {
+  --font-headline: "Tajawal", sans-serif;
+  --font-body: "Tajawal", sans-serif;
+  --font-label: "Tajawal", sans-serif;
+}
+
+/* Flip sidebar from left to right in RTL */
+[dir="rtl"] aside.fixed.left-0 {
+  left: auto;
+  right: 0;
+  transform: translateX(0);
+}
+
+[dir="rtl"] aside.fixed.left-0.-translate-x-full {
+  transform: translateX(100%);
+}
+
+/* Flip the topbar margin */
+[dir="rtl"] header.fixed.right-0 {
+  right: 0;
+  left: auto;
+}
+
+/* Active sidebar item: flip the left border to right */
+[dir="rtl"] .border-l-4 {
+  border-left-width: 0;
+  border-right-width: 4px;
+}
+
+[dir="rtl"] .border-l-2 {
+  border-left-width: 0;
+  border-right-width: 2px;
+}
+
+/* Flip ml-64 (main content offset) to mr-64 in RTL */
+[dir="rtl"] .ml-64 {
+  margin-left: 0;
+  margin-right: 16rem;
+}
+
+/* Flip search icon padding in topbar */
+[dir="rtl"] .pl-10 {
+  padding-left: 0;
+  padding-right: 2.5rem;
+}
+
+[dir="rtl"] .pl-12 {
+  padding-left: 0;
+  padding-right: 3rem;
+}
+
+/* Flip absolute icon positions inside inputs */
+[dir="rtl"] .absolute.left-3 {
+  left: auto;
+  right: 0.75rem;
+}
+
+[dir="rtl"] .absolute.left-0 {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .absolute.right-0 {
+  right: auto;
+  left: 0;
+}
+
+[dir="rtl"] .absolute.right-3 {
+  right: auto;
+  left: 0.75rem;
+}
+
+/* Flip language dropdown alignment */
+[dir="rtl"] .right-0.mt-2 {
+  right: auto;
+  left: 0;
+}
+
+/* Text alignment for RTL */
+[dir="rtl"] .text-left {
+  text-align: right;
+}
+
+[dir="rtl"] .text-right {
+  text-align: left;
+}
+
+/* Flip ml-1 labels */
+[dir="rtl"] .ml-1 {
+  margin-left: 0;
+  margin-right: 0.25rem;
+}
+
+/* Animate-in: flip direction for RTL */
+[dir="rtl"] .animate-in {
+  animation: fadeInRtl 0.4s ease-out forwards;
+}
+
+@keyframes fadeInRtl {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
 }

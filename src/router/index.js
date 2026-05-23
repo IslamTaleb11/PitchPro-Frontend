@@ -34,6 +34,11 @@ const routes = [
     path: '/dashboard/categories',
     name: 'CategoryManagementDashboard',
     component: CategoryManagementDashboard
+  },
+  {
+    path: '/dashboard/players',
+    name: 'PlayerAcquisition',
+    component: () => import('../views/PlayerAcquisition.vue')
   }
 ]
 

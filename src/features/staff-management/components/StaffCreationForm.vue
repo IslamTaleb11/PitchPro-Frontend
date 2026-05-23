@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useUiToast } from '../../../composables/useUiToast'
 import { staffService } from '../../../services/staffService'
 import { lookupService } from '../../../services/lookupService'
@@ -38,6 +39,7 @@ const selectedCategoryNames = computed(() => {
 })
 
 const { showToast } = useUiToast()
+const { t: $t } = useI18n()
 const passwordValid = computed(() => {
   const pwd = password.value
   return pwd.length >= 8 && /[a-z]/.test(pwd) && /[A-Z]/.test(pwd) && /\d/.test(pwd) && /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)
@@ -171,7 +173,7 @@ async function loadLookups() {
 
   const failedCount = results.filter(r => r.status === 'rejected').length;
   if (failedCount > 0) {
-    showToast({ title: 'Partial Load', message: `Failed to load ${failedCount} lookup(s).`, mode: 'error', duration: 4000 });
+    showToast({ title: $t('common.partialLoad'), message: `${$t('common.failedLoadLookups')} ${failedCount}`, mode: 'error', duration: 4000 });
   }
 }
 
@@ -216,7 +218,7 @@ async function submitForm(event) {
   const missing = requiredFields.filter(f => !f.value || f.value === '' );
   if (missing.length) {
     const names = missing.map(f => f.name).join(', ');
-    showToast({ title: 'Missing fields', message: `Please fill: ${names}`, mode: 'error', duration: 4000 });
+    showToast({ title: $t('common.missingFields'), message: `${$t('common.pleaseFill')}: ${names}`, mode: 'error', duration: 4000 });
     return;
   }
   // Password strength validation
@@ -231,18 +233,18 @@ async function submitForm(event) {
   const pwdValid = Object.values(pwdChecks).every(v => v);
   if (!pwdValid) {
     showToast({
-      title: 'Invalid password',
-      message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
+      title: $t('common.invalidPassword'),
+      message: $t('common.passwordRequirements'),
       mode: 'error',
       duration: 4000
     });
     return;
   }
     try {
-      showToast({ title: 'Deploying Staff...', message: 'Please wait, uploading data and creating personnel.', mode: 'info', duration: 4000 })
+      showToast({ title: $t('common.deployingStaff'), message: $t('common.deployingStaffMsg'), mode: 'info', duration: 4000 })
       const response = await staffService.createStaff(data)
       const result = response.data
-      showToast({ title: 'Staff Created', message: result.message || 'Staff member created successfully', mode: 'success', duration: 3000 })
+      showToast({ title: $t('common.staffCreated'), message: result.message || $t('common.staffCreatedMsg'), mode: 'success', duration: 3000 })
       // Reset form fields
       firstName.value = ''
       secondName.value = ''
@@ -286,11 +288,11 @@ async function onPhotoChange(event) {
   if (file) {
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      showToast({ title: 'Invalid File', message: 'Only JPG, PNG and WebP formats are allowed.', mode: 'error', duration: 4000 });
+      showToast({ title: $t('common.invalidFile'), message: $t('common.invalidFileMsg'), mode: 'error', duration: 4000 });
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      showToast({ title: 'File Too Large', message: 'Image must be less than 2MB.', mode: 'error', duration: 4000 });
+      showToast({ title: $t('common.fileTooLarge'), message: $t('common.fileTooLargeMsg'), mode: 'error', duration: 4000 });
       return;
     }
 
@@ -315,15 +317,15 @@ async function onPhotoChange(event) {
 <template>
   <section class="animate-in col-span-12 h-fit rounded-xl border-t border-white/5 bg-surface-container-low p-8 lg:col-span-5 xl:col-span-4">
     <div class="mb-8">
-      <div class="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-green-400">Onboarding Terminal</div>
-      <h2 class="font-headline text-2xl leading-none font-black uppercase tracking-tight text-white">Create Personnel</h2>
+      <div class="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-green-400">{{ $t('staffManagement.onboardingTerminal') }}</div>
+      <h2 class="font-headline text-2xl leading-none font-black uppercase tracking-tight text-white">{{ $t('staffManagement.createPersonnel') }}</h2>
     </div>
 
     <form class="space-y-8" @submit.prevent="submitForm">
       <div class="space-y-4">
         <div class="mb-2 flex items-center gap-2">
           <span class="h-3 w-1 rounded-full bg-green-400" />
-          <h3 class="text-[10px] font-black uppercase tracking-widest text-white">Identity &amp; Access</h3>
+          <h3 class="text-[10px] font-black uppercase tracking-widest text-white">{{ $t('staffManagement.identityAndAccess') }}</h3>
         </div>
         <div class="mb-4 flex items-center gap-4">
           <label
@@ -332,14 +334,14 @@ async function onPhotoChange(event) {
             <img v-if="photoPreview" :src="photoPreview" alt="Staff photo" class="h-full w-full rounded-xl object-cover" />
             <template v-else>
               <span class="material-symbols-outlined text-slate-600 transition-colors group-hover:text-green-400">add_a_photo</span>
-              <span class="mt-1 text-[8px] font-bold uppercase text-slate-500">Photo</span>
+              <span class="mt-1 text-[8px] font-bold uppercase text-slate-500">{{ $t('staffManagement.photo') }}</span>
             </template>
             <input class="absolute inset-0 cursor-pointer opacity-0" type="file" accept=".jpg,.jpeg,.png,.webp" @change="onPhotoChange" />
           </label>
           <div class="flex-1 space-y-4">
             <div class="space-y-1">
               <div class="space-y-1">
-  <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">First Name</label>
+  <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.firstName') }}</label>
   <input
     type="text"
     placeholder="e.g. Marcus"
@@ -350,7 +352,7 @@ async function onPhotoChange(event) {
     v-model="firstName" />
 </div>
 <div class="space-y-1">
-  <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Second Name (optional)</label>
+  <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.secondName') }}</label>
   <input
     type="text"
     placeholder="e.g. James"
@@ -360,7 +362,7 @@ async function onPhotoChange(event) {
     v-model="secondName" />
 </div>
 <div class="space-y-1">
-  <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Last Name</label>
+  <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.lastName') }}</label>
   <input
     type="text"
     placeholder="e.g. Rashford"
@@ -375,84 +377,84 @@ async function onPhotoChange(event) {
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div class="space-y-1">
-            <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Birth Date</label>
+            <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.birthDate') }}</label>
             <input type="date" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)] scheme-dark" autocomplete="off" name="birthDate" v-model="birthDate" />
           </div>
           <div class="space-y-1">
-            <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Gender</label>
+            <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.gender') }}</label>
             <select class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" v-model="gender">
-              <option>Male</option><option>Female</option>
+              <option>{{ $t('staffManagement.male') }}</option><option>{{ $t('staffManagement.female') }}</option>
             </select>
           </div>
         </div>
         <div class="space-y-1">
-          <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Secure Email</label>
+          <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.secureEmail') }}</label>
           <input type="email" placeholder="name@pitchpro.club" required autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" name="email" v-model="email" />
         </div>
         <div class="space-y-1">
-          <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Access Credentials</label>
+          <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.accessCredentials') }}</label>
           <input v-model="password" type="password" placeholder="••••••••••••" required autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" name="password" />
           <div v-if="password" class="flex flex-col gap-1 mt-2 transition-all duration-300">
             <div class="flex items-center gap-2">
               <span :class="['material-symbols-outlined text-sm transition-all duration-300', passwordChecks.length ? 'text-green-400 scale-110' : 'text-red-400']">{{ passwordChecks.length ? 'check_circle' : 'error' }}</span>
-              <span class="text-xs font-medium" :class="passwordChecks.length ? 'text-green-400' : 'text-red-400'">At least 8 characters</span>
+              <span class="text-xs font-medium" :class="passwordChecks.length ? 'text-green-400' : 'text-red-400'">{{ $t('common.atLeast8Chars') }}</span>
             </div>
             <div class="flex items-center gap-2">
               <span :class="['material-symbols-outlined text-sm transition-all duration-300', passwordChecks.uppercase ? 'text-green-400 scale-110' : 'text-red-400']">{{ passwordChecks.uppercase ? 'check_circle' : 'error' }}</span>
-              <span class="text-xs font-medium" :class="passwordChecks.uppercase ? 'text-green-400' : 'text-red-400'">One uppercase letter</span>
+              <span class="text-xs font-medium" :class="passwordChecks.uppercase ? 'text-green-400' : 'text-red-400'">{{ $t('common.oneUppercase') }}</span>
             </div>
             <div class="flex items-center gap-2">
               <span :class="['material-symbols-outlined text-sm transition-all duration-300', passwordChecks.lowercase ? 'text-green-400 scale-110' : 'text-red-400']">{{ passwordChecks.lowercase ? 'check_circle' : 'error' }}</span>
-              <span class="text-xs font-medium" :class="passwordChecks.lowercase ? 'text-green-400' : 'text-red-400'">One lowercase letter</span>
+              <span class="text-xs font-medium" :class="passwordChecks.lowercase ? 'text-green-400' : 'text-red-400'">{{ $t('common.oneLowercase') }}</span>
             </div>
             <div class="flex items-center gap-2">
               <span :class="['material-symbols-outlined text-sm transition-all duration-300', passwordChecks.number ? 'text-green-400 scale-110' : 'text-red-400']">{{ passwordChecks.number ? 'check_circle' : 'error' }}</span>
-              <span class="text-xs font-medium" :class="passwordChecks.number ? 'text-green-400' : 'text-red-400'">One number</span>
+              <span class="text-xs font-medium" :class="passwordChecks.number ? 'text-green-400' : 'text-red-400'">{{ $t('common.oneNumber') }}</span>
             </div>
             <div class="flex items-center gap-2">
               <span :class="['material-symbols-outlined text-sm transition-all duration-300', passwordChecks.special ? 'text-green-400 scale-110' : 'text-red-400']">{{ passwordChecks.special ? 'check_circle' : 'error' }}</span>
-              <span class="text-xs font-medium" :class="passwordChecks.special ? 'text-green-400' : 'text-red-400'">One special character</span>
+              <span class="text-xs font-medium" :class="passwordChecks.special ? 'text-green-400' : 'text-red-400'">{{ $t('common.oneSpecialChar') }}</span>
             </div>
           </div>
         </div>
       </div>
 
       <div class="space-y-4 border-t border-outline-variant/10 pt-4">
-        <div class="mb-2 flex items-center gap-2"><span class="h-3 w-1 rounded-full bg-blue-400" /><h3 class="text-[10px] font-black uppercase tracking-widest text-white">Contact Details</h3></div>
-        <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Phone Number</label><input type="tel" placeholder="+44 7000 000000" autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" v-model="phoneNumber" /></div>
-        <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Address</label><input type="text" placeholder="Street, City, Postcode" autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" v-model="address" /></div>
+        <div class="mb-2 flex items-center gap-2"><span class="h-3 w-1 rounded-full bg-blue-400" /><h3 class="text-[10px] font-black uppercase tracking-widest text-white">{{ $t('staffManagement.contactDetails') }}</h3></div>
+        <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.phoneNumber') }}</label><input type="tel" placeholder="+44 7000 000000" autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" v-model="phoneNumber" /></div>
+        <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.address') }}</label><input type="text" placeholder="Street, City, Postcode" autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" v-model="address" /></div>
       </div>
 
       <div class="space-y-4 border-t border-outline-variant/10 pt-4">
-        <div class="mb-2 flex items-center gap-2"><span class="h-3 w-1 rounded-full bg-orange-400" /><h3 class="text-[10px] font-black uppercase tracking-widest text-white">Medical Dossier</h3></div>
+        <div class="mb-2 flex items-center gap-2"><span class="h-3 w-1 rounded-full bg-orange-400" /><h3 class="text-[10px] font-black uppercase tracking-widest text-white">{{ $t('staffManagement.medicalDossier') }}</h3></div>
         <div class="grid grid-cols-2 gap-4">
           <div class="space-y-1">
-            <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Blood Type</label>
+            <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.bloodType') }}</label>
             <select class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" v-model="bloodTypeID">
               <option v-for="type in bloodTypes" :key="type.id" :value="type.id">{{ type.name }}</option>
             </select>
           </div>
-          <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Allergies</label><input type="text" placeholder="None" autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" name="allergies" v-model="allergies" /></div>
+          <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.allergies') }}</label><input type="text" placeholder="None" autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" name="allergies" v-model="allergies" /></div>
         </div>
-        <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Medical Notes</label><textarea class="min-h-[80px] w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" placeholder="Specific conditions or tactical medical info..." autocomplete="off" v-model="medicalNotes"></textarea></div>
+        <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.medicalNotes') }}</label><textarea class="min-h-[80px] w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" placeholder="Specific conditions or tactical medical info..." autocomplete="off" v-model="medicalNotes"></textarea></div>
       </div>
 
       <div class="space-y-4 border-t border-outline-variant/10 pt-4">
-        <div class="mb-2 flex items-center gap-2"><span class="h-3 w-1 rounded-full bg-primary-fixed-dim" /><h3 class="text-[10px] font-black uppercase tracking-widest text-white">Strategic Role</h3></div>
-        <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Primary Role</label><select class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" v-model="primaryRoleID">
+        <div class="mb-2 flex items-center gap-2"><span class="h-3 w-1 rounded-full bg-primary-fixed-dim" /><h3 class="text-[10px] font-black uppercase tracking-widest text-white">{{ $t('staffManagement.strategicRole') }}</h3></div>
+        <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.primaryRole') }}</label><select class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" v-model="primaryRoleID">
               <option v-for="role in primaryRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
             </select></div>
         <div class="animate-in space-y-4 duration-500">
           <div class="space-y-1">
 <div class="space-y-1">
-  <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Classification</label>
+  <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.classification') }}</label>
   <select class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" v-model="roleClassificationID">
     <option v-for="item in filteredClassifications" :key="item.id" :value="item.id">{{ item.name }}</option>
   </select>
 </div>
           </div>
           <div class="space-y-1">
-            <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Category</label>
+            <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.category') }}</label>
             <div class="relative">
               <button
                 type="button"
@@ -460,7 +462,7 @@ async function onPhotoChange(event) {
                 @click="categoryDropdownOpen = !categoryDropdownOpen"
               >
                 <span class="truncate text-left">
-                  {{ selectedCategoryNames.length ? selectedCategoryNames.join(', ') : 'Select categories' }}
+                  {{ selectedCategoryNames.length ? selectedCategoryNames.join(', ') : $t('common.selectCategories') }}
                 </span>
                 <span class="material-symbols-outlined text-sm text-slate-400">
                   {{ categoryDropdownOpen ? 'expand_less' : 'expand_more' }}
@@ -504,7 +506,7 @@ async function onPhotoChange(event) {
       </div>
 
       <button type="submit" class="pressable flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-br from-primary to-primary-container py-5 text-xs font-black uppercase tracking-widest text-on-primary-fixed shadow-lg shadow-green-900/20 transition-all hover:brightness-110">
-        DEPLOY STAFF MEMBER
+        {{ $t('staffManagement.deployStaffMember') }}
         <span class="material-symbols-outlined font-bold">person_add</span>
       </button>
     </form>

@@ -15,5 +15,13 @@ export const lookupService = {
 
   getCategories(clubID) {
     return api.get(`/lookups/categories`);
+  },
+
+  getPositions() {
+    return api.get('/lookups/positions');
+  },
+
+  getPreferredFeet() {
+    return api.get('/lookups/feet');
   }
 };

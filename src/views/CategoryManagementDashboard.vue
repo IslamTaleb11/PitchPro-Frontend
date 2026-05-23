@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.vue'
 import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
 import { categoryService } from '../services/categoryService'
@@ -7,6 +8,7 @@ import { useUiToast } from '../composables/useUiToast'
 import Slider from '@vueform/slider'
 
 const { showToast } = useUiToast()
+const { t: $t } = useI18n()
 const isSidebarOpen = ref(true)
 
 // Category form state
@@ -28,13 +30,21 @@ const pageSize = ref(5)
 const totalCount = ref(0)
 const pageSizeOptions = [5, 10, 25, 50]
 
+// Filter state
+const showFilterModal = ref(false)
+const isFilterMode = ref(false)
+const filterAgeRange = ref([4, 25])
+const filterCapacity = ref(null)
+const filterFeeRange = ref([0, 100000])
+const filterPlayersRange = ref([0, 100])
+
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize.value)))
 const startIndex = computed(() => totalCount.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1)
 const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totalCount.value))
 
 const showingText = computed(() => {
-  if (totalCount.value === 0) return 'SHOWING 0 OF 0 ENTRIES'
-  return `SHOWING ${startIndex.value}-${endIndex.value} OF ${totalCount.value} ENTRIES`
+  if (totalCount.value === 0) return `${$t('common.showing')} 0 ${$t('common.of')} 0 ${$t('common.entries')}`
+  return `${$t('common.showing')} ${startIndex.value}-${endIndex.value} ${$t('common.of')} ${totalCount.value} ${$t('common.entries')}`
 })
 
 // Safely extract a field from a category object supporting multiple naming conventions
@@ -48,7 +58,22 @@ function getField(obj, ...keys) {
 async function fetchCategories(options = {}) {
   try {
     isLoading.value = true
-    const response = await categoryService.getAllCategories(currentPage.value, pageSize.value)
+    let response
+    if (isFilterMode.value) {
+      response = await categoryService.getCategoriesByFilter({
+        pageNumber: currentPage.value,
+        pageSize: pageSize.value,
+        minAge: filterAgeRange.value[0],
+        maxAge: filterAgeRange.value[1],
+        capacity: filterCapacity.value,
+        registrationFeeMin: filterFeeRange.value[0],
+        registrationFeeMax: filterFeeRange.value[1],
+        minPlayers: filterPlayersRange.value[0],
+        maxPlayers: filterPlayersRange.value[1]
+      })
+    } else {
+      response = await categoryService.getAllCategories(currentPage.value, pageSize.value)
+    }
 
     if (response.data && response.data.data) {
       categories.value = response.data.data
@@ -104,17 +129,38 @@ function refreshCategories() {
   fetchCategories()
 }
 
+function toggleFilterModal() {
+  showFilterModal.value = !showFilterModal.value
+}
+
+function resetFilters() {
+  filterAgeRange.value = [4, 25]
+  filterCapacity.value = null
+  filterFeeRange.value = [0, 100000]
+  filterPlayersRange.value = [0, 100]
+  isFilterMode.value = false
+  currentPage.value = 1
+  fetchCategories()
+}
+
+function applyFilters() {
+  showFilterModal.value = false
+  isFilterMode.value = true
+  currentPage.value = 1
+  fetchCategories()
+}
+
 async function submitCategory() {
   if (!categoryName.value.trim()) {
-    showToast({ title: 'Missing fields', message: 'Please enter a category name.', mode: 'error', duration: 4000 })
+    showToast({ title: $t('common.missingFields'), message: $t('common.pleaseFill') + ': ' + $t('categoryManagement.categoryName'), mode: 'error', duration: 4000 })
     return
   }
   if (!capacity.value) {
-    showToast({ title: 'Missing fields', message: 'Please enter a capacity.', mode: 'error', duration: 4000 })
+    showToast({ title: $t('common.missingFields'), message: $t('common.pleaseFill') + ': ' + $t('categoryManagement.capacity'), mode: 'error', duration: 4000 })
     return
   }
   try {
-    showToast({ title: 'Creating Category', message: 'Please wait…', mode: 'loading', duration: 0 })
+    showToast({ title: $t('categoryManagement.creatingCategory'), message: $t('common.pleaseWait'), mode: 'loading', duration: 0 })
     const payload = {
       name: categoryName.value,
       ageMin: ageMin.value,
@@ -123,7 +169,7 @@ async function submitCategory() {
       registrationFee: registrationFee.value ? Number(registrationFee.value) : 0
     }
     const response = await categoryService.createCategory(payload)
-    showToast({ title: 'Category Created', message: response.data?.message || 'Category created successfully.', mode: 'success', duration: 3000 })
+    showToast({ title: $t('categoryManagement.categoryCreated'), message: response.data?.message || $t('categoryManagement.categoryCreatedMsg'), mode: 'success', duration: 3000 })
     categoryName.value = ''
     capacity.value = ''
     registrationFee.value = ''
@@ -201,7 +247,7 @@ async function submitEdit() {
   }
   try {
     isEditing.value = true
-    showToast({ title: 'Updating Category', message: 'Saving changes…', mode: 'loading', duration: 0 })
+    showToast({ title: $t('categoryManagement.updatingCategory'), message: $t('categoryManagement.savingChanges'), mode: 'loading', duration: 0 })
     const payload = {
       name: editForm.value.name,
       ageMin: editForm.value.ageMin,
@@ -210,12 +256,12 @@ async function submitEdit() {
       registrationFee: editForm.value.registrationFee ? Number(editForm.value.registrationFee) : 0
     }
     const response = await categoryService.updateCategory(editForm.value.id, payload)
-    showToast({ title: 'Category Updated', message: response.data?.message || 'Changes saved successfully.', mode: 'success', duration: 3000 })
+    showToast({ title: $t('categoryManagement.categoryUpdated'), message: response.data?.message || $t('categoryManagement.changesSaved'), mode: 'success', duration: 3000 })
     showEditModal.value = false
     fetchCategories()
   } catch (error) {
     const message = error?.response?.data?.message || error?.message || 'Failed to update category.'
-    showToast({ title: 'Update Failed', message, mode: 'error', duration: 4000 })
+    showToast({ title: $t('categoryManagement.updateFailed'), message, mode: 'error', duration: 4000 })
   } finally {
     isEditing.value = false
   }
@@ -237,9 +283,9 @@ async function confirmDelete() {
   const id = getField(deleteTarget.value, 'id', 'categoryId', '_id')
   try {
     isDeleting.value = true
-    showToast({ title: 'Deleting Category', message: 'Please wait…', mode: 'loading', duration: 0 })
+    showToast({ title: $t('categoryManagement.deletingCategory'), message: $t('common.pleaseWait'), mode: 'loading', duration: 0 })
     await categoryService.deleteCategory(id)
-    showToast({ title: 'Category Deleted', message: 'Category was removed successfully.', mode: 'success', duration: 2000 })
+    showToast({ title: $t('categoryManagement.categoryDeleted'), message: $t('categoryManagement.categoryDeletedMsg'), mode: 'success', duration: 2000 })
     showDeleteModal.value = false
     deleteTarget.value = null
     fetchCategories({ fallbackOnEmpty: true })
@@ -276,20 +322,20 @@ onMounted(() => {
       <header class="mb-10 flex items-end justify-between">
         <div>
           <h1 class="font-headline text-4xl font-extrabold uppercase tracking-tighter text-white">
-            SQUAD <span class="text-green-400">CATEGORIES</span>
+            {{ $t('categoryManagement.squad') }} <span class="text-green-400">{{ $t('categoryManagement.categoriesHeader') }}</span>
           </h1>
           <div class="mt-2 flex items-center gap-2">
             <div class="h-1 w-12 bg-green-400"></div>
             <span class="font-headline text-xs font-bold uppercase tracking-widest text-slate-500">
-              {{ totalCount }} Active Classification{{ totalCount !== 1 ? 's' : '' }}
+              {{ totalCount }} {{ $t('categoryManagement.activeClassifications') }}{{ totalCount !== 1 ? 's' : '' }}
             </span>
           </div>
         </div>
         <div class="hidden lg:block">
           <div class="text-right">
-            <span class="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">Club Capacity</span>
+            <span class="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">{{ $t('categoryManagement.clubCapacity') }}</span>
             <div class="font-headline text-2xl font-bold text-white">
-              84% <span class="text-sm tracking-normal text-green-400">Optimal</span>
+              84% <span class="text-sm tracking-normal text-green-400">{{ $t('categoryManagement.optimal') }}</span>
             </div>
           </div>
         </div>
@@ -302,11 +348,11 @@ onMounted(() => {
             <div class="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-primary-container/5 blur-[60px]"></div>
             <div class="mb-6 flex items-center gap-2">
               <span class="material-symbols-outlined text-lg text-green-400">add_box</span>
-              <h2 class="font-headline text-sm font-bold uppercase tracking-widest text-white">Create New Category</h2>
+              <h2 class="font-headline text-sm font-bold uppercase tracking-widest text-white">{{ $t('categoryManagement.createNewCategory') }}</h2>
             </div>
             <form class="space-y-6" @submit.prevent="submitCategory">
               <div class="space-y-1.5">
-                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Category Name</label>
+                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">{{ $t('categoryManagement.categoryName') }}</label>
                 <input
                   v-model="categoryName"
                   type="text"
@@ -317,12 +363,12 @@ onMounted(() => {
 
               <div class="space-y-4">
                 <div class="flex items-end justify-between">
-                  <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Age Range</label>
+                  <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">{{ $t('categoryManagement.ageRange') }}</label>
                   <div class="flex items-center gap-2">
                     <span class="inline-flex items-center justify-center rounded bg-green-400/10 px-2 py-0.5 font-headline text-xs font-bold text-green-400">{{ ageMin }}</span>
                     <span class="text-[10px] font-bold text-slate-600">—</span>
                     <span class="inline-flex items-center justify-center rounded bg-green-400/10 px-2 py-0.5 font-headline text-xs font-bold text-green-400">{{ ageMax }}</span>
-                    <span class="text-[10px] font-bold uppercase text-slate-500">yrs</span>
+                    <span class="text-[10px] font-bold uppercase text-slate-500">{{ $t('categoryManagement.yrs') }}</span>
                   </div>
                 </div>
                 <div class="age-slider-wrapper px-2 pt-4 pb-2">
@@ -344,7 +390,7 @@ onMounted(() => {
 
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1.5">
-                  <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Capacity</label>
+                  <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">{{ $t('categoryManagement.capacity') }}</label>
                   <input
                     v-model="capacity"
                     type="number"
@@ -353,7 +399,7 @@ onMounted(() => {
                   />
                 </div>
                 <div class="space-y-1.5">
-                  <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Currency</label>
+                  <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">{{ $t('categoryManagement.currency') }}</label>
                   <div class="flex h-[46px] items-center justify-center rounded bg-surface-container-high p-3 text-xs font-bold text-slate-400">
                     DZD
                   </div>
@@ -361,7 +407,7 @@ onMounted(() => {
               </div>
 
               <div class="space-y-1.5">
-                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Registration Fee</label>
+                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">{{ $t('categoryManagement.registrationFee') }}</label>
                 <div class="relative">
                   <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-green-400">د.ج</span>
                   <input
@@ -377,15 +423,15 @@ onMounted(() => {
                 type="submit"
                 class="pressable mt-2 flex w-full items-center justify-center gap-2 rounded bg-gradient-to-br from-primary to-primary-container py-4 font-headline text-xs font-black uppercase tracking-[0.2em] text-on-primary-fixed shadow-lg shadow-green-900/20 transition-transform active:scale-[0.98]"
               >
-                INITIALIZE CATEGORY
+                {{ $t('categoryManagement.initializeCategory') }}
               </button>
             </form>
           </div>
 
           <div class="rounded border-l-2 border-green-400/30 bg-surface-container-high p-6">
-            <div class="mb-2 text-[10px] font-bold uppercase tracking-widest text-green-400">Tactical Note</div>
+            <div class="mb-2 text-[10px] font-bold uppercase tracking-widest text-green-400">{{ $t('categoryManagement.tacticalNote') }}</div>
             <p class="text-xs font-medium leading-relaxed text-slate-400">
-              Defining player capacity prevents squad oversaturation and maintains the high coach-to-athlete ratio required for elite performance tracking.
+              {{ $t('categoryManagement.tacticalNoteText') }}
             </p>
           </div>
         </section>
@@ -396,7 +442,7 @@ onMounted(() => {
             <div class="flex items-center justify-between bg-surface-container-low p-6">
               <h2 class="font-headline flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-white">
                 <span class="material-symbols-outlined text-green-400">list_alt</span>
-                Category Ledger
+                {{ $t('categoryManagement.categoryLedger') }}
               </h2>
               <div class="flex gap-2">
                 <button
@@ -408,7 +454,7 @@ onMounted(() => {
                 >
                   <span class="material-symbols-outlined text-sm" :class="{ 'animate-spin': isRefreshing }">refresh</span>
                 </button>
-                <button type="button" class="pressable rounded p-2 text-slate-400 transition-colors hover:text-white hover:bg-surface-container-highest">
+                <button type="button" class="pressable rounded p-2 transition-colors hover:bg-surface-container-highest" :class="isFilterMode ? 'text-green-400' : 'text-slate-400 hover:text-white'" @click="toggleFilterModal">
                   <span class="material-symbols-outlined text-sm">filter_list</span>
                 </button>
                 <button type="button" class="pressable rounded p-2 text-slate-400 transition-colors hover:text-white hover:bg-surface-container-highest">
@@ -421,13 +467,13 @@ onMounted(() => {
               <table class="w-full border-collapse text-left">
                 <thead>
                   <tr class="border-b border-white/5">
-                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Category</th>
-                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Age Range</th>
-                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Capacity</th>
-                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Registration Fee</th>
-                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Players</th>
-                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Status</th>
-                    <th class="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Actions</th>
+                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{{ $t('categoryManagement.category') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{{ $t('categoryManagement.ageRange') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{{ $t('categoryManagement.capacity') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{{ $t('categoryManagement.registrationFee') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{{ $t('categoryManagement.playersCol') }}</th>
+                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{{ $t('common.status') }}</th>
+                    <th class="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{{ $t('common.actions') }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5">
@@ -435,7 +481,7 @@ onMounted(() => {
                     <td colspan="7" class="px-6 py-16 text-center">
                       <div class="flex flex-col items-center gap-3">
                         <span class="material-symbols-outlined animate-spin text-2xl text-green-400">progress_activity</span>
-                        <span class="text-sm text-slate-500">Loading categories...</span>
+                        <span class="text-sm text-slate-500">{{ $t('categoryManagement.loadingCategories') }}</span>
                       </div>
                     </td>
                   </tr>
@@ -443,7 +489,7 @@ onMounted(() => {
                     <td colspan="7" class="px-6 py-16 text-center">
                       <div class="flex flex-col items-center gap-3">
                         <span class="material-symbols-outlined text-3xl text-slate-600">category</span>
-                        <span class="text-sm text-slate-500">No categories found. Create one to get started.</span>
+                        <span class="text-sm text-slate-500">{{ $t('categoryManagement.noCategoriesFound') }}</span>
                       </div>
                     </td>
                   </tr>
@@ -513,7 +559,7 @@ onMounted(() => {
                             : 'bg-green-400/10 text-green-400'
                         ]"
                       >
-                        {{ getField(cat, 'status') === false || getField(cat, 'status') === 'Inactive' ? 'Inactive' : 'Active' }}
+                        {{ getField(cat, 'status') === false || getField(cat, 'status') === 'Inactive' ? $t('common.inactive') : $t('common.active') }}
                       </span>
                     </td>
 
@@ -537,7 +583,7 @@ onMounted(() => {
               <div class="flex items-center gap-4">
                 <span>{{ showingText }}</span>
                 <div class="flex items-center gap-2">
-                  <label for="category-page-size" class="text-slate-400">Rows per page:</label>
+                  <label for="category-page-size" class="text-slate-400">{{ $t('common.rowsPerPage') }}:</label>
                   <select
                     id="category-page-size"
                     :value="pageSize"
@@ -590,7 +636,7 @@ onMounted(() => {
           @click="openEditModal(categories.find(c => (getField(c, 'id', 'categoryId', '_id')) === openMenuId))"
         >
           <span class="material-symbols-outlined text-sm">edit</span>
-          Edit
+          {{ $t('common.edit') }}
         </button>
         <button
           type="button"
@@ -598,7 +644,7 @@ onMounted(() => {
           @click="openDeleteModal(categories.find(c => (getField(c, 'id', 'categoryId', '_id')) === openMenuId))"
         >
           <span class="material-symbols-outlined text-sm">delete</span>
-          Delete
+          {{ $t('common.delete') }}
         </button>
       </div>
     </Teleport>
@@ -610,8 +656,8 @@ onMounted(() => {
         <div class="relative bg-surface-container-low w-full max-w-lg rounded-xl border border-white/10 shadow-2xl overflow-hidden">
           <div class="p-6 border-b border-white/5 flex items-center justify-between">
             <div>
-              <div class="text-green-400 text-[10px] font-black tracking-[0.2em] uppercase mb-1">Modify Record</div>
-              <h2 class="text-xl font-black text-white tracking-tight uppercase">Edit Category</h2>
+              <div class="text-green-400 text-[10px] font-black tracking-[0.2em] uppercase mb-1">{{ $t('categoryManagement.modifyRecord') }}</div>
+              <h2 class="text-xl font-black text-white tracking-tight uppercase">{{ $t('categoryManagement.editCategory') }}</h2>
             </div>
             <button type="button" class="text-slate-500 hover:text-white transition-colors" @click="showEditModal = false">
               <span class="material-symbols-outlined">close</span>
@@ -619,7 +665,7 @@ onMounted(() => {
           </div>
           <div class="p-8 space-y-6">
             <div class="space-y-1.5">
-              <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Category Name</label>
+              <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">{{ $t('categoryManagement.categoryName') }}</label>
               <input
                 v-model="editForm.name"
                 type="text"
@@ -629,7 +675,7 @@ onMounted(() => {
             </div>
             <div class="space-y-4">
               <div class="flex items-end justify-between">
-                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Age Range</label>
+                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">{{ $t('categoryManagement.ageRange') }}</label>
                 <div class="flex items-center gap-2">
                   <span class="inline-flex items-center justify-center rounded bg-green-400/10 px-2 py-0.5 font-headline text-xs font-bold text-green-400">{{ editForm.ageMin }}</span>
                   <span class="text-[10px] font-bold text-slate-600">—</span>
@@ -655,7 +701,7 @@ onMounted(() => {
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div class="space-y-1.5">
-                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Capacity</label>
+                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">{{ $t('categoryManagement.capacity') }}</label>
                 <input
                   v-model="editForm.capacity"
                   type="number"
@@ -664,14 +710,14 @@ onMounted(() => {
                 />
               </div>
               <div class="space-y-1.5">
-                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Currency</label>
+                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">{{ $t('categoryManagement.currency') }}</label>
                 <div class="flex h-[46px] items-center justify-center rounded bg-surface-container-high p-3 text-xs font-bold text-slate-400">
                   DZD
                 </div>
               </div>
             </div>
             <div class="space-y-1.5">
-              <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Registration Fee</label>
+              <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">{{ $t('categoryManagement.registrationFee') }}</label>
               <div class="relative">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-green-400">د.ج</span>
                 <input
@@ -689,7 +735,7 @@ onMounted(() => {
               class="px-6 py-3 text-slate-400 font-black text-xs uppercase tracking-widest rounded-md hover:bg-white/5 transition-all"
               @click="showEditModal = false"
             >
-              CANCEL
+              {{ $t('common.cancel') }}
             </button>
             <button
               type="button"
@@ -698,7 +744,7 @@ onMounted(() => {
               @click="submitEdit"
             >
               <span v-if="isEditing" class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-              {{ isEditing ? 'UPDATING...' : 'UPDATE CATEGORY' }}
+              {{ isEditing ? $t('common.updating') : $t('categoryManagement.updateCategory') }}
             </button>
           </div>
         </div>
@@ -714,10 +760,10 @@ onMounted(() => {
             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-400/10">
               <span class="material-symbols-outlined text-3xl text-red-400">warning</span>
             </div>
-            <h2 class="text-lg font-black text-white tracking-tight uppercase mb-2">Delete Category</h2>
+            <h2 class="text-lg font-black text-white tracking-tight uppercase mb-2">{{ $t('categoryManagement.deleteCategory') }}</h2>
             <p class="text-sm text-slate-400">
-              Are you sure you want to delete
-              <span class="font-bold text-white">{{ deleteTarget ? (getField(deleteTarget, 'name', 'categoryName', 'title') ?? 'this category') : '' }}</span>? This action cannot be undone.
+              {{ $t('categoryManagement.confirmDeleteCategory') }}
+              <span class="font-bold text-white">{{ deleteTarget ? (getField(deleteTarget, 'name', 'categoryName', 'title') ?? 'this category') : '' }}</span>? {{ $t('categoryManagement.actionCannotBeUndone') }}
             </p>
           </div>
           <div class="p-6 bg-surface-container-high/50 border-t border-white/5 flex items-center justify-center gap-4">
@@ -726,7 +772,7 @@ onMounted(() => {
               class="flex-1 py-3 text-slate-400 font-black text-xs uppercase tracking-widest rounded-md hover:bg-white/5 transition-all"
               @click="cancelDelete"
             >
-              CANCEL
+              {{ $t('common.cancel') }}
             </button>
             <button
               type="button"
@@ -735,7 +781,154 @@ onMounted(() => {
               @click="confirmDelete"
             >
               <span v-if="isDeleting" class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-              {{ isDeleting ? 'DELETING...' : 'YES, DELETE' }}
+              {{ isDeleting ? $t('common.deleting') : $t('common.yesDelete') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- FILTER MODAL -->
+    <Teleport to="body">
+      <div v-if="showFilterModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-background/80 backdrop-blur-md" @click="toggleFilterModal"></div>
+        <div class="relative bg-surface-container-low w-full max-w-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden">
+          <div class="p-6 border-b border-white/5 flex items-center justify-between">
+            <div>
+              <div class="text-green-400 text-[10px] font-black tracking-[0.2em] uppercase mb-1">{{ $t('staffManagement.searchParameters') }}</div>
+              <h2 class="text-xl font-black text-white tracking-tight uppercase">{{ $t('categoryManagement.categoryFilters') }}</h2>
+            </div>
+            <button type="button" class="text-slate-500 hover:text-white transition-colors" @click="toggleFilterModal">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <div class="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
+            <!-- AGE RANGE -->
+            <div class="space-y-4">
+              <div class="flex items-end justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-1 h-3 bg-green-400 rounded-full"></span>
+                  <h3 class="text-[10px] font-black text-white tracking-widest uppercase">{{ $t('categoryManagement.ageRange') }}</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center justify-center rounded bg-green-400/10 px-2 py-0.5 font-headline text-xs font-bold text-green-400">{{ filterAgeRange[0] }}</span>
+                  <span class="text-[10px] font-bold text-slate-600">—</span>
+                  <span class="inline-flex items-center justify-center rounded bg-green-400/10 px-2 py-0.5 font-headline text-xs font-bold text-green-400">{{ filterAgeRange[1] }}</span>
+                  <span class="text-[10px] font-bold uppercase text-slate-500">yrs</span>
+                </div>
+              </div>
+              <div class="age-slider-wrapper px-2 pt-4 pb-2">
+                <Slider
+                  v-model="filterAgeRange"
+                  :min="4"
+                  :max="25"
+                  :step="1"
+                  :tooltips="false"
+                  :merge="-1"
+                  :lazy="false"
+                />
+              </div>
+              <div class="flex items-center justify-between px-2">
+                <span class="text-[9px] font-bold text-slate-600">4</span>
+                <span class="text-[9px] font-bold text-slate-600">25</span>
+              </div>
+            </div>
+
+            <!-- CAPACITY -->
+            <div class="space-y-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="w-1 h-3 bg-blue-400 rounded-full"></span>
+                <h3 class="text-[10px] font-black text-white tracking-widest uppercase">{{ $t('categoryManagement.capacity') }}</h3>
+              </div>
+              <div class="space-y-1.5">
+                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">{{ $t('categoryManagement.maxCapacity') }}</label>
+                <input
+                  v-model.number="filterCapacity"
+                  type="number"
+                  placeholder="25"
+                  min="0"
+                  class="w-full rounded border-none bg-surface-container-lowest p-3 text-sm text-white focus:ring-1 focus:ring-blue-400/50"
+                />
+              </div>
+            </div>
+
+            <!-- REGISTRATION FEE -->
+            <div class="space-y-4">
+              <div class="flex items-end justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-1 h-3 bg-orange-400 rounded-full"></span>
+                  <h3 class="text-[10px] font-black text-white tracking-widest uppercase">{{ $t('categoryManagement.registrationFee') }}</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center justify-center rounded bg-orange-400/10 px-2 py-0.5 font-headline text-xs font-bold text-orange-400">{{ filterFeeRange[0].toLocaleString() }}</span>
+                  <span class="text-[10px] font-bold text-slate-600">—</span>
+                  <span class="inline-flex items-center justify-center rounded bg-orange-400/10 px-2 py-0.5 font-headline text-xs font-bold text-orange-400">{{ filterFeeRange[1].toLocaleString() }}</span>
+                  <span class="text-[10px] font-bold uppercase text-slate-500">DZD</span>
+                </div>
+              </div>
+              <div class="age-slider-wrapper px-2 pt-4 pb-2">
+                <Slider
+                  v-model="filterFeeRange"
+                  :min="0"
+                  :max="100000"
+                  :step="5000"
+                  :tooltips="false"
+                  :merge="-1"
+                  :lazy="false"
+                />
+              </div>
+              <div class="flex items-center justify-between px-2">
+                <span class="text-[9px] font-bold text-slate-600">0</span>
+                <span class="text-[9px] font-bold text-slate-600">100,000</span>
+              </div>
+            </div>
+
+            <!-- PLAYERS RANGE -->
+            <div class="space-y-4">
+              <div class="flex items-end justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-1 h-3 bg-purple-400 rounded-full"></span>
+                  <h3 class="text-[10px] font-black text-white tracking-widest uppercase">{{ $t('categoryManagement.playersCol') }}</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center justify-center rounded bg-purple-400/10 px-2 py-0.5 font-headline text-xs font-bold text-purple-400">{{ filterPlayersRange[0] }}</span>
+                  <span class="text-[10px] font-bold text-slate-600">—</span>
+                  <span class="inline-flex items-center justify-center rounded bg-purple-400/10 px-2 py-0.5 font-headline text-xs font-bold text-purple-400">{{ filterPlayersRange[1] }}</span>
+                  <span class="text-[10px] font-bold uppercase text-slate-500">players</span>
+                </div>
+              </div>
+              <div class="age-slider-wrapper px-2 pt-4 pb-2">
+                <Slider
+                  v-model="filterPlayersRange"
+                  :min="0"
+                  :max="100"
+                  :step="1"
+                  :tooltips="false"
+                  :merge="-1"
+                  :lazy="false"
+                />
+              </div>
+              <div class="flex items-center justify-between px-2">
+                <span class="text-[9px] font-bold text-slate-600">0</span>
+                <span class="text-[9px] font-bold text-slate-600">100</span>
+              </div>
+            </div>
+          </div>
+          <div class="p-6 bg-surface-container-high/50 border-t border-white/5 flex items-center justify-between gap-4">
+            <button
+              type="button"
+              class="flex-1 py-4 text-slate-400 font-black text-xs uppercase tracking-widest rounded-md hover:bg-white/5 transition-all"
+              @click="resetFilters"
+            >
+              {{ $t('staffManagement.resetFilters') }}
+            </button>
+            <button
+              type="button"
+              class="flex-[2] py-4 bg-primary-container text-on-primary-fixed font-black text-xs uppercase tracking-widest rounded-md shadow-lg shadow-green-900/20 hover:brightness-110 transition-all flex items-center justify-center gap-2"
+              @click="applyFilters"
+            >
+              {{ $t('staffManagement.applyFilters') }}
+              <span class="material-symbols-outlined font-bold text-sm">filter_alt</span>
             </button>
           </div>
         </div>

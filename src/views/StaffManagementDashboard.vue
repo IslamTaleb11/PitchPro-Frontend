@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.vue'
 import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
 import StaffCreationForm from '../features/staff-management/components/StaffCreationForm.vue'
@@ -9,23 +10,22 @@ import StaffInsightsCards from '../features/staff-management/components/StaffIns
 import { useUiToast } from '../composables/useUiToast'
 
 const { showToast } = useUiToast()
+const { t: $t } = useI18n()
 const isSidebarOpen = ref(true)
 
 async function onDeployStaff() {
-  // Simulate API call
   showToast({
-    title: 'Deploying staff member',
-    message: 'Provisioning profile, role access, and tactical permissions...',
+    title: $t('common.deployingStaff'),
+    message: $t('common.deployingStaffMsg'),
     mode: 'loading',
     duration: 30000
   })
 
-  // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 2000))
 
   showToast({
-    title: 'Staff deployed',
-    message: 'Personnel record was created successfully.',
+    title: $t('common.staffCreated'),
+    message: $t('common.staffCreatedMsg'),
     mode: 'success',
     duration: 2000
   })

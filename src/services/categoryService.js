@@ -20,5 +20,21 @@ export const categoryService = {
 
   async deleteCategory(id) {
     return await api.delete(`/dashboard/category/${id}`);
+  },
+
+  async getCategoriesByFilter({ pageNumber = 1, pageSize = 10, minAge, maxAge, capacity, registrationFeeMin, registrationFeeMax, minPlayers, maxPlayers }) {
+    return await api.get('/dashboard/category/filter', {
+      params: {
+        pageNumber,
+        pageSize,
+        minAge,
+        maxAge,
+        ...(capacity != null && { capacity }),
+        registrationFeeMin,
+        registrationFeeMax,
+        minPlayers,
+        maxPlayers
+      }
+    });
   }
 };
