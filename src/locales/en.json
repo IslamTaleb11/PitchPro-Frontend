@@ -67,7 +67,10 @@
     "finances": "Finances",
     "categories": "Categories",
     "settings": "Settings",
-    "matchPrep": "MATCH PREP"
+    "matchPrep": "MATCH PREP",
+    "matches": "Matches",
+    "schedule": "Schedule",
+    "training": "Training"
   },
   "topbar": {
     "staffAndRoleConfig": "STAFF & ROLE CONFIG",

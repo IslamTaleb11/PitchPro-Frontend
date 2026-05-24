@@ -17,11 +17,12 @@ defineProps({
 const route = useRoute()
 
 const items = [
-  { key: 'staff-management', icon: 'groups', labelKey: 'sidebar.staffManagement', path: '/dashboard/staff-management' },
-  { key: 'players', icon: 'sports_soccer', labelKey: 'sidebar.players', path: '/dashboard/players' },
-  { key: 'finances', icon: 'payments', labelKey: 'sidebar.finances', path: '/dashboard/finances' },
-  { key: 'categories', icon: 'category', labelKey: 'sidebar.categories', path: '/dashboard/categories' },
-  { key: 'settings', icon: 'settings', labelKey: 'sidebar.settings', path: '/dashboard/settings' }
+  { key: 'staff-management', icon: 'groups',         labelKey: 'sidebar.staffManagement', path: '/dashboard/staff-management' },
+  { key: 'players',          icon: 'sports_soccer',  labelKey: 'sidebar.players',         path: '/dashboard/players'          },
+  { key: 'schedule',  icon: 'calendar_month', labelKey: 'sidebar.schedule',  path: '/dashboard/schedule'  },
+  { key: 'finances',         icon: 'payments',       labelKey: 'sidebar.finances',         path: '/dashboard/finances'         },
+  { key: 'categories',       icon: 'category',       labelKey: 'sidebar.categories',       path: '/dashboard/categories'       },
+  { key: 'settings',         icon: 'settings',       labelKey: 'sidebar.settings',         path: '/dashboard/settings'         },
 ]
 </script>
 

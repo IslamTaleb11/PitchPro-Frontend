@@ -68,7 +68,10 @@
     "finances": "المالية",
     "categories": "الفئات",
     "settings": "الإعدادات",
-    "matchPrep": "تحضير المباراة"
+    "matchPrep": "تحضير المباراة",
+    "matches": "المباريات",
+    "schedule": "الجدول الزمني",
+    "training": "التدريب"
   },
   "topbar": {
     "staffAndRoleConfig": "إعداد الطاقم والأدوار",

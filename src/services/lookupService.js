@@ -23,5 +23,9 @@ export const lookupService = {
 
   getPreferredFeet() {
     return api.get('/lookups/feet');
+  },
+
+  getSessionTypes() {
+    return api.get('/lookups/sessiontypes');
   }
 };

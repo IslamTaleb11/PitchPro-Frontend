@@ -39,6 +39,21 @@ const routes = [
     path: '/dashboard/players',
     name: 'PlayerAcquisition',
     component: () => import('../views/PlayerAcquisition.vue')
+  },
+  {
+    path: '/dashboard/matches',
+    name: 'MatchesDashboard',
+    component: () => import('../views/MatchesDashboard.vue')
+  },
+  {
+    path: '/dashboard/schedule',
+    name: 'ScheduleDashboard',
+    component: () => import('../views/ScheduleDashboard.vue')
+  },
+  {
+    path: '/dashboard/training',
+    name: 'TrainingDashboard',
+    component: () => import('../views/TrainingDashboard.vue')
   }
 ]
 
