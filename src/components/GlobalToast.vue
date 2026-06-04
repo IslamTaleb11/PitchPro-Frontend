@@ -10,7 +10,7 @@ const { toastState } = useUiToast()
       <div
         v-if="toastState.visible"
         :class="[
-          'pointer-events-none fixed right-4 top-4 z-100 w-[min(92vw,360px)] rounded-xl p-4 shadow-[0_12px_30px_rgba(0,0,0,0.35)] backdrop-blur-md',
+          'pointer-events-none fixed right-4 top-4 z-[200] w-[min(92vw,360px)] rounded-xl p-4 shadow-[0_12px_30px_rgba(0,0,0,0.35)]',
           toastState.mode === 'error'
             ? 'border border-red-500/20 bg-red-600/95 text-white'
             : 'border border-outline-variant/60 bg-surface-container-high/95'
