@@ -2,9 +2,11 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUiToast } from '../composables/useUiToast'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const { showLoadingToast, showToast } = useUiToast()
+const { t } = useI18n()
 
 const showPassword = ref(false)
 const form = reactive({
@@ -15,27 +17,27 @@ const form = reactive({
 
 function handleLogin() {
   showLoadingToast({
-    title: 'Accessing terminal',
-    message: 'Verifying tactical credentials...',
-    successTitle: 'Access granted',
-    successMessage: 'Welcome back, Technical Director.'
+    title: t('login.toast.accessingTerminalTitle'),
+    message: t('login.toast.accessingTerminalMessage'),
+    successTitle: t('login.toast.accessingTerminalSuccessTitle'),
+    successMessage: t('login.toast.accessingTerminalSuccessMessage')
   })
   setTimeout(() => router.push('/dashboard/staff-management'), 900)
 }
 
 function handleSsoLogin() {
   showLoadingToast({
-    title: 'Launching SSO login',
-    message: 'Connecting to federation provider...',
-    successTitle: 'SSO connected',
-    successMessage: 'Identity provider responded successfully.'
+    title: t('login.toast.launchingSsoTitle'),
+    message: t('login.toast.launchingSsoMessage'),
+    successTitle: t('login.toast.launchingSsoSuccessTitle'),
+    successMessage: t('login.toast.launchingSsoSuccessMessage')
   })
 }
 
 function handleBiometricLogin() {
   showToast({
-    title: 'Biometric required',
-    message: 'Biometric API not connected yet in this demo.',
+    title: t('login.toast.biometricRequiredTitle'),
+    message: t('login.toast.biometricRequiredMessage'),
     mode: 'info'
   })
 }
@@ -80,7 +82,7 @@ function handleBiometricLogin() {
         <div class="flex-1 border-l-2 border-primary-fixed-dim pl-4">
           <h1 class="font-headline text-3xl font-bold tracking-tighter text-white">PitchPro</h1>
           <p class="font-headline text-xs font-medium uppercase tracking-[0.2em] text-primary-fixed">
-            Technical Director
+            {{ t('login.tacticalDirector') }}
           </p>
         </div>
       </div>
@@ -90,7 +92,7 @@ function handleBiometricLogin() {
           <div class="space-y-4">
             <div class="space-y-1.5">
               <label class="block px-1 font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-                Tactical ID (Email)
+                {{ t('login.tacticalIdEmail') }}
               </label>
               <div class="group relative">
                 <span
@@ -101,7 +103,7 @@ function handleBiometricLogin() {
                 <input
                   v-model="form.email"
                   type="email"
-                  placeholder="director@pitchpro.io"
+                  :placeholder="t('login.emailPlaceholder')"
                   class="w-full rounded-sm border-none bg-surface-container-lowest py-3.5 pl-11 font-body text-sm text-on-surface placeholder:text-on-surface/20 transition-all focus:ring-1 focus:ring-primary-fixed-dim"
                 />
               </div>
@@ -109,7 +111,7 @@ function handleBiometricLogin() {
 
             <div class="space-y-1.5">
               <label class="block px-1 font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-                Security Key (Password)
+                {{ t('login.securityKey') }}
               </label>
               <div class="group relative">
                 <span
@@ -120,7 +122,7 @@ function handleBiometricLogin() {
                 <input
                   v-model="form.password"
                   :type="showPassword ? 'text' : 'password'"
-                  placeholder="••••••••••••"
+                  :placeholder="t('login.passwordPlaceholder')"
                   class="w-full rounded-sm border-none bg-surface-container-lowest py-3.5 pl-11 font-body text-sm text-on-surface placeholder:text-on-surface/20 transition-all focus:ring-1 focus:ring-primary-fixed-dim"
                 />
                 <button
@@ -150,10 +152,10 @@ function handleBiometricLogin() {
                   check
                 </span>
               </div>
-              <span class="text-xs text-on-surface-variant transition-colors group-hover:text-on-surface">Stay logged in</span>
+              <span class="text-xs text-on-surface-variant transition-colors group-hover:text-on-surface">{{ t('login.stayLoggedIn') }}</span>
             </label>
             <a href="#" class="text-xs font-medium text-primary-fixed/80 transition-colors hover:text-primary-fixed-dim">
-              Forgot password?
+              {{ t('login.forgotPassword') }}
             </a>
           </div>
 
@@ -166,7 +168,7 @@ function handleBiometricLogin() {
                 class="flex items-center justify-center gap-3 bg-primary-container py-4 transition-colors group-hover:bg-primary-fixed-dim"
               >
                 <span class="font-headline text-sm font-bold uppercase tracking-widest text-on-primary-container">
-                  Access Terminal
+                  {{ t('login.accessTerminal') }}
                 </span>
                 <span class="material-symbols-outlined text-[18px] font-bold text-on-primary-container">
                   arrow_forward
@@ -176,7 +178,7 @@ function handleBiometricLogin() {
 
             <div class="flex items-center gap-4 py-2">
               <div class="h-px flex-1 bg-outline-variant/30" />
-              <span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">System Check</span>
+              <span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{{ t('login.systemCheck') }}</span>
               <div class="h-px flex-1 bg-outline-variant/30" />
             </div>
 
@@ -191,7 +193,7 @@ function handleBiometricLogin() {
                   class="h-4 w-4 opacity-70 transition-opacity group-hover:opacity-100"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuChnr9Wz6YVsTHb-HpKxPCXWbd2eJipzAOArGxzPn1Cb8Foqs7SIcmuQJ5uAPT2SKddL2SJqItJaQtut-ozHXTLu4oAMUSGSqPGWclccDbA9MRHER7Q7ieNuThvDeBCV5BMBCLVYPHD6vDCebGScNWgym1E55aOuY6WNYyTFjNP8U7ilMm_6JAnlJkt3bSlUdoNgoqnVlBEfUrtXgKEQPZJStkI2r2Ypzgt9rbfIcw9qWXl3xTCpsO2BXz0dogLZoJ3_VitwNOiYNA"
                 />
-                <span class="text-xs font-medium text-on-surface-variant">SSO Login</span>
+                <span class="text-xs font-medium text-on-surface-variant">{{ t('login.ssoLogin') }}</span>
               </button>
               <button
                 type="button"
@@ -201,7 +203,7 @@ function handleBiometricLogin() {
                 <span class="material-symbols-outlined text-[18px] text-on-surface-variant transition-colors group-hover:text-primary-fixed-dim">
                   fingerprint
                 </span>
-                <span class="text-xs font-medium text-on-surface-variant">Biometric</span>
+                <span class="text-xs font-medium text-on-surface-variant">{{ t('login.biometric') }}</span>
               </button>
             </div>
           </div>
@@ -210,10 +212,10 @@ function handleBiometricLogin() {
 
       <div class="mt-8 flex items-center justify-between px-2">
         <div class="flex gap-4">
-          <span class="font-mono text-[10px] uppercase text-on-surface-variant/40">v4.0.2-stable</span>
-          <span class="font-mono text-[10px] uppercase text-on-surface-variant/40">Lat: 51.5074 N</span>
+          <span class="font-mono text-[10px] uppercase text-on-surface-variant/40">{{ t('login.appVersion') }}</span>
+          <span class="font-mono text-[10px] uppercase text-on-surface-variant/40">{{ t('login.location') }}</span>
         </div>
-        <p class="text-[10px] font-medium text-on-surface-variant/60">© 2025 PitchPro Analytics</p>
+        <p class="text-[10px] font-medium text-on-surface-variant/60">{{ t('login.copyRight') }}</p>
       </div>
     </div>
 
@@ -221,7 +223,7 @@ function handleBiometricLogin() {
       <div class="relative h-1 w-32 bg-primary-fixed-dim/20">
         <div class="absolute right-0 top-0 h-full w-8 bg-primary-fixed-dim" />
       </div>
-      <p class="font-headline text-[10px] uppercase tracking-widest text-primary-fixed">Encryption Active</p>
+      <p class="font-headline text-[10px] uppercase tracking-widest text-primary-fixed">{{ t('login.encryptionActive') }}</p>
     </div>
   </main>
 </template>

@@ -9,7 +9,7 @@ import { trainingService } from '../services/trainingService'
 import { scheduleService } from '../services/scheduleService'
 import { useUiToast } from '../composables/useUiToast'
 
-const { t: $t } = useI18n()
+const { t: $t, locale } = useI18n()
 const { showToast } = useUiToast()
 const isSidebarOpen = ref(true)
 
@@ -35,7 +35,7 @@ function formatTimeSpan(ts) {
   const [hours, minutes] = ts.split(':')
   const date = new Date()
   date.setHours(parseInt(hours, 10), parseInt(minutes, 10))
-  return date.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleTimeString(locale.value || 'en', { hour: '2-digit', minute: '2-digit' })
 }
 
 function formatEventForUI(event) {
@@ -60,15 +60,15 @@ function formatEventForUI(event) {
     eventDate: event.eventDate,
     categoryID: event.categoryID,
     day: String(date.getDate()).padStart(2, '0'),
-    month: date.toLocaleString('en', { month: 'short' }).toUpperCase(),
+    month: date.toLocaleString(locale.value || 'en', { month: 'short' }).toUpperCase(),
     icon: isMatch ? 'stadium' : 'exercise',
     iconColor: isMatch ? 'text-green-400' : 'text-amber-400',
     iconBg: isMatch ? 'bg-green-400/10' : 'bg-amber-400/10',
     title: event.title,
-    subtitle: isMatch ? 'Match' : 'Training',
-    timeLabel: 'Time',
+    subtitle: isMatch ? $t('schedule.match') : $t('schedule.training'),
+    timeLabel: $t('schedule.time'),
     time: timeDisplay,
-    detailLabel: 'Location',
+    detailLabel: $t('schedule.locationLabel'),
     detail: event.location,
     location: event.location,
     badge: event.categoryName || (isMatch ? 'Match' : 'Training'),
@@ -107,7 +107,7 @@ async function fetchEvents() {
     hasMore.value = data.hasMore
   } catch (error) {
     console.error('Failed to fetch events:', error)
-    showToast({ title: 'Error', message: 'Failed to load events.', mode: 'error', duration: 4000 })
+    showToast({ title: $t('common.error'), message: $t('schedule.toast.failedLoadEvents'), mode: 'error', duration: 4000 })
   } finally {
     isLoading.value = false
   }
@@ -190,7 +190,7 @@ async function saveEdit() {
 
   isSubmittingEdit.value = true
   try {
-    showToast({ title: 'Updating Event...', message: 'Saving changes to database.', mode: 'loading', duration: 0 })
+    showToast({ title: $t('schedule.toast.updatingEventTitle'), message: $t('schedule.toast.updatingEventMessage'), mode: 'loading', duration: 0 })
 
     if (editingEntry.value.eventType === 'Match') {
       const payload = {
@@ -219,7 +219,7 @@ async function saveEdit() {
       await trainingService.updateSession(payload)
     }
 
-    showToast({ title: 'Event Updated', message: 'Changes saved successfully.', mode: 'success', duration: 3000 })
+    showToast({ title: $t('schedule.toast.eventUpdatedTitle'), message: $t('schedule.toast.eventUpdatedMessage'), mode: 'success', duration: 3000 })
 
     showEditModal.value = false
     currentPage.value = 1
@@ -227,7 +227,7 @@ async function saveEdit() {
 
   } catch (error) {
     const message = error.response?.data?.message || error.message || 'An error occurred.'
-    showToast({ title: 'Error', message, mode: 'error', duration: 4000 })
+    showToast({ title: $t('common.error'), message, mode: 'error', duration: 4000 })
   } finally {
     isSubmittingEdit.value = false
   }
@@ -264,7 +264,7 @@ onMounted(async () => {
 // ── Deploy Match ──────────────────────────────────────────────────────────────
 async function deployMatch() {
   if (!matchCategoryID.value || !opponentName.value.trim() || !matchDate.value || !kickoffTime.value || !matchEndTime.value) {
-    showToast({ title: 'Missing Fields', message: 'Please fill in all required fields.', mode: 'error', duration: 4000 })
+    showToast({ title: $t('schedule.toast.missingFieldsTitle'), message: $t('schedule.toast.fillAllFieldsMessage'), mode: 'error', duration: 4000 })
     return
   }
 
@@ -273,7 +273,7 @@ async function deployMatch() {
   today.setHours(0, 0, 0, 0)
 
   if (selectedDate < today) {
-    showToast({ title: 'Invalid Date', message: 'Match date must be today or in the future.', mode: 'error', duration: 4000 })
+    showToast({ title: $t('schedule.toast.invalidDateTitle'), message: $t('schedule.toast.matchDateFutureMessage'), mode: 'error', duration: 4000 })
     return
   }
 
@@ -281,13 +281,13 @@ async function deployMatch() {
   const end = new Date(`2000-01-01 ${matchEndTime.value}`)
 
   if (end <= start) {
-    showToast({ title: 'Invalid Time', message: 'End time must be after kickoff time.', mode: 'error', duration: 4000 })
+    showToast({ title: $t('schedule.toast.invalidTimeTitle'), message: $t('schedule.toast.endAfterKickoffMessage'), mode: 'error', duration: 4000 })
     return
   }
 
   isSubmittingMatch.value = true
   try {
-    showToast({ title: 'Scheduling Match...', message: 'Saving match to database.', mode: 'loading', duration: 0 })
+    showToast({ title: $t('schedule.toast.schedulingMatchTitle'), message: $t('schedule.toast.schedulingMatchMessage'), mode: 'loading', duration: 0 })
 
     const payload = {
       ClubID:       7,
@@ -302,7 +302,7 @@ async function deployMatch() {
 
     await matchService.createMatch(payload)
 
-    showToast({ title: 'Match Scheduled', message: 'Match saved successfully.', mode: 'success', duration: 3000 })
+    showToast({ title: $t('schedule.toast.matchScheduledTitle'), message: $t('schedule.toast.matchScheduledMessage'), mode: 'success', duration: 3000 })
 
     matchCategoryID.value   = ''
     opponentName.value = ''
@@ -317,7 +317,7 @@ async function deployMatch() {
 
   } catch (error) {
     const message = error.response?.data?.message || error.message || 'An error occurred.'
-    showToast({ title: 'Error', message, mode: 'error', duration: 4000 })
+    showToast({ title: $t('common.error'), message, mode: 'error', duration: 4000 })
   } finally {
     isSubmittingMatch.value = false
   }
@@ -326,7 +326,7 @@ async function deployMatch() {
 // ── Deploy Training Session ──────────────────────────────────────────────────────
 async function deployTraining() {
   if (!trainingCategoryID.value || !sessionDate.value || !startTime.value || !endTime.value || !location.value.trim() || !sessionTypeID.value) {
-    showToast({ title: 'Missing Fields', message: 'Please fill in all required fields.', mode: 'error', duration: 4000 })
+    showToast({ title: $t('schedule.toast.missingFieldsTitle'), message: $t('schedule.toast.fillAllFieldsMessage'), mode: 'error', duration: 4000 })
     return
   }
 
@@ -335,7 +335,7 @@ async function deployTraining() {
   today.setHours(0, 0, 0, 0)
 
   if (selectedDate < today) {
-    showToast({ title: 'Invalid Date', message: 'Training date must be today or in the future.', mode: 'error', duration: 4000 })
+    showToast({ title: $t('schedule.toast.invalidDateTitle'), message: $t('schedule.toast.trainingDateFutureMessage'), mode: 'error', duration: 4000 })
     return
   }
 
@@ -343,13 +343,13 @@ async function deployTraining() {
   const end = new Date(`2000-01-01 ${endTime.value}`)
 
   if (end <= start) {
-    showToast({ title: 'Invalid Time', message: 'End time must be after start time.', mode: 'error', duration: 4000 })
+    showToast({ title: $t('schedule.toast.invalidTimeTitle'), message: $t('schedule.toast.endAfterStartMessage'), mode: 'error', duration: 4000 })
     return
   }
 
   isSubmittingTraining.value = true
   try {
-    showToast({ title: 'Creating Session...', message: 'Saving training session to database.', mode: 'loading', duration: 0 })
+    showToast({ title: $t('schedule.toast.creatingSessionTitle'), message: $t('schedule.toast.creatingSessionMessage'), mode: 'loading', duration: 0 })
 
     const payload = {
       ClubID:        7,
@@ -363,7 +363,7 @@ async function deployTraining() {
 
     await trainingService.createSession(payload)
 
-    showToast({ title: 'Session Created', message: 'Training session saved successfully.', mode: 'success', duration: 3000 })
+    showToast({ title: $t('schedule.toast.sessionCreatedTitle'), message: $t('schedule.toast.sessionCreatedMessage'), mode: 'success', duration: 3000 })
 
     trainingCategoryID.value    = ''
     sessionDate.value   = ''
@@ -400,15 +400,15 @@ async function deployTraining() {
         <!-- ── Page Header + Event Classification Tabs ── -->
         <section class="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div class="space-y-2">
-            <span class="text-[10px] font-bold tracking-[0.2em] text-green-400 font-headline uppercase">Technical Hub</span>
+            <span class="text-[10px] font-bold tracking-[0.2em] text-green-400 font-headline uppercase">{{ $t('schedule.pageSectionTitle') }}</span>
             <h2 class="text-4xl font-black font-headline tracking-tighter text-white">
-              CALENDAR <span class="text-slate-500">&amp; SCHEDULE</span>
+              {{ $t('schedule.pageTitle') }} <span class="text-slate-500">{{ $t('schedule.pageSubtitle') }}</span>
             </h2>
           </div>
           <div class="flex flex-col gap-4">
             <!-- Event Classification Tabs -->
             <div class="flex items-center gap-2 bg-surface-container-low p-1.5 rounded-lg border border-white/5">
-              <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">Event Classification</div>
+              <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">{{ $t('schedule.eventClassificationLabel') }}</div>
               <button
                 type="button"
                 @click="activeEventType = 'all'"
@@ -419,7 +419,7 @@ async function deployTraining() {
                     : 'text-slate-500 hover:text-white'
                 ]"
               >
-                All
+                {{ $t('schedule.all') }}
               </button>
               <button
                 type="button"
@@ -431,7 +431,7 @@ async function deployTraining() {
                     : 'text-slate-500 hover:text-white'
                 ]"
               >
-                Match
+                {{ $t('schedule.match') }}
               </button>
               <button
                 type="button"
@@ -443,7 +443,7 @@ async function deployTraining() {
                     : 'text-slate-500 hover:text-white'
                 ]"
               >
-                Training
+                {{ $t('schedule.training') }}
               </button>
             </div>
             <!-- Category Filter -->
@@ -458,7 +458,7 @@ async function deployTraining() {
                     : 'text-slate-500 hover:text-white'
                 ]"
               >
-                All Categories
+                {{ $t('schedule.allCategories') }}
               </button>
               <button
                 v-for="cat in categories"
@@ -490,7 +490,7 @@ async function deployTraining() {
 
               <div class="flex items-center gap-3 mb-6">
                 <div class="h-8 w-1 bg-green-400 rounded-full"></div>
-                <h3 class="font-headline font-bold text-lg tracking-tight uppercase text-white">Event Terminal</h3>
+                <h3 class="font-headline font-bold text-lg tracking-tight uppercase text-white">{{ $t('schedule.eventTerminal') }}</h3>
               </div>
 
               <!-- Creation Tabs -->
@@ -505,7 +505,7 @@ async function deployTraining() {
                       : 'text-slate-500 hover:text-white'
                   ]"
                 >
-                  Match
+                  {{ $t('schedule.match') }}
                 </button>
                 <button
                   type="button"
@@ -517,7 +517,7 @@ async function deployTraining() {
                       : 'text-slate-500 hover:text-white'
                   ]"
                 >
-                  Training
+                  {{ $t('schedule.training') }}
                 </button>
               </div>
 
@@ -526,21 +526,21 @@ async function deployTraining() {
 
                 <!-- Category -->
                 <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Category</label>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.category') }}</label>
                   <select v-model="matchCategoryID" required class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 cursor-pointer">
-                    <option value="" disabled>Select Category...</option>
+                    <option value="" disabled>{{ $t('schedule.selectCategoryPlaceholder') }}</option>
                     <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                   </select>
                 </div>
 
                 <!-- Opponent Name -->
                 <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Opponent</label>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.opponent') }}</label>
                   <input
                     v-model="opponentName"
                     required
                     type="text"
-                    placeholder="E.G. REAL MADRID CF"
+                    :placeholder="$t('schedule.opponentPlaceholder')"
                     class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 placeholder:text-slate-600 uppercase"
                   />
                 </div>
@@ -548,33 +548,33 @@ async function deployTraining() {
                 <!-- Date + Kickoff + End Time -->
                 <div class="grid grid-cols-3 gap-4">
                   <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date</label>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.date') }}</label>
                     <input v-model="matchDate" required type="date" class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 scheme-dark cursor-pointer"/>
                   </div>
                   <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Kickoff</label>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.kickoff') }}</label>
                     <input v-model="kickoffTime" required type="time" class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 scheme-dark cursor-pointer"/>
                   </div>
                   <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">End</label>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.end') }}</label>
                     <input v-model="matchEndTime" required type="time" class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 scheme-dark cursor-pointer"/>
                   </div>
                 </div>
 
                 <!-- Stadium Name -->
                 <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Stadium Name</label>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.stadiumName') }}</label>
                   <input
                     v-model="stadiumName"
                     type="text"
-                    placeholder="E.G. STADE DU 5 JUILLET"
+                    :placeholder="$t('schedule.stadiumNamePlaceholder')"
                     class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 placeholder:text-slate-600 uppercase"
                   />
                 </div>
 
                 <!-- Home / Away Toggle -->
                 <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Venue Type</label>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.venueType') }}</label>
                   <div class="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -587,7 +587,7 @@ async function deployTraining() {
                       ]"
                     >
                       <span class="material-symbols-outlined text-base">home</span>
-                      Home
+                      {{ $t('schedule.home') }}
                     </button>
                     <button
                       type="button"
@@ -600,7 +600,7 @@ async function deployTraining() {
                       ]"
                     >
                       <span class="material-symbols-outlined text-base">flight_takeoff</span>
-                      Away
+                      {{ $t('schedule.away') }}
                     </button>
                   </div>
                 </div>
@@ -611,7 +611,7 @@ async function deployTraining() {
                   class="w-full py-4 bg-gradient-to-r from-green-400 to-green-300 text-slate-950 font-black font-headline text-xs tracking-[0.2em] uppercase rounded-md shadow-lg shadow-green-900/20 hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span class="material-symbols-outlined text-sm">add_circle</span>
-                  Schedule Match
+                  {{ $t('schedule.scheduleMatch') }}
                 </button>
               </form>
 
@@ -620,48 +620,48 @@ async function deployTraining() {
 
                 <!-- Category -->
                 <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Category</label>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.category') }}</label>
                   <select v-model="trainingCategoryID" required class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 cursor-pointer">
-                    <option value="" disabled>Select Category...</option>
+                    <option value="" disabled>{{ $t('schedule.selectCategoryPlaceholder') }}</option>
                     <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                   </select>
                 </div>
 
                 <!-- Session Type -->
                 <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Session Type</label>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.sessionType') }}</label>
                   <select v-model="sessionTypeID" required class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 cursor-pointer">
-                    <option value="" disabled>Select Session Type...</option>
+                    <option value="" disabled>{{ $t('schedule.selectSessionTypePlaceholder') }}</option>
                     <option v-for="type in sessionTypes" :key="type.id" :value="type.id">{{ type.name }}</option>
                   </select>
                 </div>
 
                 <!-- Date -->
                 <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date</label>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.date') }}</label>
                   <input v-model="sessionDate" required type="date" class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 scheme-dark cursor-pointer"/>
                 </div>
 
                 <!-- Start Time + End Time -->
                 <div class="grid grid-cols-2 gap-4">
                   <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Start Time</label>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.startTime') }}</label>
                     <input v-model="startTime" required type="time" class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 scheme-dark cursor-pointer"/>
                   </div>
                   <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">End Time</label>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.endTime') }}</label>
                     <input v-model="endTime" required type="time" class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 scheme-dark cursor-pointer"/>
                   </div>
                 </div>
 
                 <!-- Location -->
                 <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Location</label>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.location') }}</label>
                   <input
                     v-model="location"
                     required
                     type="text"
-                    placeholder="E.G. PITCH 1 — MAIN ARENA"
+                    :placeholder="$t('schedule.locationPlaceholder')"
                     class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 placeholder:text-slate-600 uppercase"
                   />
                 </div>
@@ -672,7 +672,7 @@ async function deployTraining() {
                   class="w-full py-4 bg-gradient-to-r from-green-400 to-green-300 text-slate-950 font-black font-headline text-xs tracking-[0.2em] uppercase rounded-md shadow-lg shadow-green-900/20 hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span class="material-symbols-outlined text-sm">add_circle</span>
-                  Create Session
+                  {{ $t('schedule.createSession') }}
                 </button>
               </form>
             </div>
@@ -684,11 +684,11 @@ async function deployTraining() {
             <div class="flex items-center justify-between">
               <h3 class="font-headline font-bold text-lg tracking-tight uppercase flex items-center gap-3 text-white">
                 <span class="material-symbols-outlined text-green-400">analytics</span>
-                Schedule Ledger
+                {{ $t('schedule.scheduleLedger') }}
               </h3>
               <div class="flex items-center gap-4">
                 <div class="text-sm text-slate-400">
-                  Page {{ currentPage }}
+                  {{ $t('schedule.page') }} {{ currentPage }}
                 </div>
                 <div class="flex gap-2">
                   <button
@@ -754,7 +754,7 @@ async function deployTraining() {
                               {{ entry.subtitle }}
                             </p>
                             <span v-if="entry.eventType === 'Match'" class="text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded" :class="entry.isHome ? 'bg-green-400/10 text-green-400 border border-green-400/20' : 'bg-blue-400/10 text-blue-400 border border-blue-400/20'">
-                              {{ entry.isHome ? 'HOME' : 'AWAY' }}
+                              {{ entry.isHome ? $t('schedule.home') : $t('schedule.away') }}
                             </span>
                           </div>
                         </div>
@@ -768,7 +768,7 @@ async function deployTraining() {
                       <div class="flex flex-col gap-1">
                         <div class="flex items-center gap-2">
                           <span class="material-symbols-outlined text-slate-500 text-sm">schedule</span>
-                          <span class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Time</span>
+                          <span class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">{{ $t('schedule.time') }}</span>
                         </div>
                         <div class="flex items-center gap-2">
                           <span class="text-sm font-mono font-bold text-white">{{ entry.time }}</span>
@@ -777,7 +777,7 @@ async function deployTraining() {
                       <div class="flex flex-col gap-1">
                         <div class="flex items-center gap-2">
                           <span class="material-symbols-outlined text-slate-500 text-sm">location_on</span>
-                          <span class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Location</span>
+                          <span class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">{{ $t('schedule.locationLabel') }}</span>
                         </div>
                         <div class="flex items-center gap-2">
                           <span class="text-sm font-bold text-white uppercase">{{ entry.detail }}</span>
@@ -807,14 +807,14 @@ async function deployTraining() {
                   </div>
                 </div>
                 <div class="text-center space-y-2">
-                  <p class="font-headline font-black uppercase tracking-tight text-white text-lg">No Events Found</p>
+                  <p class="font-headline font-black uppercase tracking-tight text-white text-lg">{{ $t('schedule.noEventsFoundTitle') }}</p>
                   <p class="text-slate-500 text-xs font-medium max-w-xs leading-relaxed">
-                    There are no events matching your current filters. Use the Event Terminal on the left to deploy a new match or training session, or adjust your filters.
+                    {{ $t('schedule.noEventsFoundMessage') }}
                   </p>
                 </div>
                 <div class="flex items-center gap-3 px-5 py-2.5 rounded-full border border-white/5 bg-surface-container-high">
                   <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                  <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Ready for Deployment</span>
+                  <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">{{ $t('schedule.readyForDeployment') }}</span>
                 </div>
               </div>
             </div>
@@ -823,20 +823,20 @@ async function deployTraining() {
             <div class="relative overflow-hidden bg-surface-container-high rounded-xl p-8 flex flex-col md:flex-row items-center justify-between gap-10 border border-white/5">
               <div class="space-y-4 max-w-md">
                 <h4 class="text-3xl font-black font-headline tracking-tighter italic text-green-400 leading-none">
-                  PEAK PERFORMANCE <br/><span class="text-white">SCHEDULED.</span>
+                  {{ $t('schedule.bottomStatsTitlePrefix') }} <br/><span class="text-white">{{ $t('schedule.bottomStatsTitleAccent') }}</span>
                 </h4>
                 <p class="text-sm text-slate-400 leading-relaxed">
-                  Manage the tactical lifecycle of every squad from the academy to the first team. Integrated telemetry ensures pitch availability is never a bottleneck.
+                  {{ $t('schedule.bottomStatsSubtitle') }}
                 </p>
                 <div class="flex gap-6">
                   <div class="flex flex-col">
                     <span class="text-2xl font-black font-headline text-white">{{ filteredEvents.length }}</span>
-                    <span class="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">Events This Week</span>
+                    <span class="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">{{ $t('schedule.eventsThisWeek') }}</span>
                   </div>
                   <div class="w-px h-8 bg-white/10 self-center"></div>
                   <div class="flex flex-col">
                     <span class="text-2xl font-black font-headline text-white">98%</span>
-                    <span class="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">Pitch Utilization</span>
+                    <span class="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">{{ $t('schedule.pitchUtilization') }}</span>
                   </div>
                 </div>
               </div>
@@ -865,8 +865,8 @@ async function deployTraining() {
         <div class="relative bg-surface-container-low w-full max-w-md rounded-xl border border-white/10 shadow-2xl overflow-hidden">
           <div class="p-6 border-b border-white/5 flex items-center justify-between">
             <div>
-              <div class="text-green-400 text-[10px] font-black tracking-[0.2em] uppercase mb-1">Modify Event</div>
-              <h2 class="text-xl font-black text-white tracking-tight uppercase">Edit Event</h2>
+              <div class="text-green-400 text-[10px] font-black tracking-[0.2em] uppercase mb-1">{{ $t('schedule.modifyEvent') }}</div>
+              <h2 class="text-xl font-black text-white tracking-tight uppercase">{{ $t('schedule.editEvent') }}</h2>
             </div>
             <button type="button" class="text-slate-500 hover:text-white transition-colors" @click="showEditModal = false">
               <span class="material-symbols-outlined">close</span>
@@ -875,9 +875,9 @@ async function deployTraining() {
           <div class="p-6 space-y-4" v-if="editingEntry">
             <!-- Category -->
             <div class="space-y-1.5">
-              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Category</label>
+              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.category') }}</label>
               <select v-model="editingEntry.editCategoryID" required class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 cursor-pointer">
-                <option value="" disabled>Select Category...</option>
+                <option value="" disabled>{{ $t('schedule.selectCategoryPlaceholder') }}</option>
                 <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
               </select>
             </div>
@@ -886,37 +886,37 @@ async function deployTraining() {
             <template v-if="editingEntry.eventType === 'Match'">
               <!-- Opponent Name -->
               <div class="space-y-1.5">
-                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Opponent</label>
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.opponent') }}</label>
                 <input
                   v-model="editingEntry.editOpponentName"
                   required
                   type="text"
-                  placeholder="E.G. LIVERPOOL FC"
+                  :placeholder="$t('schedule.opponentPlaceholder')"
                   class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 placeholder:text-slate-600 uppercase"
                 />
               </div>
 
               <!-- Date -->
               <div class="space-y-1.5">
-                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date</label>
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.date') }}</label>
                 <input v-model="editingEntry.editDate" required type="date" class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 scheme-dark cursor-pointer"/>
               </div>
 
               <!-- Kickoff + End Time -->
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Kickoff</label>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.kickoff') }}</label>
                   <input v-model="editingEntry.editKickoffTime" required type="time" class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 scheme-dark cursor-pointer"/>
                 </div>
                 <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">End</label>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.end') }}</label>
                   <input v-model="editingEntry.editEndTime" required type="time" class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 scheme-dark cursor-pointer"/>
                 </div>
               </div>
 
               <!-- Home/Away Toggle -->
               <div class="space-y-1.5">
-                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Fixture</label>
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.fixture') }}</label>
                 <div class="grid grid-cols-2 gap-2 bg-surface-container-lowest p-1 rounded-md border border-white/5">
                   <button
                     type="button"
@@ -929,7 +929,7 @@ async function deployTraining() {
                     ]"
                   >
                     <span class="material-symbols-outlined text-base">home</span>
-                    Home
+                    {{ $t('schedule.home') }}
                   </button>
                   <button
                     type="button"
@@ -942,18 +942,18 @@ async function deployTraining() {
                     ]"
                   >
                     <span class="material-symbols-outlined text-base">flight_takeoff</span>
-                    Away
+                    {{ $t('schedule.away') }}
                   </button>
                 </div>
               </div>
 
               <!-- Stadium Name -->
               <div class="space-y-1.5">
-                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Stadium</label>
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.stadium') }}</label>
                 <input
                   v-model="editingEntry.editStadiumName"
                   type="text"
-                  placeholder="E.G. ANFIELD"
+                  :placeholder="$t('schedule.stadiumPlaceholder')"
                   class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 placeholder:text-slate-600 uppercase"
                 />
               </div>
@@ -962,39 +962,39 @@ async function deployTraining() {
             <template v-else>
               <!-- Session Type -->
               <div class="space-y-1.5">
-                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Session Type</label>
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.sessionType') }}</label>
                 <select v-model="editingEntry.editSessionTypeID" required class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 cursor-pointer">
-                  <option value="" disabled>Select Session Type...</option>
+                  <option value="" disabled>{{ $t('schedule.selectSessionTypePlaceholder') }}</option>
                   <option v-for="type in sessionTypes" :key="type.id" :value="type.id">{{ type.name }}</option>
                 </select>
               </div>
 
               <!-- Date -->
               <div class="space-y-1.5">
-                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date</label>
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.date') }}</label>
                 <input v-model="editingEntry.editDate" required type="date" class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 scheme-dark cursor-pointer"/>
               </div>
 
               <!-- Start + End Time -->
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Start</label>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.start') }}</label>
                   <input v-model="editingEntry.editStartTime" required type="time" class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 scheme-dark cursor-pointer"/>
                 </div>
                 <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">End</label>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.end') }}</label>
                   <input v-model="editingEntry.editEndTime" required type="time" class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 scheme-dark cursor-pointer"/>
                 </div>
               </div>
 
               <!-- Location -->
               <div class="space-y-1.5">
-                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Location</label>
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $t('schedule.location') }}</label>
                 <input
                   v-model="editingEntry.editLocation"
                   required
                   type="text"
-                  placeholder="E.G. PITCH 1"
+                  :placeholder="$t('schedule.locationPlaceholder')"
                   class="w-full bg-surface-container-lowest border-none text-xs font-medium text-white rounded-md p-3 focus:ring-1 focus:ring-green-400/50 placeholder:text-slate-600 uppercase"
                 />
               </div>
@@ -1002,11 +1002,11 @@ async function deployTraining() {
           </div>
           <div class="p-6 bg-surface-container-high/50 border-t border-white/5 flex gap-3">
             <button type="button" @click="showEditModal = false" class="flex-1 py-3 text-slate-400 font-black text-xs uppercase tracking-widest rounded-md hover:bg-white/5 transition-all">
-              Cancel
+              {{ $t('common.cancel') }}
             </button>
             <button type="button" @click="saveEdit" :disabled="isSubmittingEdit" class="flex-[2] py-3 bg-gradient-to-r from-green-400 to-green-300 text-slate-950 font-black text-xs uppercase tracking-widest rounded-md hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
               <span class="material-symbols-outlined text-sm">save</span>
-              {{ isSubmittingEdit ? 'Saving...' : 'Save Changes' }}
+              {{ isSubmittingEdit ? $t('schedule.saving') : $t('schedule.saveChanges') }}
             </button>
           </div>
         </div>

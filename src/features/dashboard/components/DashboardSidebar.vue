@@ -1,5 +1,4 @@
 <script setup>
-import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 const { t: $t } = useI18n()
 
@@ -14,13 +13,12 @@ defineProps({
   }
 })
 
-const route = useRoute()
-
 const items = [
   { key: 'staff-management', icon: 'groups',         labelKey: 'sidebar.staffManagement', path: '/dashboard/staff-management' },
   { key: 'players',          icon: 'sports_soccer',  labelKey: 'sidebar.players',         path: '/dashboard/players'          },
   { key: 'schedule',  icon: 'calendar_month', labelKey: 'sidebar.schedule',  path: '/dashboard/schedule'  },
   { key: 'finances',         icon: 'payments',       labelKey: 'sidebar.finances',         path: '/dashboard/finances'         },
+  { key: 'subscription',     icon: 'upgrade',        labelKey: 'sidebar.subscription',     path: '/dashboard/subscription'     },
   { key: 'categories',       icon: 'category',       labelKey: 'sidebar.categories',       path: '/dashboard/categories'       },
   { key: 'settings',         icon: 'settings',       labelKey: 'sidebar.settings',         path: '/dashboard/settings'         },
 ]
@@ -29,8 +27,8 @@ const items = [
 <template>
   <aside
     :class="[
-      'fixed left-0 top-0 z-50 flex h-screen w-64 flex-col bg-slate-900 py-6 transition-transform duration-300',
-      isOpen ? 'translate-x-0' : '-translate-x-full',
+      'fixed ltr:left-0 rtl:right-0 top-0 z-50 flex h-screen w-64 flex-col bg-slate-900 py-6 transition-transform duration-300',
+      isOpen ? 'translate-x-0' : 'ltr:-translate-x-full rtl:translate-x-full',
     ]"
   >
     <div class="mb-10 px-6">
@@ -58,7 +56,7 @@ const items = [
         :class="[
           'pressable flex items-center gap-3 rounded px-4 py-3 text-slate-400 transition-colors',
           item.key === activeItem
-            ? 'scale-95 border-l-4 border-green-400 bg-green-400/10 text-green-400'
+            ? 'scale-95 border-s-4 border-green-400 bg-green-400/10 text-green-400'
             : 'hover:bg-slate-800 hover:text-green-300',
         ]"
       >
@@ -67,14 +65,14 @@ const items = [
       </router-link>
     </nav>
 
-    <div class="mt-auto px-4">
-      <button
-        type="button"
-        class="pressable flex w-full items-center justify-center gap-2 rounded bg-green-400 py-4 text-xs font-black uppercase tracking-[0.2em] text-slate-900 transition-all hover:bg-green-300"
+    <div class="mt-auto px-4 space-y-3">
+      <router-link
+        to="/dashboard/subscription"
+        class="pressable flex w-full items-center justify-center gap-2 rounded bg-green-500 py-4 text-xs font-black uppercase tracking-[0.2em] text-slate-950 transition-all hover:bg-green-400"
       >
-        {{ $t('sidebar.matchPrep') }}
+        {{ $t('topbar.upgradeNow') }}
         <span class="material-symbols-outlined text-sm">bolt</span>
-      </button>
+      </router-link>
     </div>
   </aside>
 </template>

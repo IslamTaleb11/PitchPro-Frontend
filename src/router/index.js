@@ -4,6 +4,9 @@ import Login from '../views/Login.vue'
 import ClubPresidentRegistration from '../views/ClubPresidentRegistration.vue'
 import StaffManagementDashboard from '../views/StaffManagementDashboard.vue'
 import CategoryManagementDashboard from '../views/CategoryManagementDashboard.vue'
+import SubscriptionDashboard from '../views/SubscriptionDashboard.vue'
+import PaymentSuccess from '../views/PaymentSuccess.vue'
+import PaymentFailure from '../views/PaymentFailure.vue'
 
 const routes = [
   {
@@ -54,6 +57,22 @@ const routes = [
     path: '/dashboard/training',
     name: 'TrainingDashboard',
     component: () => import('../views/TrainingDashboard.vue')
+  },
+  {
+    path: '/dashboard/subscription',
+    name: 'SubscriptionDashboard',
+    component: SubscriptionDashboard
+  },
+  {
+    path: '/payment-success',
+    name: 'PaymentSuccess',
+    component: PaymentSuccess,
+    alias: '/dashboard/payment-success'
+  },
+  {
+    path: '/payment-failure',
+    name: 'PaymentFailure',
+    component: PaymentFailure
   }
 ]
 

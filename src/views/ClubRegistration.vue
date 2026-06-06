@@ -24,7 +24,7 @@ const iconArrowRight =
   'https://www.figma.com/api/mcp/asset/a97f2b9d-8a07-4ac5-80d3-c74ade1da529'
 
 const identityColors = ['#00ff41', '#ff3d00', '#2962ff', '#ffd600']
-const footerLinks = ['PRIVACY PROTOCOL', 'LICENSE AGREEMENT', 'SYSTEM SUPPORT']
+const footerLinks = ['footer.privacyProtocol', 'footer.licenseAgreement', 'footer.systemSupport']
 
 const selectedColor = ref(identityColors[0])
 const colorInputRef = ref(null)
@@ -66,32 +66,32 @@ function validateClubForm() {
   errors.crest = ''
 
   if (!clubName.value.trim()) {
-    errors.clubName = 'Club name is required.'
+    errors.clubName = t('clubRegistration.errors.clubNameRequired')
     valid = false
   } else if (clubName.value.trim().length > 255) {
-    errors.clubName = 'Club name must be 255 characters or fewer.'
+    errors.clubName = t('clubRegistration.errors.clubNameMaxLength')
     valid = false
   }
 
   const contactValue = contactNumber.value.trim()
   if (!contactValue) {
-    errors.contactNumber = 'Contact number is required.'
+    errors.contactNumber = t('clubRegistration.errors.contactNumberRequired')
     valid = false
   } else if (!phoneRegex.test(contactValue)) {
-    errors.contactNumber = 'Enter a valid phone number with digits and optional leading +.'
+    errors.contactNumber = t('clubRegistration.errors.contactNumberInvalid')
     valid = false
   }
 
   if (!selectedColor.value) {
-    errors.selectedClubColor = 'Primary identity color is required.'
+    errors.selectedClubColor = t('clubRegistration.errors.selectedClubColorRequired')
     valid = false
   }
 
   if (!crestFile.value) {
-    errors.crest = 'Club crest is required.'
+    errors.crest = t('clubRegistration.errors.crestRequired')
     valid = false
   } else if (crestFile.value.size > 2 * 1024 * 1024) {
-    errors.crest = 'Crest must be 2MB or smaller.'
+    errors.crest = t('clubRegistration.errors.crestTooLarge')
     valid = false
   }
 
@@ -125,8 +125,8 @@ async function onCrestChange(event) {
   const validTypes = ['image/jpeg', 'image/png'];
   if (!validTypes.includes(file.type)) {
     showToast({
-      title: 'Invalid File',
-      message: 'Only JPG, PNG and WebP formats are allowed.',
+      title: t('clubRegistration.toasts.invalidFileTitle'),
+      message: t('clubRegistration.toasts.invalidFileMessage'),
       mode: 'error',
       duration: 4000
     })
@@ -135,10 +135,8 @@ async function onCrestChange(event) {
 
   if (file.size > 2 * 1024 * 1024) {
     showToast({
-      title: 'Invalid crest file',
-      message: 'Crest must be 2MB or smaller.',
-      mode: 'error',
-      duration: 4000
+      title: t('clubRegistration.toasts.invalidFileTitle'),
+      message: t('clubRegistration.errors.crestTooLarge'),
     })
     return
   }
@@ -156,8 +154,8 @@ async function onCrestChange(event) {
     crestPreviewUrl.value = URL.createObjectURL(compressedFile)
     errors.crest = ''
     showToast({
-      title: 'Club crest uploaded',
-      message: `${compressedFile.name} is ready for registration.`,
+      title: t('clubRegistration.toasts.crestUploadedTitle'),
+      message: t('clubRegistration.toasts.crestUploadedMessage', { fileName: compressedFile.name }),
       mode: 'success',
       duration: 3000
     })
@@ -168,8 +166,8 @@ async function onCrestChange(event) {
     crestPreviewUrl.value = URL.createObjectURL(file)
     errors.crest = ''
     showToast({
-      title: 'Club crest uploaded',
-      message: `${file.name} is ready for registration (uncompressed).`,
+      title: t('clubRegistration.toasts.crestUploadedTitle'),
+      message: t('clubRegistration.toasts.crestUploadedMessage', { fileName: file.name }),
       mode: 'success',
       duration: 3000
     })
@@ -178,10 +176,10 @@ async function onCrestChange(event) {
 
 function goToLogin() {
   showLoadingToast({
-    title: 'Returning to login',
-    message: 'Syncing club context...',
-    successTitle: 'Login screen ready',
-    successMessage: 'Secure channel initialized.'
+    title: t('clubRegistration.toasts.returningToLoginTitle'),
+    message: t('clubRegistration.toasts.returningToLoginMessage'),
+    successTitle: t('clubRegistration.toasts.loginScreenReadyTitle'),
+    successMessage: t('clubRegistration.toasts.loginScreenReadyMessage')
   })
   setTimeout(() => router.push('/login'), 900)
 }
@@ -189,8 +187,8 @@ function goToLogin() {
 function goToPresidentRegistration() {
   if (!validateClubForm()) {
     showToast({
-      title: 'Fix form errors',
-      message: 'Please correct the highlighted fields before continuing.',
+      title: t('clubRegistration.toasts.fixFormErrorsTitle'),
+      message: t('clubRegistration.toasts.fixFormErrorsMessage'),
       mode: 'error',
       duration: 3500
     })
@@ -205,10 +203,10 @@ function goToPresidentRegistration() {
   }
   
   showLoadingToast({
-    title: 'Preparing president registration',
-    message: 'Loading executive credentials module...',
-    successTitle: 'Module ready',
-    successMessage: 'Continue with president credentials.'
+    title: t('clubRegistration.toasts.preparingPresidentRegistrationTitle'),
+    message: t('clubRegistration.toasts.preparingPresidentRegistrationMessage'),
+    successTitle: t('clubRegistration.toasts.moduleReadyTitle'),
+    successMessage: t('clubRegistration.toasts.moduleReadyMessage')
   })
 
   // Wait for the toast animation, then push ONCE with the data
@@ -256,13 +254,13 @@ function goToPresidentRegistration() {
           <div class="relative space-y-2">
             <h1 class="font-headline text-5xl font-bold tracking-tight text-on-surface">PitchPro</h1>
             <p class="font-body text-xs tracking-[0.2em] text-primary-fixed">
-              ELITE PERFORMANCE ANALYTICS
+              {{ t('clubRegistration.elitePerformanceAnalytics') }}
             </p>
           </div>
 
           <div class="relative space-y-8">
             <blockquote class="max-w-xs font-headline text-4xl leading-tight font-light text-on-surface">
-              "Precision isn’t a goal, it’s a requirement for the modern technical director."
+              {{ t('clubRegistration.quote') }}
             </blockquote>
 
             <div class="flex items-center gap-3">
@@ -272,7 +270,7 @@ function goToPresidentRegistration() {
               <div>
                 <p class="font-body text-sm font-bold text-on-surface">Marcus Vane</p>
                 <p class="font-body text-[11px] tracking-[0.12em] text-on-surface-variant">
-                  CHIEF TECHNICAL SCOUT
+                  {{ t('clubRegistration.chiefTechnicalScout') }}
                 </p>
               </div>
             </div>
@@ -287,7 +285,7 @@ function goToPresidentRegistration() {
               >
                 <div>
                   <p class="font-body text-[10px] tracking-[0.16em] text-on-surface-variant">
-                    TACTICAL ONBOARDING
+                    {{ t('clubRegistration.tacticalOnboarding') }}
                   </p>
                   <p class="font-headline text-sm font-bold text-on-surface">Club Setup Intelligence</p>
                 </div>
@@ -298,7 +296,7 @@ function goToPresidentRegistration() {
               </div>
               <h2 class="font-headline text-3xl font-bold text-on-surface md:text-4xl">{{ t('clubRegistration.title') }}</h2>
               <p class="max-w-xl font-body text-sm leading-relaxed text-on-surface-variant md:text-base">
-                Initialize your tactical database with core club identification.
+                {{ t('clubRegistration.description') }}
               </p>
             </header>
 
@@ -312,7 +310,7 @@ function goToPresidentRegistration() {
                   v-model="clubName"
                   type="text"
                   autocomplete="off"
-                  placeholder="e.g. London Rovers FC"
+                  :placeholder="t('clubRegistration.clubNamePlaceholder')"
                   class="w-full rounded bg-surface-container-lowest px-4 py-3.5 font-body text-base text-on-surface placeholder:text-surface-container-highest focus:outline-none focus:ring-2 focus:ring-primary-container/60"
                 />
                 <p v-if="errors.clubName" class="text-xs text-error mt-1">{{ errors.clubName }}</p>
@@ -327,7 +325,7 @@ function goToPresidentRegistration() {
                   v-model="contactNumber"
                   type="text"
                   autocomplete="off"
-                  placeholder="e.g. +213797998877"
+                  :placeholder="t('clubRegistration.contactNumberPlaceholder')"
                   class="w-full rounded bg-surface-container-lowest px-4 py-3.5 font-body text-base text-on-surface placeholder:text-surface-container-highest focus:outline-none focus:ring-2 focus:ring-primary-container/60"
                 />
                 <p v-if="errors.contactNumber" class="text-xs text-error mt-1">{{ errors.contactNumber }}</p>
@@ -337,7 +335,7 @@ function goToPresidentRegistration() {
               <div class="grid gap-6 md:grid-cols-2">
                 <div class="space-y-3">
                   <p class="font-body text-[11px] tracking-[0.18em] text-on-surface-variant">
-                    PRIMARY IDENTITY COLOR
+                    {{ t('clubRegistration.selectColor') }}
                   </p>
                   <div class="flex flex-wrap gap-3">
                     <button
@@ -375,11 +373,11 @@ function goToPresidentRegistration() {
                     <span class="font-body text-xs text-on-surface-variant">{{ selectedColor }}</span>
                   </div>
                   <div class="mt-4">
-                    <p class="font-body text-[11px] tracking-[0.18em] text-on-surface-variant mb-2">COLOR PREVIEW</p>
+                    <p class="font-body text-[11px] tracking-[0.18em] text-on-surface-variant mb-2">{{ t('clubRegistration.colorPreview') }}</p>
                     <div class="flex items-center gap-3">
                       <div class="h-16 w-16 rounded-full border-2 border-outline-variant" :style="{ backgroundColor: selectedColor }"></div>
                       <div class="flex flex-col">
-                        <span class="font-body text-sm font-bold text-on-surface">Selected Club Color</span>
+                        <span class="font-body text-sm font-bold text-on-surface">{{ t('clubRegistration.selectedClubColor') }}</span>
                         <span class="font-body text-xs text-on-surface-variant">{{ selectedColor.toUpperCase() }}</span>
                       </div>
                     </div>
@@ -388,7 +386,7 @@ function goToPresidentRegistration() {
                 </div>
 
                 <div class="space-y-2">
-                  <p class="font-body text-[11px] tracking-[0.18em] text-on-surface-variant">CLUB CREST</p>
+                  <p class="font-body text-[11px] tracking-[0.18em] text-on-surface-variant">{{ t('clubRegistration.uploadCrest') }}</p>
                   <button
                     type="button"
                     class="flex w-full flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-outline-variant px-4 py-7 text-center"
@@ -402,7 +400,7 @@ function goToPresidentRegistration() {
                     />
                     <img v-else :src="iconUpload" alt="" class="h-5 w-4" />
                     <span class="font-body text-[10px] tracking-[-0.03em] text-on-surface-variant">
-                      {{ crestFileName || 'JPG, PNG OR WEBP (MAX 2MB)' }}
+                      {{ crestFileName || t('clubRegistration.fileSpecs') }}
                     </span>
                   </button>
                   <input
@@ -423,7 +421,7 @@ function goToPresidentRegistration() {
                   @click="goToLogin"
                 >
                   <img :src="iconArrowLeft" alt="" class="h-2.5 w-2.5" />
-                  BACK TO LOGIN
+                  {{ t('clubRegistration.backToLogin') }}
                 </button>
 
                 <button
@@ -444,7 +442,7 @@ function goToPresidentRegistration() {
                   "
                   @click="goToPresidentRegistration"
                 >
-                  PROCEED TO CREDENTIALS
+                  {{ t('clubRegistration.proceedToCredentials') }}
                   <img :src="iconArrowRight" alt="" class="h-2.5 w-2.5" />
                 </button>
               </div>
@@ -458,7 +456,7 @@ function goToPresidentRegistration() {
               href="#"
               class="font-body text-[10px] tracking-[0.2em] text-on-surface-variant"
             >
-              {{ item }}
+              {{ t(item) }}
             </a>
           </footer>
         </div>

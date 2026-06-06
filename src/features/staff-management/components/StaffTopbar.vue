@@ -11,7 +11,7 @@ defineProps({
 
 defineEmits(['toggle-sidebar'])
 
-const { locale } = useI18n()
+const { locale, t: $t } = useI18n()
 const isLangDropdownOpen = ref(false)
 
 const currentLangLabel = computed(() => {
@@ -33,7 +33,7 @@ function setLanguage(lang) {
 <template>
   <header
     :class="[
-      'fixed top-0 right-0 z-40 flex h-20 items-center justify-between bg-slate-950/80 px-8 shadow-2xl shadow-green-900/5 backdrop-blur-xl transition-all duration-300',
+      'fixed top-0 ltr:right-0 ltr:left-auto rtl:left-0 rtl:right-auto z-40 flex h-20 items-center justify-between bg-slate-950/80 px-8 shadow-2xl shadow-green-900/5 backdrop-blur-xl transition-all duration-300',
       sidebarOpen ? 'w-[calc(100%-16rem)]' : 'w-full',
     ]"
   >
@@ -52,14 +52,21 @@ function setLanguage(lang) {
     </div>
     <div class="flex items-center gap-6">
       <div class="relative">
-        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-500">search</span>
+        <span class="material-symbols-outlined absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 text-lg text-slate-500">search</span>
         <input
           type="text"
           :placeholder="$t('topbar.searchStaff')"
-          class="w-64 rounded-lg border-none bg-slate-900 py-2 pl-10 pr-4 text-xs text-white transition-all focus:ring-1 focus:ring-green-400/50"
+          class="w-64 rounded-lg border-none bg-slate-900 py-2 ltr:pl-10 ltr:pr-4 rtl:pr-10 rtl:pl-4 text-xs text-white transition-all focus:ring-1 focus:ring-green-400/50"
         />
       </div>
       <div class="flex items-center gap-4">
+        <router-link
+          to="/dashboard/subscription"
+          class="pressable inline-flex items-center gap-2 rounded-lg bg-green-400 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-slate-950 transition-colors hover:bg-green-300"
+        >
+          <span>{{ $t('topbar.upgradeNow') }}</span>
+          <span class="material-symbols-outlined text-sm">bolt</span>
+        </router-link>
         <button type="button" class="pressable text-slate-400 transition-opacity hover:text-green-400 active:opacity-80">
           <span class="material-symbols-outlined">notifications</span>
         </button>
@@ -81,7 +88,7 @@ function setLanguage(lang) {
 
           <div
             v-if="isLangDropdownOpen"
-            class="absolute right-0 mt-2 w-40 rounded-lg border border-white/10 bg-surface-container-high shadow-2xl overflow-hidden"
+            class="absolute ltr:right-0 rtl:left-0 mt-2 w-40 rounded-lg border border-white/10 bg-surface-container-high shadow-2xl overflow-hidden"
           >
             <button
               type="button"
@@ -94,7 +101,7 @@ function setLanguage(lang) {
               @click="setLanguage('en')"
             >
               <span>🇬🇧</span>
-              <span>English</span>
+              <span>{{ $t('languages.en') }}</span>
             </button>
             <button
               type="button"
@@ -107,7 +114,7 @@ function setLanguage(lang) {
               @click="setLanguage('ar')"
             >
               <span>🇩🇿</span>
-              <span>العربية</span>
+              <span>{{ $t('languages.ar') }}</span>
             </button>
           </div>
         </div>

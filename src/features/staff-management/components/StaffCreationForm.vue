@@ -344,7 +344,7 @@ async function onPhotoChange(event) {
   <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.firstName') }}</label>
   <input
     type="text"
-    placeholder="e.g. Marcus"
+    :placeholder="$t('staffManagement.firstNamePlaceholder')"
     required
     autocomplete="off"
     class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]"
@@ -355,7 +355,7 @@ async function onPhotoChange(event) {
   <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.secondName') }}</label>
   <input
     type="text"
-    placeholder="e.g. James"
+    :placeholder="$t('staffManagement.secondNamePlaceholder')"
     autocomplete="off"
     class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]"
     name="secondName"
@@ -365,7 +365,7 @@ async function onPhotoChange(event) {
   <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.lastName') }}</label>
   <input
     type="text"
-    placeholder="e.g. Rashford"
+    :placeholder="$t('staffManagement.lastNamePlaceholder')"
     required
     autocomplete="off"
     class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]"
@@ -389,7 +389,7 @@ async function onPhotoChange(event) {
         </div>
         <div class="space-y-1">
           <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.secureEmail') }}</label>
-          <input type="email" placeholder="name@pitchpro.club" required autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" name="email" v-model="email" />
+          <input type="email" :placeholder="$t('staffManagement.emailPlaceholder')" required autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" name="email" v-model="email" />
         </div>
         <div class="space-y-1">
           <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.accessCredentials') }}</label>
@@ -421,8 +421,8 @@ async function onPhotoChange(event) {
 
       <div class="space-y-4 border-t border-outline-variant/10 pt-4">
         <div class="mb-2 flex items-center gap-2"><span class="h-3 w-1 rounded-full bg-blue-400" /><h3 class="text-[10px] font-black uppercase tracking-widest text-white">{{ $t('staffManagement.contactDetails') }}</h3></div>
-        <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.phoneNumber') }}</label><input type="tel" placeholder="+44 7000 000000" autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" v-model="phoneNumber" /></div>
-        <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.address') }}</label><input type="text" placeholder="Street, City, Postcode" autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" v-model="address" /></div>
+        <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.phoneNumber') }}</label><input type="tel" :placeholder="$t('staffManagement.phonePlaceholder')" autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" v-model="phoneNumber" /></div>
+        <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.address') }}</label><input type="text" :placeholder="$t('staffManagement.addressPlaceholder')" autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" v-model="address" /></div>
       </div>
 
       <div class="space-y-4 border-t border-outline-variant/10 pt-4">
@@ -434,9 +434,9 @@ async function onPhotoChange(event) {
               <option v-for="type in bloodTypes" :key="type.id" :value="type.id">{{ type.name }}</option>
             </select>
           </div>
-          <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.allergies') }}</label><input type="text" placeholder="None" autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" name="allergies" v-model="allergies" /></div>
+          <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.allergies') }}</label><input type="text" :placeholder="$t('staffManagement.allergiesPlaceholder')" autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" name="allergies" v-model="allergies" /></div>
         </div>
-        <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.medicalNotes') }}</label><textarea class="min-h-[80px] w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" placeholder="Specific conditions or tactical medical info..." autocomplete="off" v-model="medicalNotes"></textarea></div>
+        <div class="space-y-1"><label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.medicalNotes') }}</label><textarea class="min-h-[80px] w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" :placeholder="$t('staffManagement.medicalNotesPlaceholder')" autocomplete="off" v-model="medicalNotes"></textarea></div>
       </div>
 
       <div class="space-y-4 border-t border-outline-variant/10 pt-4">
@@ -461,7 +461,7 @@ async function onPhotoChange(event) {
                 class="pressable flex w-full items-center justify-between rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]"
                 @click="categoryDropdownOpen = !categoryDropdownOpen"
               >
-                <span class="truncate text-left">
+                <span class="truncate text-start">
                   {{ selectedCategoryNames.length ? selectedCategoryNames.join(', ') : $t('common.selectCategories') }}
                 </span>
                 <span class="material-symbols-outlined text-sm text-slate-400">

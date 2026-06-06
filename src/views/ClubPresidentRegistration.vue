@@ -2,6 +2,7 @@
 import { reactive, ref, onMounted, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useUiToast } from '../composables/useUiToast'
 import { clubService } from '../services/clubService'
 
@@ -17,7 +18,8 @@ const form = reactive({
 
 const showPassword = ref(false)
 const router = useRouter()
-const { showToast } = useUiToast()
+const { showToast, showLoadingToast } = useUiToast()
+const { t } = useI18n()
 
 const debouncedPassword = ref('')
 let debounceTimer = null
@@ -47,19 +49,19 @@ const passwordChecks = computed(() => {
 
 function handleRegister() {
   showLoadingToast({
-    title: 'Registering president account',
-    message: 'Validating secure identity payload...',
-    successTitle: 'Registration successful',
-    successMessage: 'President credentials are now active.'
+    title: t('presidentRegistration.toast.registeringTitle'),
+    message: t('presidentRegistration.toast.registeringMessage'),
+    successTitle: t('presidentRegistration.toast.successTitle'),
+    successMessage: t('presidentRegistration.toast.successMessage')
   })
 }
 
 function goToLogin() {
   showLoadingToast({
-    title: 'Opening login hub',
-    message: 'Securing transfer channel...',
-    successTitle: 'Login ready',
-    successMessage: 'Welcome back to PitchPro Hub.'
+    title: t('presidentRegistration.toast.loginReadyTitle'),
+    message: t('presidentRegistration.toast.loginReadyMessage'),
+    successTitle: t('presidentRegistration.toast.loginReadyTitle'),
+    successMessage: t('presidentRegistration.toast.loginReadyMessage')
   })
   setTimeout(() => router.push('/login'), 900)
 }
@@ -146,8 +148,8 @@ const handleRegistration = async () => {
   // Validate president form
   if (!form.firstName || !form.lastName || !form.gender || !form.birthDate || !form.email || !form.password || !passwordValid.value) {
     showToast({
-      title: 'Incomplete Form',
-      message: 'Please fill in all required fields and ensure password meets all requirements.',
+      title: t('presidentRegistration.toast.incompleteTitle'),
+      message: t('presidentRegistration.toast.incompleteMessage'),
       mode: 'error',
       duration: 3500
     })
@@ -188,8 +190,8 @@ const handleRegistration = async () => {
 
 
   showToast({
-    title: 'Registering president account',
-    message: 'Validating secure identity payload...',
+    title: t('presidentRegistration.toast.registeringTitle'),
+    message: t('presidentRegistration.toast.registeringMessage'),
     mode: 'loading',
     duration: 30000 // long duration
   })
@@ -197,8 +199,8 @@ const handleRegistration = async () => {
   try {
     const response = await clubService.completeRegistration(formData)
     showToast({
-      title: 'Registration Successful',
-      message: 'Club and president credentials have been registered.',
+      title: t('presidentRegistration.toast.successTitle'),
+      message: t('presidentRegistration.toast.successMessage'),
       mode: 'success',
       duration: 2000
     })
@@ -210,7 +212,7 @@ const handleRegistration = async () => {
     const apiMessage = getApiErrorMessage(error)
 
     showToast({
-      title: 'API Error',
+      title: t('presidentRegistration.toast.apiErrorTitle'),
       message: apiMessage,
       mode: 'error',
       duration: 4000
@@ -274,15 +276,15 @@ const handleRegistration = async () => {
         <div class="mb-12 lg:hidden">
           <h2 class="font-headline text-3xl font-bold tracking-tighter text-white">PitchPro</h2>
           <p class="mt-1 font-headline text-xs uppercase tracking-widest text-primary-fixed">
-            Step 02: President Credentials
+            {{ t('presidentRegistration.stepLabel') }}
           </p>
         </div>
 
         <div class="space-y-8">
           <div>
-            <h2 class="font-headline text-3xl font-bold tracking-tight text-white">President Credentials</h2>
+            <h2 class="font-headline text-3xl font-bold tracking-tight text-white">{{ t('presidentRegistration.pageTitle') }}</h2>
             <p class="mt-2 font-body text-on-surface-variant">
-              Initialize the high-level security layer and identify the Executive Protocol Officer.
+              {{ t('presidentRegistration.introText') }}
             </p>
           </div>
 
@@ -290,13 +292,13 @@ const handleRegistration = async () => {
             <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div class="space-y-2">
                 <label class="block font-headline text-[10px] uppercase tracking-widest text-outline" for="first-name">
-                  First Name<span class="ml-1 font-bold text-error">*</span>
+                  {{ t('presidentRegistration.firstName') }}<span class="ml-1 font-bold text-error">*</span>
                 </label>
                 <input
                   id="first-name"
                   v-model="form.firstName"
                   type="text"
-                  placeholder="John"
+                  :placeholder="t('presidentRegistration.placeholderFirstName')"
                   required
                   autocomplete="off"
                   class="w-full rounded-lg border-0 bg-surface-container-low px-4 py-3 font-body text-sm text-white placeholder:text-outline/50 transition-all focus:ring-1 focus:ring-primary-fixed/50"
@@ -305,13 +307,13 @@ const handleRegistration = async () => {
 
               <div class="space-y-2">
                 <label class="block font-headline text-[10px] uppercase tracking-widest text-outline" for="second-name">
-                  Second Name
+                  {{ t('presidentRegistration.secondName') }}
                 </label>
                 <input
                   id="second-name"
                   v-model="form.secondName"
                   type="text"
-                  placeholder="Quincy"
+                  :placeholder="t('presidentRegistration.placeholderSecondName')"
                   autocomplete="off"
                   class="w-full rounded-lg border-0 bg-surface-container-low px-4 py-3 font-body text-sm text-white placeholder:text-outline/50 transition-all focus:ring-1 focus:ring-primary-fixed/50"
                 />
@@ -319,13 +321,13 @@ const handleRegistration = async () => {
 
               <div class="space-y-2">
                 <label class="block font-headline text-[10px] uppercase tracking-widest text-outline" for="last-name">
-                  Last Name<span class="ml-1 font-bold text-error">*</span>
+                  {{ t('presidentRegistration.lastName') }}<span class="ml-1 font-bold text-error">*</span>
                 </label>
                 <input
                   id="last-name"
                   v-model="form.lastName"
                   type="text"
-                  placeholder="Doe"
+                  :placeholder="t('presidentRegistration.placeholderLastName')"
                   required
                   autocomplete="off"
                   class="w-full rounded-lg border-0 bg-surface-container-low px-4 py-3 font-body text-sm text-white placeholder:text-outline/50 transition-all focus:ring-1 focus:ring-primary-fixed/50"
@@ -336,7 +338,7 @@ const handleRegistration = async () => {
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div class="space-y-2">
                 <label class="block font-headline text-[10px] uppercase tracking-widest text-outline" for="gender">
-                  Gender<span class="ml-1 font-bold text-error">*</span>
+                  {{ t('presidentRegistration.gender') }}<span class="ml-1 font-bold text-error">*</span>
                 </label>
                 <select
                   id="gender"
@@ -344,14 +346,14 @@ const handleRegistration = async () => {
                   required
                   class="w-full cursor-pointer appearance-none rounded-lg border-0 bg-surface-container-low px-4 py-3 font-body text-sm text-white transition-all focus:ring-1 focus:ring-primary-fixed/50"
                 >
-                  <option disabled value="">Select Protocol</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
+                  <option disabled value="">{{ t('presidentRegistration.selectProtocol') }}</option>
+                  <option value="male">{{ t('presidentRegistration.male') }}</option>
+                  <option value="female">{{ t('presidentRegistration.female') }}</option>
                 </select>
               </div>
               <div class="space-y-2">
                 <label class="block font-headline text-[10px] uppercase tracking-widest text-outline" for="birth-date">
-                  Birth Date<span class="ml-1 font-bold text-error">*</span>
+                  {{ t('presidentRegistration.birthDate') }}<span class="ml-1 font-bold text-error">*</span>
                 </label>
                 <input
                   id="birth-date"
@@ -368,7 +370,7 @@ const handleRegistration = async () => {
 
             <div class="space-y-2">
               <label class="block font-headline text-xs uppercase tracking-widest text-outline" for="email">
-                President Email<span class="ml-1 font-bold text-error">*</span>
+                {{ t('presidentRegistration.email') }}<span class="ml-1 font-bold text-error">*</span>
               </label>
               <div class="group relative">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
@@ -380,7 +382,7 @@ const handleRegistration = async () => {
                   id="email"
                   v-model="form.email"
                   type="email"
-                  placeholder="president@club-command.com"
+                  :placeholder="t('presidentRegistration.placeholderEmail')"
                   required
                   autocomplete="off"
                   class="w-full rounded-lg border-0 bg-surface-container-low py-4 pl-12 font-body text-white placeholder:text-outline/50 transition-all focus:ring-1 focus:ring-primary-fixed/50"
@@ -391,10 +393,10 @@ const handleRegistration = async () => {
             <div class="space-y-2">
               <div class="flex items-end justify-between">
                 <label class="block font-headline text-xs uppercase tracking-widest text-outline" for="password">
-                  Security Password<span class="ml-1 font-bold text-error">*</span>
+                  {{ t('presidentRegistration.password') }}<span class="ml-1 font-bold text-error">*</span>
                 </label>
                 <a class="font-headline text-[10px] uppercase tracking-widest text-primary-fixed-dim transition-colors hover:text-primary-fixed" href="#">
-                  Tactical Reset
+                  {{ t('presidentRegistration.tacticalReset') }}
                 </a>
               </div>
               <div class="group relative">
@@ -426,23 +428,23 @@ const handleRegistration = async () => {
               <div v-if="debouncedPassword" class="flex flex-col gap-1 mt-2 transition-all duration-300">
                 <div class="flex items-center gap-2">
                   <span :class="['material-symbols-outlined text-sm transition-all duration-300', passwordChecks.length ? 'text-green-400 scale-110' : 'text-red-400']">{{ passwordChecks.length ? 'check_circle' : 'error' }}</span>
-                  <span class="text-xs font-medium" :class="passwordChecks.length ? 'text-green-400' : 'text-red-400'">At least 8 characters</span>
+                  <span class="text-xs font-medium" :class="passwordChecks.length ? 'text-green-400' : 'text-red-400'">{{ t('presidentRegistration.passwordRequirements.length') }}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <span :class="['material-symbols-outlined text-sm transition-all duration-300', passwordChecks.uppercase ? 'text-green-400 scale-110' : 'text-red-400']">{{ passwordChecks.uppercase ? 'check_circle' : 'error' }}</span>
-                  <span class="text-xs font-medium" :class="passwordChecks.uppercase ? 'text-green-400' : 'text-red-400'">One uppercase letter</span>
+                  <span class="text-xs font-medium" :class="passwordChecks.uppercase ? 'text-green-400' : 'text-red-400'">{{ t('presidentRegistration.passwordRequirements.uppercase') }}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <span :class="['material-symbols-outlined text-sm transition-all duration-300', passwordChecks.lowercase ? 'text-green-400 scale-110' : 'text-red-400']">{{ passwordChecks.lowercase ? 'check_circle' : 'error' }}</span>
-                  <span class="text-xs font-medium" :class="passwordChecks.lowercase ? 'text-green-400' : 'text-red-400'">One lowercase letter</span>
+                  <span class="text-xs font-medium" :class="passwordChecks.lowercase ? 'text-green-400' : 'text-red-400'">{{ t('presidentRegistration.passwordRequirements.lowercase') }}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <span :class="['material-symbols-outlined text-sm transition-all duration-300', passwordChecks.number ? 'text-green-400 scale-110' : 'text-red-400']">{{ passwordChecks.number ? 'check_circle' : 'error' }}</span>
-                  <span class="text-xs font-medium" :class="passwordChecks.number ? 'text-green-400' : 'text-red-400'">One number</span>
+                  <span class="text-xs font-medium" :class="passwordChecks.number ? 'text-green-400' : 'text-red-400'">{{ t('presidentRegistration.passwordRequirements.number') }}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <span :class="['material-symbols-outlined text-sm transition-all duration-300', passwordChecks.special ? 'text-green-400 scale-110' : 'text-red-400']">{{ passwordChecks.special ? 'check_circle' : 'error' }}</span>
-                  <span class="text-xs font-medium" :class="passwordChecks.special ? 'text-green-400' : 'text-red-400'">One special character</span>
+                  <span class="text-xs font-medium" :class="passwordChecks.special ? 'text-green-400' : 'text-red-400'">{{ t('presidentRegistration.passwordRequirements.special') }}</span>
                 </div>
               </div>
             </div>
@@ -455,7 +457,7 @@ const handleRegistration = async () => {
               >
                 <span class="group flex items-center justify-center gap-3">
                   <span class="font-headline text-base font-black uppercase tracking-widest text-on-primary-fixed drop-shadow-md">
-                    Register
+                    {{ t('presidentRegistration.register') }}
                   </span>
                   <span class="material-symbols-outlined text-lg text-on-primary-fixed transition-transform group-hover:translate-x-1">
                     arrow_forward
@@ -467,9 +469,9 @@ const handleRegistration = async () => {
 
           <div class="border-t border-outline-variant/10 pt-8 text-center">
             <p class="font-body text-sm text-on-surface-variant">
-              Part of the club legacy?
+              {{ t('presidentRegistration.partOfClubLegacy') }}
               <RouterLink to="/login" class="pressable font-bold text-primary-fixed hover:underline" @click.prevent="goToLogin">
-                Log in to Hub
+                {{ t('presidentRegistration.loginToHub') }}
               </RouterLink>
             </p>
           </div>
@@ -485,13 +487,13 @@ const handleRegistration = async () => {
         <span class="relative inline-flex h-2 w-2 rounded-full bg-primary-fixed" />
       </div>
       <span class="font-headline text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">
-        System: Ready for Deployment
+        {{ t('presidentRegistration.systemReadyForDeployment') }}
       </span>
     </div>
 
     <div class="pointer-events-none fixed right-0 top-0 p-8 opacity-20">
       <div class="select-none font-headline text-[120px] leading-none font-extrabold tracking-tighter text-outline-variant/10">
-        STRATEGY
+        {{ t('presidentRegistration.strategyLabel') }}
       </div>
     </div>
   </main>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700;900&display=swap');
 @import "tailwindcss";
 @import "@vueform/slider/themes/default.css";
 
@@ -15,6 +15,11 @@
   --color-on-surface-variant: #b9ccb2;
   --color-outline-variant: #3b4b37;
   --color-on-tertiary-fixed: #291800; /* Dark brown for button text */
+  --color-tertiary-fixed-dim: #ffb950;
+  --color-tertiary-container: #ffd6a1;
+  --color-error-container: #93000a;
+  --color-error: #ffb4ab;
+  --color-on-primary: #003907;
   
   --font-headline: "Space Grotesk", sans-serif;
   --font-body: "Inter", sans-serif;
@@ -23,6 +28,10 @@
 
 /* Custom Tactical Gradient */
 @utility pitch-glow {
+  background: linear-gradient(135deg, #ebffe2 0%, #00ff41 100%);
+}
+
+@utility performance-gradient {
   background: linear-gradient(135deg, #ebffe2 0%, #00ff41 100%);
 }
 
@@ -145,13 +154,15 @@ select {
 }
 
 [dir="rtl"] aside.fixed.left-0.-translate-x-full {
+  left: auto;
+  right: 0;
   transform: translateX(100%);
 }
 
-/* Flip the topbar margin */
+/* Flip the topbar anchor for RTL */
 [dir="rtl"] header.fixed.right-0 {
-  right: 0;
-  left: auto;
+  left: 0;
+  right: auto;
 }
 
 /* Active sidebar item: flip the left border to right */

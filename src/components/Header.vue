@@ -25,13 +25,13 @@
             @click="setLanguage('en')"
             class="w-full rounded bg-surface-container-low px-4 py-2 text-left font-body text-on-surface hover:bg-surface-container-lowest"
           >
-            English
+            {{ t('languages.en') }}
           </button>
           <button
             @click="setLanguage('ar')"
             class="w-full rounded bg-surface-container-low px-4 py-2 text-left font-body text-on-surface hover:bg-surface-container-lowest"
           >
-            العربية
+            {{ t('languages.ar') }}
           </button>
         </div>
       </div>
