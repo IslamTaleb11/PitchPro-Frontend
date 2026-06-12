@@ -493,7 +493,10 @@
     "noClassificationsForRole": "No classifications for selected role",
     "selectPrimaryRoleFirst": "Select a primary role first",
     "resetFilters": "RESET FILTERS",
-    "applyFilters": "APPLY FILTERS"
+    "applyFilters": "APPLY FILTERS",
+    "firstNamePlaceholder": "First name (required)",
+    "secondNamePlaceholder": "Second name (optional)",
+    "lastNamePlaceholder": "Last name (required)"
   },
   "categoryManagement": {
     "squadCategories": "SQUAD CATEGORIES",

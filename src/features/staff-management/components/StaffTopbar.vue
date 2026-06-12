@@ -45,7 +45,7 @@ function setLanguage(lang) {
       >
         <span class="material-symbols-outlined text-lg">{{ sidebarOpen ? 'close' : 'menu' }}</span>
       </button>
-      <h1 class="text-lg font-black uppercase tracking-widest text-white">{{ $t('topbar.staffAndRoleConfig') }}</h1>
+      <h1 class="text-lg font-black uppercase tracking-widest text-white">{{ pageTitle }}</h1>
       <span class="rounded border border-green-400/20 bg-green-400/10 px-2 py-0.5 text-[10px] font-bold text-green-400">
         {{ $t('topbar.liveOps') }}
       </span>
