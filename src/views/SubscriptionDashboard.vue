@@ -23,8 +23,8 @@ async function orderProPlan() {
       duration: 0
     })
 
-    const clubId = 1
-    const response = await paymentService.createCheckout({ clubId })
+    // Call checkout without clubId
+    const response = await paymentService.createCheckout({})
     const paymentUrl = response?.data?.paymentUrl
 
     if (paymentUrl) {
@@ -153,7 +153,7 @@ onMounted(() => {
               <div class="flex flex-col">
                 <div class="mb-8">
                   <div class="flex items-baseline gap-1">
-                    <span class="text-6xl font-black font-display text-white italic">4000</span>
+                    <span class="text-6xl font-black font-display text-white italic">5900</span>
                     <span class="text-2xl font-black text-white uppercase">DA</span>
                     <span class="text-xs text-neutral-400 ml-2">/ {{ $t('subscription.month') }}</span>
                   </div>
