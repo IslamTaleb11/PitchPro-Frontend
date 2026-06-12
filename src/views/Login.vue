@@ -70,7 +70,7 @@ function handleBiometricLogin() {
             <img
               alt="PitchPro Club Logo"
               class="h-14 w-14 object-contain"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDR7c8D4tGZxbvo-R1MEEPyokq5HnnR_xr_zpRvGR3PDmjCp916r_wpJNoAmdYZgGdZQiZeskR0YUqioTTpAgVE2MiR9_qzNkkZdu0lzc_zqzCc2r3joq8SiLwJKid7huMmIgDYThZXrAdB22OYTAtlW6B_pHm-qiElTIAgToEen9gym4jMCG9W6TC6QerNvDoR4uPqeHOTmSv5xAF2r5la2iFERkA5om6McLmx6KhKw2zU9l2ns2WR9-rEzNgcAgJ_bOCA4Wrrdhw"
+              src="/assets/club-logo.svg"
             />
           </div>
           <div
@@ -191,7 +191,7 @@ function handleBiometricLogin() {
                 <img
                   alt="Google icon"
                   class="h-4 w-4 opacity-70 transition-opacity group-hover:opacity-100"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuChnr9Wz6YVsTHb-HpKxPCXWbd2eJipzAOArGxzPn1Cb8Foqs7SIcmuQJ5uAPT2SKddL2SJqItJaQtut-ozHXTLu4oAMUSGSqPGWclccDbA9MRHER7Q7ieNuThvDeBCV5BMBCLVYPHD6vDCebGScNWgym1E55aOuY6WNYyTFjNP8U7ilMm_6JAnlJkt3bSlUdoNgoqnVlBEfUrtXgKEQPZJStkI2r2Ypzgt9rbfIcw9qWXl3xTCpsO2BXz0dogLZoJ3_VitwNOiYNA"
+                  src="/assets/google-icon.svg"
                 />
                 <span class="text-xs font-medium text-on-surface-variant">{{ t('login.ssoLogin') }}</span>
               </button>

@@ -7,6 +7,7 @@ import CategoryManagementDashboard from '../views/CategoryManagementDashboard.vu
 import SubscriptionDashboard from '../views/SubscriptionDashboard.vue'
 import PaymentSuccess from '../views/PaymentSuccess.vue'
 import PaymentFailure from '../views/PaymentFailure.vue'
+import ComingSoon from '../views/ComingSoon.vue'
 
 const routes = [
   {
@@ -62,6 +63,16 @@ const routes = [
     path: '/dashboard/subscription',
     name: 'SubscriptionDashboard',
     component: SubscriptionDashboard
+  },
+  {
+    path: '/dashboard/finances',
+    name: 'FinancesDashboard',
+    component: ComingSoon
+  },
+  {
+    path: '/dashboard/settings',
+    name: 'SettingsDashboard',
+    component: ComingSoon
   },
   {
     path: '/payment-success',

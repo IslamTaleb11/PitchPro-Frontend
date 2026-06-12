@@ -230,7 +230,7 @@ const handleRegistration = async () => {
       <div
         class="pointer-events-none absolute inset-0 opacity-10"
         style="
-          background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDv7GzDSsIQrz9fq5W03vDgEcGssVGXk9Ny151GeypoYUTkoLqGVN335Yz9LdLv4vNtoHBZKMF8avNm4dpb3LrP1_Er1jy_8dmBHsFcH4kYUvQnLV_GXO5gTZkzNMUJb5eZeiNnquiS2IvOtlG3lXcimZVvc_DGr9_d_17PpuBPgMg-N6_kWMebinr9cY3vbZmBuoyDKMWNSzoBckHRfjAJsb-sjUQ2YXjUrHNOhbc5YvBaV5OFeXXDbUW8FBjJnVYz_p6yC00cIfI');
+          background-image: url('/assets/stadium.svg');
           background-position: center;
           background-size: cover;
         "

@@ -51,10 +51,10 @@ onMounted(() => {
       <div class="relative z-10 w-full max-w-4xl grid md:grid-cols-12 gap-8 items-center">
         <div class="md:col-span-5 hidden md:block">
           <div class="relative aspect-[4/5] rounded-xl overflow-hidden border border-outline-variant/20 bg-surface-container-low shadow-2xl">
-            <img 
+            <img
               class="w-full h-full object-cover grayscale opacity-40 mix-blend-overlay"
               alt="A cinematic, high-contrast photograph of an empty, high-tech stadium at night under heavy rainfall"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBP25lsrzbZQUe9_TXxcgNwNswgKtQPqY4VTHYW8PrHggm4crsJGCCw8pyamWVzoHRT6TNjj61tF79q68ZMKQCQqR0tMIcEv_DBHGYkrC8ax_6NehbGfcXUdcsNJou-8xxZ0Vp_48EbrWFpN5688ZhWQAtxCnmUbPYDFuLNfxzuVOc9HMWQzUxgEFkMYPe2TuhPfcVqYPm8d80FDubV3NezYHEZAHq6tnC-ylK0zjGfqQPO4vU63J58qf8UTkK8pPdoRUkT5Gr4Nlw"
+              src="/assets/stadium.svg"
             />
             <div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
             <div class="absolute top-4 left-4 font-label text-[10px] text-tertiary-fixed-dim tracking-[0.2em] font-bold">

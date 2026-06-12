@@ -123,7 +123,7 @@ function setLanguage(lang) {
           <img
             alt="Director Portrait"
             class="h-full w-full rounded-full object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-BzVYmJKXJdcA-qAHMZ14u0FG5WsdDVe0PNNiMVdD6H1qfiElHEyCs9_mFThkcCc1--9t34meTMf5M3OQyDnS-aski7rib1xPQJRTUQZbPfVzNdD_wOpR0_kGJHFyqYs2clLjswj6DfZcrBbprpt5yhZM7qg77kRdJVho1JL-6cwEKewRKArRO6P_VLdQLfUlD5WWzo4qf0yCOBgeHzd2l8Mx5oQi3xpgxEG-A4ethqK4_8olIpAwVTx_lv5-E21yrUzoFDv3nmM"
+            src="/assets/director-avatar.svg"
           />
         </div>
       </div>

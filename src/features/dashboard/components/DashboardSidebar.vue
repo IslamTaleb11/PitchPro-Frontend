@@ -38,7 +38,7 @@ const items = [
           <img
             alt="Club Director Profile"
             class="h-full w-full object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCu0zvtXwlqz4V0i-1xvN-1ltRo3iZ8kIWKiUkdAkNsx-x7zYf93tWG-CJBPfxdRd8Uxj9aBGNo-PgTbUp9tiRycNBR1GfAneYDAy-NGJLzDn6u9FaFFZ6w4-KYuGvsAKGFT0pttslGukof3X1MQFsxL87-v9FVTDOFd2DFluZwP3QNk2B3WMo_8PVXJu0cuZV33l20J-sMmYMWjNzOHJAqtKU7RJOUaTl33jsyup80ofiLUsB8yb9jURooC2nYf6wONETKdzfWPck"
+            src="/assets/director-avatar.svg"
           />
         </div>
         <div>

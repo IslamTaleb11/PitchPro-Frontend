@@ -348,6 +348,11 @@
     "licenseAgreement": "LICENSE AGREEMENT",
     "systemSupport": "SYSTEM SUPPORT"
   },
+  "comingSoon": {
+    "title": "COMING SOON",
+    "subtitle": "This feature is under development and will be available shortly.",
+    "status": "Under Development"
+  },
   "presidentRegistration": {
     "title": "President Registration",
     "firstName": "First Name",

@@ -842,7 +842,7 @@ async function deployTraining() {
               </div>
               <div class="relative w-full md:w-auto">
                 <img
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdqJLouIsFLiDNmg1vM1cLaF-0wU7H2BHwvlRX6fckIdd_XtIWTcpYvFK0DWJ3n0yim_cRX2xBBX4WKRT0r3fZ3CFGcvuNEJgA-beenBdyllO-x02RPJkiooB4lMBIapcSFlJrBQ91oG2bPjJJ83S5uhytqpYqZXoFhSilYDxLi6AhKn_Wt8iH5l8QtWLD1J_GrDmof5ZDyBM9wD9gap9nHmVyAVldkv8gNWQOZZX_T8f9S0SvCJXLs6OsTOp0hyv3N5YSETYKIzk"
+                  src="/assets/stadium.svg"
                   alt="Stadium at night"
                   class="rounded-lg shadow-2xl shadow-black/50 grayscale hover:grayscale-0 transition-all duration-700 w-full max-w-sm"
                 />
