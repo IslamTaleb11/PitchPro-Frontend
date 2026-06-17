@@ -181,14 +181,14 @@ function deployEvent() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background text-on-surface">
-    <DashboardSidebar active-item="matches" :is-open="isSidebarOpen" />
+  <div class="min-h-screen bg-background text-on-surface lg:flex lg:items-stretch">
+    <DashboardSidebar active-item="matches" :is-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
     <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
 
     <main
       :class="[
-        'pt-20 min-h-[calc(100vh-5rem)] overflow-y-auto bg-background p-8 transition-all duration-300',
-        isSidebarOpen ? 'ms-64' : 'ms-0',
+        'pt-20 min-h-[calc(100vh-5rem)] overflow-y-auto bg-background p-8 transition-all duration-300 lg:flex-1',
+        'ms-0',
       ]"
     >
       <div class="space-y-8">

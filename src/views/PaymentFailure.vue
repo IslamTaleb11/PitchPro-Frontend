@@ -33,14 +33,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background text-on-background">
-    <DashboardSidebar active-item="subscription" :is-open="isSidebarOpen" />
+  <div class="min-h-screen bg-background text-on-background lg:flex lg:items-stretch">
+    <DashboardSidebar active-item="subscription" :is-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
     <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
 
     <main
       :class="[
-        'pt-20 h-[calc(100vh-5rem)] overflow-hidden bg-background relative flex items-center justify-center p-6',
-        isSidebarOpen ? 'ml-64' : 'ml-0',
+        'pt-20 h-[calc(100vh-5rem)] overflow-hidden bg-background relative flex items-center justify-center p-6 lg:flex-1',
+        'ml-0',
       ]"
     >
       <div class="absolute inset-0 z-0 pointer-events-none opacity-20">

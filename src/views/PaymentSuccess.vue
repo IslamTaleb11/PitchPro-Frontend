@@ -19,13 +19,13 @@ function goToSubscription() {
 
 <template>
   <div class="min-h-screen bg-background text-on-background">
-    <DashboardSidebar active-item="subscription" :is-open="isSidebarOpen" />
+     <DashboardSidebar active-item="subscription" :is-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
     <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
 
     <main
       :class="[
-        'pt-20 h-[calc(100vh-5rem)] overflow-hidden bg-background p-8 transition-all duration-300',
-        isSidebarOpen ? 'ml-64' : 'ml-0',
+          'pt-20 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-8 transition-all duration-300 lg:flex-1',
+          'ms-0',
       ]"
     >
       <div class="scanline"></div>
