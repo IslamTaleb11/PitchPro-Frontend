@@ -33,10 +33,10 @@ function setLanguage(lang) {
 <template>
   <header
     :class="[
-      'fixed top-0 ltr:right-0 ltr:left-auto rtl:left-0 rtl:right-auto z-40 flex h-20 w-full items-center justify-between bg-slate-950/80 px-8 shadow-2xl shadow-green-900/5 backdrop-blur-xl transition-all duration-300 lg:w-[calc(100%-16rem)]',
+      'fixed top-0 ltr:right-0 ltr:left-auto rtl:left-0 rtl:right-auto z-40 flex w-full flex-wrap items-center justify-between gap-3 bg-slate-950/80 px-4 py-3 shadow-2xl shadow-green-900/5 backdrop-blur-xl transition-all duration-300 md:h-20 md:px-8 md:py-0 lg:w-[calc(100%-16rem)]',
     ]"
   >
-    <div class="flex items-center gap-4">
+    <div class="flex min-w-0 flex-1 items-center gap-3 md:flex-initial md:gap-4">
       <button
         type="button"
         class="pressable inline-flex h-9 w-9 items-center justify-center rounded border border-outline-variant/30 bg-surface-container-low text-slate-300 hover:text-primary-fixed lg:hidden"
@@ -44,13 +44,13 @@ function setLanguage(lang) {
       >
         <span class="material-symbols-outlined text-lg">{{ sidebarOpen ? 'close' : 'menu' }}</span>
       </button>
-      <h1 class="text-lg font-black uppercase tracking-widest text-white">{{ pageTitle }}</h1>
-      <span class="rounded border border-green-400/20 bg-green-400/10 px-2 py-0.5 text-[10px] font-bold text-green-400">
+      <h1 class="min-w-0 truncate text-base font-black uppercase tracking-widest text-white md:text-lg">{{ pageTitle }}</h1>
+      <span class="hidden rounded border border-green-400/20 bg-green-400/10 px-2 py-0.5 text-[10px] font-bold text-green-400 md:inline-flex">
         {{ $t('topbar.liveOps') }}
       </span>
     </div>
-    <div class="flex items-center gap-6">
-      <div class="relative">
+    <div class="flex items-center gap-2 md:gap-4 lg:gap-6">
+      <div class="relative hidden xl:block">
         <span class="material-symbols-outlined absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 text-lg text-slate-500">search</span>
         <input
           type="text"
@@ -58,18 +58,18 @@ function setLanguage(lang) {
           class="w-64 rounded-lg border-none bg-slate-900 py-2 ltr:pl-10 ltr:pr-4 rtl:pr-10 rtl:pl-4 text-xs text-white transition-all focus:ring-1 focus:ring-green-400/50"
         />
       </div>
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 md:gap-4">
         <router-link
           to="/dashboard/subscription"
-          class="pressable inline-flex items-center gap-2 rounded-lg bg-green-400 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-slate-950 transition-colors hover:bg-green-300"
+          class="pressable hidden items-center gap-2 rounded-lg bg-green-400 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-slate-950 transition-colors hover:bg-green-300 md:inline-flex"
         >
           <span>{{ $t('topbar.upgradeNow') }}</span>
           <span class="material-symbols-outlined text-sm">bolt</span>
         </router-link>
-        <button type="button" class="pressable text-slate-400 transition-opacity hover:text-green-400 active:opacity-80">
+        <button type="button" class="pressable hidden text-slate-400 transition-opacity hover:text-green-400 active:opacity-80 md:inline-flex">
           <span class="material-symbols-outlined">notifications</span>
         </button>
-        <button type="button" class="pressable text-slate-400 transition-opacity hover:text-green-400 active:opacity-80">
+        <button type="button" class="pressable hidden text-slate-400 transition-opacity hover:text-green-400 active:opacity-80 md:inline-flex">
           <span class="material-symbols-outlined">analytics</span>
         </button>
 
@@ -81,7 +81,7 @@ function setLanguage(lang) {
             @click="isLangDropdownOpen = !isLangDropdownOpen"
           >
             <span class="text-sm">{{ currentLangFlag }}</span>
-            <span>{{ currentLangLabel }}</span>
+            <span class="hidden sm:inline">{{ currentLangLabel }}</span>
             <span class="material-symbols-outlined text-xs transition-transform" :class="{ 'rotate-180': isLangDropdownOpen }">expand_more</span>
           </button>
 
@@ -118,7 +118,7 @@ function setLanguage(lang) {
           </div>
         </div>
 
-        <div class="h-10 w-10 rounded-full border-2 border-green-400/30 p-0.5">
+        <div class="h-9 w-9 rounded-full border-2 border-green-400/30 p-0.5 md:h-10 md:w-10">
           <img
             alt="Director Portrait"
             class="h-full w-full rounded-full object-cover"
