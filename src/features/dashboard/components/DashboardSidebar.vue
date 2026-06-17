@@ -2,6 +2,8 @@
 import { useI18n } from 'vue-i18n'
 const { t: $t } = useI18n()
 
+defineEmits(['toggle-sidebar'])
+
 defineProps({
   activeItem: {
     type: String,
@@ -31,8 +33,18 @@ const items = [
       isOpen ? 'translate-x-0 lg:translate-x-0' : 'ltr:-translate-x-full rtl:translate-x-full lg:translate-x-0',
     ]"
   >
-    <div class="mb-10 px-6">
+    <div class="mb-10 flex items-start justify-between px-6">
       <div class="text-xl font-black tracking-tighter text-green-400">{{ $t('sidebar.clubOps') }}</div>
+      <button
+        type="button"
+        class="pressable inline-flex h-9 w-9 items-center justify-center rounded border border-white/10 bg-slate-800 text-slate-300 lg:hidden"
+        @click="$emit('toggle-sidebar')"
+      >
+        <span class="material-symbols-outlined text-lg">close</span>
+      </button>
+    </div>
+
+    <div class="mb-10 px-6 lg:pt-0">
       <div class="mt-4 flex items-center gap-3">
         <div class="h-10 w-10 overflow-hidden rounded-lg border border-outline-variant/20 bg-surface-container-high">
           <img
