@@ -24,7 +24,7 @@ function goToSubscription() {
 
     <main
       :class="[
-          'pt-20 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-8 transition-all duration-300 lg:flex-1',
+          'pt-24 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-8 transition-all duration-300 lg:flex-1',
           'ms-0',
       ]"
     >
@@ -127,7 +127,6 @@ function goToSubscription() {
     </main>
   </div>
 </template>
-
 <style>
 .scanline {
   width: 100%;

@@ -29,7 +29,7 @@ const items = [
 <template>
   <aside
     :class="[
-      'absolute ltr:left-0 rtl:right-0 top-0 z-50 flex h-screen w-64 flex-col bg-slate-900 py-6 transition-transform duration-300 lg:fixed',
+      'fixed inset-y-0 ltr:left-0 rtl:right-0 z-50 flex h-screen w-64 shrink-0 flex-col bg-slate-900 py-6 transition-transform duration-300 lg:relative lg:inset-auto lg:translate-x-0',
       isOpen ? 'translate-x-0 lg:translate-x-0' : 'ltr:-translate-x-full rtl:translate-x-full lg:translate-x-0',
     ]"
   >

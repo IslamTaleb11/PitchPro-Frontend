@@ -102,12 +102,12 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to) => {
-  if (to.meta.requiresAuth && !getAuthToken()) {
-    return { name: 'Login' }
-  }
+// router.beforeEach((to) => {
+//   if (to.meta.requiresAuth && !getAuthToken()) {
+//     return { name: 'Login' }
+//   }
 
-  return true
-})
+//   return true
+// })
 
 export default router

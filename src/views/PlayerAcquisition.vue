@@ -313,7 +313,7 @@ async function submitPlayerAcquisition() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background text-on-surface">
+  <div class="min-h-screen overflow-hidden bg-background text-on-surface lg:flex lg:items-stretch">
     <!-- Club Sidebar Navigation -->
     <DashboardSidebar active-item="players" :is-open="isSidebarOpen" />
     
@@ -323,8 +323,8 @@ async function submitPlayerAcquisition() {
     <!-- Main Workspace Container -->
     <main
       :class="[
-        'pt-20 min-h-[calc(100vh-5rem)] overflow-y-auto bg-background p-8 transition-all duration-300',
-        isSidebarOpen ? 'ml-64' : 'ml-0',
+        'pt-24 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-8 transition-all duration-300 lg:flex-1',
+        'ml-0',
       ]"
     >
       <!-- Sub-Header and Status Bar -->
@@ -374,7 +374,6 @@ async function submitPlayerAcquisition() {
                     <span class="material-symbols-outlined text-4xl text-neutral-600 mb-2 transition-colors group-hover:text-green-400">add_a_photo</span>
                     <span class="font-label text-[10px] text-neutral-500 uppercase font-black">{{ $t('playerAcquisition.uploadProfile') }}</span>
                   </template>
-                  <input class="absolute inset-0 cursor-pointer opacity-0" type="file" accept=".jpg,.jpeg,.png,.webp" @change="onPhotoChange" />
                 </label>
                 <button v-if="photoPreview" type="button" @click="removePhoto" class="mt-2 w-full text-center text-[10px] font-black uppercase text-red-400 hover:text-red-300 flex items-center justify-center gap-1">
                   <span class="material-symbols-outlined text-sm">close</span> {{ $t('playerAcquisition.removePhoto') }}

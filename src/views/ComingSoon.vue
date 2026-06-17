@@ -20,14 +20,14 @@ defineProps({
 </script>
 
 <template>
-  <div class="min-h-screen bg-background text-on-background">
+  <div class="min-h-screen bg-background text-on-background lg:flex lg:items-stretch">
     <DashboardSidebar active-item="coming-soon" :is-open="isSidebarOpen" />
     <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
 
     <main
       :class="[
-        'pt-20 min-h-[calc(100vh-5rem)] overflow-y-auto bg-background p-8 transition-all duration-300 flex items-center justify-center',
-        isSidebarOpen ? 'ms-64' : 'ms-0',
+        'pt-24 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-8 transition-all duration-300 flex items-center justify-center lg:flex-1',
+        'ms-0',
       ]"
     >
       <div class="text-center space-y-6 max-w-md">

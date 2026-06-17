@@ -39,7 +39,7 @@ onMounted(() => {
 
     <main
       :class="[
-        'pt-20 h-[calc(100vh-5rem)] overflow-hidden bg-background relative flex items-center justify-center p-6 lg:flex-1',
+        'pt-24 h-[calc(100vh-5rem)] overflow-hidden bg-background relative flex items-center justify-center p-6 lg:flex-1',
         'ml-0',
       ]"
     >
