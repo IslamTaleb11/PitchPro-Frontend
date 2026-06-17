@@ -27,8 +27,8 @@ const items = [
 <template>
   <aside
     :class="[
-      'fixed ltr:left-0 rtl:right-0 top-0 z-50 flex h-screen w-64 flex-col bg-slate-900 py-6 transition-transform duration-300',
-      isOpen ? 'translate-x-0' : 'ltr:-translate-x-full rtl:translate-x-full',
+      'absolute ltr:left-0 rtl:right-0 top-0 z-50 flex h-screen w-64 flex-col bg-slate-900 py-6 transition-transform duration-300 lg:fixed',
+      isOpen ? 'translate-x-0 lg:translate-x-0' : 'ltr:-translate-x-full rtl:translate-x-full lg:translate-x-0',
     ]"
   >
     <div class="mb-10 px-6">

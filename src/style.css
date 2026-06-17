@@ -159,6 +159,26 @@ select {
   transform: translateX(100%);
 }
 
+@media (max-width: 1023px) {
+  .ml-64 {
+    margin-left: 0 !important;
+  }
+
+  .ms-64 {
+    margin-inline-start: 0 !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ml-64 {
+    margin-left: 16rem !important;
+  }
+
+  .ms-64 {
+    margin-inline-start: 16rem !important;
+  }
+}
+
 /* Flip the topbar anchor for RTL */
 [dir="rtl"] header.fixed.right-0 {
   left: 0;

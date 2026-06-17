@@ -33,14 +33,13 @@ function setLanguage(lang) {
 <template>
   <header
     :class="[
-      'fixed top-0 ltr:right-0 ltr:left-auto rtl:left-0 rtl:right-auto z-40 flex h-20 items-center justify-between bg-slate-950/80 px-8 shadow-2xl shadow-green-900/5 backdrop-blur-xl transition-all duration-300',
-      sidebarOpen ? 'w-[calc(100%-16rem)]' : 'w-full',
+      'fixed top-0 ltr:right-0 ltr:left-auto rtl:left-0 rtl:right-auto z-40 flex h-20 w-full items-center justify-between bg-slate-950/80 px-8 shadow-2xl shadow-green-900/5 backdrop-blur-xl transition-all duration-300 lg:w-[calc(100%-16rem)]',
     ]"
   >
     <div class="flex items-center gap-4">
       <button
         type="button"
-        class="pressable inline-flex h-9 w-9 items-center justify-center rounded border border-outline-variant/30 bg-surface-container-low text-slate-300 hover:text-primary-fixed"
+        class="pressable inline-flex h-9 w-9 items-center justify-center rounded border border-outline-variant/30 bg-surface-container-low text-slate-300 hover:text-primary-fixed lg:hidden"
         @click="$emit('toggle-sidebar')"
       >
         <span class="material-symbols-outlined text-lg">{{ sidebarOpen ? 'close' : 'menu' }}</span>
