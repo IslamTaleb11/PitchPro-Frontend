@@ -8,6 +8,7 @@ import SubscriptionDashboard from '../views/SubscriptionDashboard.vue'
 import PaymentSuccess from '../views/PaymentSuccess.vue'
 import PaymentFailure from '../views/PaymentFailure.vue'
 import ComingSoon from '../views/ComingSoon.vue'
+import { getAuthToken } from '../services/axiosConfig'
 
 const routes = [
   {
@@ -32,47 +33,56 @@ const routes = [
   {
     path: '/dashboard/staff-management',
     name: 'StaffManagementDashboard',
-    component: StaffManagementDashboard
+    component: StaffManagementDashboard,
+    meta: { requiresAuth: true }
   },
   {
     path: '/dashboard/categories',
     name: 'CategoryManagementDashboard',
-    component: CategoryManagementDashboard
+    component: CategoryManagementDashboard,
+    meta: { requiresAuth: true }
   },
   {
     path: '/dashboard/players',
     name: 'PlayerAcquisition',
-    component: () => import('../views/PlayerAcquisition.vue')
+    component: () => import('../views/PlayerAcquisition.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/dashboard/matches',
     name: 'MatchesDashboard',
-    component: () => import('../views/MatchesDashboard.vue')
+    component: () => import('../views/MatchesDashboard.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/dashboard/schedule',
     name: 'ScheduleDashboard',
-    component: () => import('../views/ScheduleDashboard.vue')
+    component: () => import('../views/ScheduleDashboard.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/dashboard/training',
     name: 'TrainingDashboard',
-    component: () => import('../views/TrainingDashboard.vue')
+    component: () => import('../views/TrainingDashboard.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/dashboard/subscription',
     name: 'SubscriptionDashboard',
-    component: SubscriptionDashboard
+    component: SubscriptionDashboard,
+    meta: { requiresAuth: true }
   },
   {
     path: '/dashboard/finances',
     name: 'FinancesDashboard',
-    component: ComingSoon
+    component: ComingSoon,
+    meta: { requiresAuth: true }
   },
   {
     path: '/dashboard/settings',
     name: 'SettingsDashboard',
-    component: ComingSoon
+    component: ComingSoon,
+    meta: { requiresAuth: true }
   },
   {
     path: '/payment-success',
@@ -90,6 +100,14 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+router.beforeEach((to) => {
+  if (to.meta.requiresAuth && !getAuthToken()) {
+    return { name: 'Login' }
+  }
+
+  return true
 })
 
 export default router

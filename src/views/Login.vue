@@ -3,26 +3,63 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUiToast } from '../composables/useUiToast'
 import { useI18n } from 'vue-i18n'
+import { login } from '../services/authService'
+import { setAuthToken } from '../services/axiosConfig'
 
 const router = useRouter()
-const { showLoadingToast, showToast } = useUiToast()
+const { showToast, showLoadingToast } = useUiToast()
 const { t } = useI18n()
 
 const showPassword = ref(false)
+const isSubmitting = ref(false)
 const form = reactive({
   email: '',
   password: '',
   stayLoggedIn: false
 })
 
-function handleLogin() {
-  showLoadingToast({
-    title: t('login.toast.accessingTerminalTitle'),
-    message: t('login.toast.accessingTerminalMessage'),
-    successTitle: t('login.toast.accessingTerminalSuccessTitle'),
-    successMessage: t('login.toast.accessingTerminalSuccessMessage')
-  })
-  setTimeout(() => router.push('/dashboard/staff-management'), 900)
+async function handleLogin() {
+  if (isSubmitting.value) {
+    return
+  }
+
+  if (!form.email || !form.password) {
+    showToast({
+      title: t('login.toast.accessingTerminalTitle'),
+      message: t('login.toast.accessingTerminalMessage'),
+      mode: 'info'
+    })
+    return
+  }
+
+  isSubmitting.value = true
+
+  try {
+    const response = await login(form.email.trim(), form.password)
+    const token = response?.data?.token
+
+    if (!token) {
+      throw new Error('Login succeeded but no token was returned.')
+    }
+
+    setAuthToken(token, form.stayLoggedIn)
+
+    showToast({
+      title: t('login.toast.accessingTerminalSuccessTitle'),
+      message: t('login.toast.accessingTerminalSuccessMessage'),
+      mode: 'success'
+    })
+
+    await router.push('/dashboard/staff-management')
+  } catch (error) {
+    showToast({
+      title: t('login.toast.accessingTerminalTitle'),
+      message: error?.response?.data || error?.message || 'Login failed',
+      mode: 'error'
+    })
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 function handleSsoLogin() {
@@ -55,7 +92,7 @@ function handleBiometricLogin() {
       "
     />
     <div class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-10">
-      <div class="relative flex h-[819px] w-[80vw] items-center justify-center border-2 border-primary-fixed-dim">
+      <div class="relative flex h-204.75 w-[80vw] items-center justify-center border-2 border-primary-fixed-dim">
         <div class="absolute top-1/2 h-px w-full bg-primary-fixed-dim" />
         <div class="h-48 w-48 rounded-full border-2 border-primary-fixed-dim" />
       </div>
@@ -162,16 +199,17 @@ function handleBiometricLogin() {
           <div class="space-y-4 pt-4">
             <button
               type="submit"
-              class="pressable group relative w-full overflow-hidden rounded-md bg-gradient-to-br from-primary to-primary-container p-[1px]"
+              :disabled="isSubmitting"
+              class="pressable group relative w-full overflow-hidden rounded-md bg-linear-to-br from-primary to-primary-container p-px disabled:cursor-not-allowed disabled:opacity-70"
             >
               <div
                 class="flex items-center justify-center gap-3 bg-primary-container py-4 transition-colors group-hover:bg-primary-fixed-dim"
               >
                 <span class="font-headline text-sm font-bold uppercase tracking-widest text-on-primary-container">
-                  {{ t('login.accessTerminal') }}
+                  {{ isSubmitting ? 'Signing in...' : t('login.accessTerminal') }}
                 </span>
                 <span class="material-symbols-outlined text-[18px] font-bold text-on-primary-container">
-                  arrow_forward
+                  {{ isSubmitting ? 'hourglass_top' : 'arrow_forward' }}
                 </span>
               </div>
             </button>

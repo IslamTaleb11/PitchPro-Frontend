@@ -40,7 +40,7 @@ async function onDeployStaff() {
     <main
       :class="[
         'pt-20 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-8 transition-all duration-300',
-        isSidebarOpen ? 'ml-64' : 'ml-0',
+        'ml-0',
       ]"
     >
       <div class="grid grid-cols-12 items-start gap-6">
