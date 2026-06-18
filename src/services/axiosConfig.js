@@ -13,21 +13,33 @@ function getAuthToken() {
   return localStorage.getItem(authTokenKey) || sessionStorage.getItem(sessionTokenKey);
 }
 
+function setAuthHeader(token) {
+  if (token) {
+    api.defaults.headers.common.Authorization = `Bearer ${token}`;
+    return;
+  }
+
+  delete api.defaults.headers.common.Authorization;
+}
+
 function setAuthToken(token, persist = false) {
   localStorage.removeItem(authTokenKey);
   sessionStorage.removeItem(sessionTokenKey);
 
   if (persist) {
     localStorage.setItem(authTokenKey, token);
+    setAuthHeader(token);
     return;
   }
 
   sessionStorage.setItem(sessionTokenKey, token);
+  setAuthHeader(token);
 }
 
 function clearAuthToken() {
   localStorage.removeItem(authTokenKey);
   sessionStorage.removeItem(sessionTokenKey);
+  setAuthHeader(null);
 }
 
 const api = axios.create({
