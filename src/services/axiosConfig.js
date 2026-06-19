@@ -42,6 +42,30 @@ function clearAuthToken() {
   setAuthHeader(null);
 }
 
+function redirectToLogin() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (window.location.pathname !== '/login') {
+    window.location.replace('/login');
+  }
+}
+
+function getResponseHeader(headers, headerName) {
+  if (!headers) {
+    return undefined;
+  }
+
+  if (typeof headers.get === 'function') {
+    return headers.get(headerName);
+  }
+
+  const normalizedHeaderName = headerName.toLowerCase();
+
+  return headers[normalizedHeaderName] || headers[headerName];
+}
+
 const api = axios.create({
   // This smoothly combines the domain and the global /api prefix
   baseURL: `${cleanDomain}/api`,
@@ -62,6 +86,25 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const tokenExpired = Boolean(getResponseHeader(error?.response?.headers, 'Token-Expired'));
+
+    if (status === 401) {
+      if (tokenExpired) {
+        console.info('Authentication token expired. Redirecting to login.');
+      }
+
+      clearAuthToken();
+      redirectToLogin();
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export { clearAuthToken, getAuthToken, setAuthToken };
 
