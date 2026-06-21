@@ -244,6 +244,16 @@ function handleBiometricLogin() {
                 <span class="text-xs font-medium text-on-surface-variant">{{ t('login.biometric') }}</span>
               </button>
             </div>
+
+            <p class="pt-2 text-center text-xs text-on-surface-variant">
+              New to PitchPro?
+              <RouterLink
+                to="/club-registration"
+                class="font-semibold text-primary-fixed transition-colors hover:text-primary-fixed-dim"
+              >
+                Register here
+              </RouterLink>
+            </p>
           </div>
         </form>
       </div>
