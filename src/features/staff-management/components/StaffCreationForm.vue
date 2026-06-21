@@ -20,7 +20,7 @@ const firstName = ref('')
 const secondName = ref('')
 const lastName = ref('')
 const gender = ref('Male')
-// const clubID = ref(7) // removed; backend derives clubId from JWT
+onMounted(loadLookups)
 const primaryRoleID = ref(null)
 const roleClassificationID = ref(null)
 const bloodTypeID = ref(null)
@@ -78,7 +78,7 @@ watch(filteredClassifications, (newVals) => {
   }
 });
 
-onMounted(loadLookups)
+// onMounted(loadLookups) // removed; custom onMounted handles clubId extraction and lookup loading
 
 function normalizeLookupItem(item) {
   if (!item) return { id: 'Unknown', name: 'Unknown' };
@@ -142,11 +142,12 @@ function normalizeLookupArray(data) {
 }
 
 async function loadLookups() {
+  console.log('Loading lookups...')
   const results = await Promise.allSettled([
     lookupService.getBloodTypes(),
     lookupService.getPrimaryRoles(),
     lookupService.getRoleClassifications(),
-    lookupService.getCategories(clubID.value)
+    lookupService.getCategories()
   ]);
 
   if (results[0].status === 'fulfilled') bloodTypes.value = normalizeLookupArray(results[0].value.data);
@@ -187,7 +188,7 @@ async function submitForm(event) {
     lastName: lastName.value,
     gender: gender.value,
     birthDate: birthDate.value,
-    clubID: clubID.value,
+    // clubID: omitted; backend derives from JWT
     email: email.value,
     password: password.value,
     photo: photoFile.value,
