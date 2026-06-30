@@ -133,7 +133,7 @@ function handleBiometricLogin() {
               </label>
               <div class="group relative">
                 <span
-                  class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant transition-colors group-focus-within:text-primary-fixed-dim"
+                  class="material-symbols-outlined absolute start-3 top-1/2 -translate-y-1/2 text-on-surface-variant transition-colors group-focus-within:text-primary-fixed-dim"
                 >
                   alternate_email
                 </span>
@@ -141,7 +141,7 @@ function handleBiometricLogin() {
                   v-model="form.email"
                   type="email"
                   :placeholder="t('login.emailPlaceholder')"
-                  class="w-full rounded-sm border-none bg-surface-container-lowest py-3.5 pl-11 font-body text-sm text-on-surface placeholder:text-on-surface/20 transition-all focus:ring-1 focus:ring-primary-fixed-dim"
+                  class="w-full rounded-sm border-none bg-surface-container-lowest py-3.5 pe-11 ps-11 font-body text-sm text-on-surface placeholder:text-on-surface/20 transition-all focus:ring-1 focus:ring-primary-fixed-dim"
                 />
               </div>
             </div>
@@ -152,7 +152,7 @@ function handleBiometricLogin() {
               </label>
               <div class="group relative">
                 <span
-                  class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant transition-colors group-focus-within:text-primary-fixed-dim"
+                  class="material-symbols-outlined absolute start-3 top-1/2 -translate-y-1/2 text-on-surface-variant transition-colors group-focus-within:text-primary-fixed-dim"
                 >
                   lock
                 </span>
@@ -160,11 +160,11 @@ function handleBiometricLogin() {
                   v-model="form.password"
                   :type="showPassword ? 'text' : 'password'"
                   :placeholder="t('login.passwordPlaceholder')"
-                  class="w-full rounded-sm border-none bg-surface-container-lowest py-3.5 pl-11 font-body text-sm text-on-surface placeholder:text-on-surface/20 transition-all focus:ring-1 focus:ring-primary-fixed-dim"
+                  class="w-full rounded-sm border-none bg-surface-container-lowest py-3.5 pe-11 ps-11 font-body text-sm text-on-surface placeholder:text-on-surface/20 transition-all focus:ring-1 focus:ring-primary-fixed-dim"
                 />
                 <button
                   type="button"
-                  class="pressable absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-white"
+                  class="pressable absolute end-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-white"
                   @click="showPassword = !showPassword"
                 >
                   <span class="material-symbols-outlined text-[20px]">
