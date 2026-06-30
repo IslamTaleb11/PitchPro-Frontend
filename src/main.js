@@ -6,13 +6,13 @@ import { createI18n } from 'vue-i18n'
 import en from './locales/en.json'
 import ar from './locales/ar.json'
 
-// Restore saved locale or default to 'en'
-const savedLocale = localStorage.getItem('pitchpro-locale') || 'en'
+const savedLocaleValue = localStorage.getItem('pitchpro-locale')
+const savedLocale = savedLocaleValue === 'en' || savedLocaleValue === 'ar' ? savedLocaleValue : 'ar'
 
 const i18n = createI18n({
   legacy: false,
   locale: savedLocale,
-  fallbackLocale: 'en',
+  fallbackLocale: 'ar',
   messages: { en, ar }
 })
 

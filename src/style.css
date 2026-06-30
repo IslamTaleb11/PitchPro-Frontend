@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 @import "@vueform/slider/themes/default.css";
 
@@ -21,9 +21,17 @@
   --color-error: #ffb4ab;
   --color-on-primary: #003907;
   
-  --font-headline: "Space Grotesk", sans-serif;
-  --font-body: "Inter", sans-serif;
-  --font-label: "Inter", sans-serif;
+  --font-headline: "Cairo", sans-serif;
+  --font-body: "Cairo", sans-serif;
+  --font-label: "Cairo", sans-serif;
+}
+
+:root {
+  font-family: "Cairo", sans-serif;
+}
+
+body {
+  font-family: "Cairo", sans-serif;
 }
 
 /* Custom Tactical Gradient */
@@ -141,9 +149,9 @@ select {
 /* ===== Arabic / RTL Support ===== */
 :root:lang(ar),
 [dir="rtl"] {
-  --font-headline: "Tajawal", sans-serif;
-  --font-body: "Tajawal", sans-serif;
-  --font-label: "Tajawal", sans-serif;
+  --font-headline: "Cairo", sans-serif;
+  --font-body: "Cairo", sans-serif;
+  --font-label: "Cairo", sans-serif;
 }
 
 /* Flip sidebar from left to right in RTL */
