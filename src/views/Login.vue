@@ -151,11 +151,6 @@ function handleBiometricLogin() {
                 {{ t('login.securityKey') }}
               </label>
               <div class="group relative">
-                <span
-                  class="material-symbols-outlined absolute start-3 top-1/2 -translate-y-1/2 text-on-surface-variant transition-colors group-focus-within:text-primary-fixed-dim"
-                >
-                  lock
-                </span>
                 <input
                   v-model="form.password"
                   :type="showPassword ? 'text' : 'password'"
