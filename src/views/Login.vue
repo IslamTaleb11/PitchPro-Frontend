@@ -138,6 +138,7 @@ function handleBiometricLogin() {
                   alternate_email
                 </span>
                 <input
+                  required
                   v-model="form.email"
                   type="email"
                   :placeholder="t('login.emailPlaceholder')"
@@ -152,6 +153,7 @@ function handleBiometricLogin() {
               </label>
               <div class="group relative">
                 <input
+                  required
                   v-model="form.password"
                   :type="showPassword ? 'text' : 'password'"
                   :placeholder="t('login.passwordPlaceholder')"
