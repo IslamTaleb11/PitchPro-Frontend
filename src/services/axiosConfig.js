@@ -29,11 +29,25 @@ function setAuthToken(token, persist = false) {
   if (persist) {
     localStorage.setItem(authTokenKey, token);
     setAuthHeader(token);
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('auth:tokenChanged', { detail: { token } }));
+      } catch (e) {
+        // ignore unsupported browsers
+      }
+    }
     return;
   }
 
   sessionStorage.setItem(sessionTokenKey, token);
   setAuthHeader(token);
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(new CustomEvent('auth:tokenChanged', { detail: { token } }));
+    } catch (e) {
+      // ignore unsupported browsers
+    }
+  }
 }
 
 function getAuthTokenStorageType() {
@@ -124,6 +138,13 @@ function clearAuthToken() {
   localStorage.removeItem(authTokenKey);
   sessionStorage.removeItem(sessionTokenKey);
   setAuthHeader(null);
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(new CustomEvent('auth:tokenChanged', { detail: { token: null } }));
+    } catch (e) {
+      // ignore unsupported browsers
+    }
+  }
 }
 
 function redirectToLogin() {

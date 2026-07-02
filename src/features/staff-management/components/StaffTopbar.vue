@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getCurrentPlanFromJwt } from '../../../services/axiosConfig'
 
@@ -23,8 +23,27 @@ const currentLangFlag = computed(() => {
   return locale.value === 'ar' ? '🇩🇿' : '🇬🇧'
 })
 
+const currentPlan = ref(null)
+
+function updatePlan() {
+  currentPlan.value = getCurrentPlanFromJwt()
+}
+
+onMounted(() => {
+  updatePlan()
+  if (typeof window !== 'undefined') {
+    window.addEventListener('auth:tokenChanged', updatePlan)
+  }
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('auth:tokenChanged', updatePlan)
+  }
+})
+
 const planLabel = computed(() => {
-  const plan = getCurrentPlanFromJwt()
+  const plan = currentPlan.value
   if (!plan) return null
 
   const normalized = plan.toString().trim().toLowerCase()
