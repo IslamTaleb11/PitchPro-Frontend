@@ -201,7 +201,6 @@ const handleRegistration = async () => {
     // }, 2000)
   } catch (error) {
     const apiMessage = getApiErrorMessage(error)
-    alert(`Registration failed: ${apiMessage}`) // For debugging
     showToast({
       title: t('presidentRegistration.toast.apiErrorTitle'),
       message: apiMessage,
