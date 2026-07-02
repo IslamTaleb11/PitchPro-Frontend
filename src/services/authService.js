@@ -8,5 +8,5 @@ export async function login(email, password) {
 }
 
 export async function upgradeToken() {
-  return api.post('/upgrade-token')
+  return api.post('/payment/upgrade-token')
 }
