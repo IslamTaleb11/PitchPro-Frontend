@@ -133,6 +133,56 @@ function getCurrentPlanFromJwt() {
   return null;
 }
 
+function getPlanFromToken(token) {
+  const claims = parseJwt(token);
+  if (!claims) return null;
+
+  const rawPlan =
+    claims.plan ||
+    claims.subscription ||
+    claims.tier ||
+    claims.membership ||
+    claims['https://pitchpro.io/plan'] ||
+    claims['planType'] ||
+    claims['accountType'];
+
+  if (typeof rawPlan === 'string' && rawPlan.trim().length > 0) {
+    return rawPlan.trim();
+  }
+
+  if (rawPlan && typeof rawPlan === 'object') {
+    const planValue =
+      rawPlan.name ||
+      rawPlan.type ||
+      rawPlan.label ||
+      rawPlan.plan ||
+      rawPlan.value ||
+      rawPlan.accountType ||
+      rawPlan.subscriptionType ||
+      rawPlan.tier ||
+      rawPlan.product ||
+      rawPlan.description;
+
+    if (typeof planValue === 'string' && planValue.trim().length > 0) {
+      return planValue.trim();
+    }
+
+    if (planValue != null) {
+      return String(planValue);
+    }
+  }
+
+  if (claims.premium === true || claims.isPremium === true) {
+    return 'premium';
+  }
+
+  if (claims.paid === true || claims.isPaid === true) {
+    return 'paid';
+  }
+
+  return null;
+}
+
 function getCurrentClubIdFromJwt() {
   const token = getAuthToken();
   const claims = parseJwt(token);
@@ -232,6 +282,6 @@ api.interceptors.response.use(
   }
 );
 
-export { clearAuthToken, getAuthToken, setAuthToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getCurrentClubIdFromJwt };
+export { clearAuthToken, getAuthToken, setAuthToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getPlanFromToken, getCurrentClubIdFromJwt };
 
 export default api;

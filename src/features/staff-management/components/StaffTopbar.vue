@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { getCurrentPlanFromJwt } from '../../../services/axiosConfig'
+import { getCurrentPlanFromJwt, getPlanFromToken } from '../../../services/axiosConfig'
 
 defineProps({
   sidebarOpen: {
@@ -25,7 +25,11 @@ const currentLangFlag = computed(() => {
 
 const currentPlan = ref(null)
 
-function updatePlan() {
+function updatePlan(evt) {
+  if (evt && evt.detail && evt.detail.token) {
+    currentPlan.value = getPlanFromToken(evt.detail.token) || getCurrentPlanFromJwt()
+    return
+  }
   currentPlan.value = getCurrentPlanFromJwt()
 }
 
