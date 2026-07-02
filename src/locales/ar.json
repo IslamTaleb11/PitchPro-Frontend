@@ -107,7 +107,11 @@
     "staffAndRoleConfig": "إعداد الطاقم والأدوار",
     "liveOps": "عمليات مباشرة",
     "searchStaff": "البحث في أعضاء الطاقم...",
-    "upgradeNow": "ارفع الآن"
+    "upgradeNow": "ارفع الآن",
+    "premiumPlanLabel": "الخطة المميزة",
+    "paidPlanLabel": "خطة مدفوعة",
+    "freePlanLabel": "الخطة المجانية",
+    "planLabel": "الخطة: {plan}"
   },
   "subscription": {
     "banner": "مركز الاشتراك",
@@ -449,6 +453,7 @@
     "secureEmail": "البريد الإلكتروني الآمن",
     "emailPlaceholder": "name{'@'}pitchpro.club",
     "accessCredentials": "بيانات الدخول",
+    "passwordPlaceholder": "••••••••••••",
     "phoneNumber": "رقم الهاتف",
     "phonePlaceholder": "+44 7000 000000",
     "address": "العنوان",

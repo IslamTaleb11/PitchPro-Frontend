@@ -193,12 +193,11 @@ const handleRegistration = async () => {
       title: t('presidentRegistration.toast.successTitle'),
       message: t('presidentRegistration.toast.successMessage'),
       mode: 'success',
-      duration: 2000
+      duration: 1200
     })
-    // Optionally redirect to login after a delay
-    // setTimeout(() => {
-    //   router.push('/login')
-    // }, 2000)
+    setTimeout(() => {
+      router.push('/login')
+    }, 1200)
   } catch (error) {
     const apiMessage = getApiErrorMessage(error)
     showToast({

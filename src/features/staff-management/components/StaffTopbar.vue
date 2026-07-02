@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getCurrentPlanFromJwt } from '../../../services/axiosConfig'
 
 defineProps({
   sidebarOpen: {
@@ -20,6 +21,24 @@ const currentLangLabel = computed(() => {
 
 const currentLangFlag = computed(() => {
   return locale.value === 'ar' ? '🇩🇿' : '🇬🇧'
+})
+
+const planLabel = computed(() => {
+  const plan = getCurrentPlanFromJwt()
+  if (!plan) return null
+
+  const normalized = plan.toString().trim().toLowerCase()
+  if (normalized.includes('premium') || normalized.includes('pro')) {
+    return $t('topbar.premiumPlanLabel')
+  }
+  if (normalized.includes('paid')) {
+    return $t('topbar.paidPlanLabel')
+  }
+  if (normalized.includes('free')) {
+    return $t('topbar.freePlanLabel')
+  }
+
+  return $t('topbar.planLabel', { plan })
 })
 
 function setLanguage(lang) {
@@ -47,6 +66,9 @@ function setLanguage(lang) {
       <h1 class="min-w-0 truncate text-base font-black uppercase tracking-widest text-white md:text-lg">{{ pageTitle }}</h1>
       <span class="hidden rounded border border-green-400/20 bg-green-400/10 px-2 py-0.5 text-[10px] font-bold text-green-400 md:inline-flex">
         {{ $t('topbar.liveOps') }}
+      </span>
+      <span v-if="planLabel" class="hidden rounded border border-slate-500/20 bg-slate-900/80 px-2 py-0.5 text-[10px] font-bold text-slate-200 md:inline-flex">
+        {{ planLabel }}
       </span>
     </div>
     <div class="flex items-center gap-2 md:gap-4 lg:gap-6">

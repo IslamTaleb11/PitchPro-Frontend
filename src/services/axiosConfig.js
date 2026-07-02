@@ -47,6 +47,59 @@ function getAuthTokenStorageType() {
   return null;
 }
 
+function parseJwt(token) {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.')
+  if (parts.length !== 3) return null;
+
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => `%${(`00${c.charCodeAt(0).toString(16)}`).slice(-2)}`)
+        .join('')
+    );
+
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
+function getCurrentPlanFromJwt() {
+  const token = getAuthToken();
+  const claims = parseJwt(token);
+  if (!claims) return null;
+
+  const rawPlan =
+    claims.plan ||
+    claims.subscription ||
+    claims.tier ||
+    claims.membership ||
+    claims['https://pitchpro.io/plan'] ||
+    claims['planType'] ||
+    claims['accountType'];
+
+  if (typeof rawPlan === 'string' && rawPlan.trim().length > 0) {
+    return rawPlan.trim();
+  }
+
+  if (rawPlan && typeof rawPlan === 'object') {
+    return rawPlan.name || rawPlan.type || rawPlan.label || null;
+  }
+
+  if (claims.premium === true || claims.isPremium === true) {
+    return 'premium';
+  }
+
+  if (claims.paid === true || claims.isPaid === true) {
+    return 'paid';
+  }
+
+  return null;
+}
+
 function clearAuthToken() {
   localStorage.removeItem(authTokenKey);
   sessionStorage.removeItem(sessionTokenKey);

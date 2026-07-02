@@ -394,7 +394,7 @@ async function onPhotoChange(event) {
         </div>
         <div class="space-y-1">
           <label class="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.accessCredentials') }}</label>
-          <input v-model="password" type="password" placeholder="••••••••••••" required autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" name="password" />
+          <input v-model="password" type="password" :placeholder="$t('staffManagement.passwordPlaceholder')" required autocomplete="off" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white focus:ring-2 focus:ring-primary-fixed/45 focus:shadow-[0_0_0_3px_rgba(114,255,112,0.16)]" name="password" />
           <div v-if="password" class="flex flex-col gap-1 mt-2 transition-all duration-300">
             <div class="flex items-center gap-2">
               <span :class="['material-symbols-outlined text-sm transition-all duration-300', passwordChecks.length ? 'text-green-400 scale-110' : 'text-red-400']">{{ passwordChecks.length ? 'check_circle' : 'error' }}</span>
