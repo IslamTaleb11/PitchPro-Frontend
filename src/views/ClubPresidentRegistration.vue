@@ -47,15 +47,6 @@ const passwordChecks = computed(() => {
   }
 })
 
-function handleRegister() {
-  showLoadingToast({
-    title: t('presidentRegistration.toast.registeringTitle'),
-    message: t('presidentRegistration.toast.registeringMessage'),
-    successTitle: t('presidentRegistration.toast.successTitle'),
-    successMessage: t('presidentRegistration.toast.successMessage')
-  })
-}
-
 function goToLogin() {
   showLoadingToast({
     title: t('presidentRegistration.toast.loginReadyTitle'),
@@ -288,7 +279,7 @@ const handleRegistration = async () => {
             </p>
           </div>
 
-          <form class="space-y-6" @submit.prevent="handleRegister">
+          <form class="space-y-6" @submit.prevent="handleRegistration">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div class="space-y-2">
                 <label class="block font-headline text-[10px] uppercase tracking-widest text-outline" for="first-name">
@@ -451,7 +442,6 @@ const handleRegistration = async () => {
 
             <div class="pt-4">
               <button
-              @click="handleRegistration"
                 type="submit"
                 class="pressable w-full rounded-lg bg-[linear-gradient(135deg,#ebffe2_0%,#00ff41_100%)] py-5 transition-transform active:scale-95"
               >

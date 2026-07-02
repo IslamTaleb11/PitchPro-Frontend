@@ -1,8 +1,12 @@
-import api from './axiosConfig'
+﻿import api from './axiosConfig'
 
 export async function login(email, password) {
   return api.post('/auth/login', {
     email,
     password
   })
+}
+
+export async function upgradeToken() {
+  return api.post('/upgrade-token')
 }

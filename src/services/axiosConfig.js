@@ -4,8 +4,7 @@ import axios from 'axios';
 // Example value in Vercel: https://pitchprobackend-production.up.railway.app
 const baseDomain = import.meta.env.VITE_API_URL || 'https://localhost:7057';
 const authTokenKey = 'pitchpro-auth-token';
-const sessionTokenKey = 'pitchpro-session-auth-token';
-
+const sessionTokenKey = 'pitchpro-session-auth-token';let loginRedirectTimer = null;
 // 2. Clean up any trailing slashes from the domain to prevent double slashes (//api)
 const cleanDomain = baseDomain.replace(/\/+$/, '');
 
@@ -34,6 +33,18 @@ function setAuthToken(token, persist = false) {
 
   sessionStorage.setItem(sessionTokenKey, token);
   setAuthHeader(token);
+}
+
+function getAuthTokenStorageType() {
+  if (localStorage.getItem(authTokenKey)) {
+    return 'local';
+  }
+
+  if (sessionStorage.getItem(sessionTokenKey)) {
+    return 'session';
+  }
+
+  return null;
 }
 
 function clearAuthToken() {
@@ -98,14 +109,17 @@ api.interceptors.response.use(
         console.info('Authentication token expired. Redirecting to login.');
       }
 
-      clearAuthToken();
-      redirectToLogin();
+      clearTimeout(loginRedirectTimer);
+      loginRedirectTimer = setTimeout(() => {
+        clearAuthToken();
+        redirectToLogin();
+      }, 2200);
     }
 
     return Promise.reject(error);
   }
 );
 
-export { clearAuthToken, getAuthToken, setAuthToken };
+export { clearAuthToken, getAuthToken, setAuthToken, getAuthTokenStorageType };
 
 export default api;

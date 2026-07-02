@@ -1,16 +1,38 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useUiToast } from '../composables/useUiToast'
+import { upgradeToken } from '../services/authService'
+import { getAuthTokenStorageType, setAuthToken } from '../services/axiosConfig'
 import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.vue'
 import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
 
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
+const { showToast } = useUiToast()
 const isSidebarOpen = ref(true)
 
 const checkoutId = computed(() => route.query.checkout_id || route.query.checkoutId || null)
+
+onMounted(async () => {
+  try {
+    const storageType = getAuthTokenStorageType()
+    const response = await upgradeToken()
+    const newToken = response?.data?.token || response?.data?.accessToken || response?.data?.access_token
+
+    if (!newToken) {
+      throw new Error('Upgrade endpoint did not return a token.')
+    }
+
+    setAuthToken(newToken, storageType === 'local')
+  } catch (error) {
+    const message = error?.response?.data?.message || error?.message || t('paymentSuccess.upgradeErrorMessage') || 'Unable to refresh subscription token.'
+    showToast({ title: t('paymentSuccess.upgradeFailed') || 'Upgrade failed', message, mode: 'error', duration: 4000 })
+    console.error('Upgrade token failed:', error)
+  }
+})
 
 function goToSubscription() {
   router.push({ name: 'SubscriptionDashboard' })
