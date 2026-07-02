@@ -108,14 +108,13 @@ function getCurrentPlanFromJwt(token) {
   const claims = parseJwt(rawToken);
   if (!claims) return null;
 
+  consle.log('Claims:', claims); // Debugging line to check the claims
   const rawPlan =
     claims.plan ||
     claims.subscription ||
     claims.tier ||
-    claims.membership ||
-    claims['https://pitchpro.io/plan'] ||
-    claims['planType'] ||
-    claims['accountType'];
+    claims.membership
+;
 
   if (typeof rawPlan === 'string' && rawPlan.trim().length > 0) {
     return normalizePlanValue(rawPlan);
