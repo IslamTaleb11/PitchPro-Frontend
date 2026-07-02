@@ -82,9 +82,30 @@ function parseJwt(token) {
   }
 }
 
-function getCurrentPlanFromJwt() {
-  const token = getAuthToken();
-  const claims = parseJwt(token);
+function normalizePlanValue(plan) {
+  if (plan == null) return null;
+  const normalized = String(plan).trim().toLowerCase();
+  if (!normalized) return null;
+
+  if (normalized.includes('premium') || normalized.includes('pro')) {
+    return 'premium';
+  }
+  if (normalized.includes('paid')) {
+    return 'paid';
+  }
+  if (normalized.includes('free')) {
+    return 'free';
+  }
+  if (normalized.includes('basic') || normalized.includes('starter')) {
+    return 'free';
+  }
+
+  return normalized;
+}
+
+function getCurrentPlanFromJwt(token) {
+  const rawToken = token || getAuthToken();
+  const claims = parseJwt(rawToken);
   if (!claims) return null;
 
   const rawPlan =
@@ -97,7 +118,7 @@ function getCurrentPlanFromJwt() {
     claims['accountType'];
 
   if (typeof rawPlan === 'string' && rawPlan.trim().length > 0) {
-    return rawPlan.trim();
+    return normalizePlanValue(rawPlan);
   }
 
   if (rawPlan && typeof rawPlan === 'object') {
@@ -113,12 +134,12 @@ function getCurrentPlanFromJwt() {
       rawPlan.product ||
       rawPlan.description;
 
-    if (typeof planValue === 'string' && planValue.trim().length > 0) {
-      return planValue.trim();
+    const normalizedValue = normalizePlanValue(planValue);
+    if (normalizedValue) {
+      return normalizedValue;
     }
-
     if (planValue != null) {
-      return String(planValue);
+      return String(planValue).trim();
     }
   }
 
@@ -147,7 +168,7 @@ function getPlanFromToken(token) {
     claims['accountType'];
 
   if (typeof rawPlan === 'string' && rawPlan.trim().length > 0) {
-    return rawPlan.trim();
+    return normalizePlanValue(rawPlan);
   }
 
   if (rawPlan && typeof rawPlan === 'object') {
@@ -163,12 +184,13 @@ function getPlanFromToken(token) {
       rawPlan.product ||
       rawPlan.description;
 
-    if (typeof planValue === 'string' && planValue.trim().length > 0) {
-      return planValue.trim();
+    const normalizedPlanValue = normalizePlanValue(planValue);
+    if (normalizedPlanValue) {
+      return normalizedPlanValue;
     }
 
     if (planValue != null) {
-      return String(planValue);
+      return String(planValue).trim();
     }
   }
 
