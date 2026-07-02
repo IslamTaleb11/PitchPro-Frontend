@@ -173,6 +173,6 @@ api.interceptors.response.use(
   }
 );
 
-export { clearAuthToken, getAuthToken, setAuthToken, getAuthTokenStorageType };
+export { clearAuthToken, getAuthToken, setAuthToken, getAuthTokenStorageType, getCurrentPlanFromJwt };
 
 export default api;
