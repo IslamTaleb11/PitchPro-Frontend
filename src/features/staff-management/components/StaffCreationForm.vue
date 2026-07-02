@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useUiToast } from '../../../composables/useUiToast'
 import { staffService } from '../../../services/staffService'
 import { lookupService } from '../../../services/lookupService'
+import { getCurrentClubIdFromJwt } from '../../../services/axiosConfig'
 import imageCompression from 'browser-image-compression'
 
 defineEmits(['deploy'])
@@ -142,7 +143,6 @@ function normalizeLookupArray(data) {
 }
 
 async function loadLookups() {
-  console.log('Loading lookups...')
   const results = await Promise.allSettled([
     lookupService.getBloodTypes(),
     lookupService.getPrimaryRoles(),
@@ -182,13 +182,19 @@ async function submitForm(event) {
   // Prevent default form submission
   event.preventDefault()
   // Build request payload from component refs
+  const clubId = getCurrentClubIdFromJwt();
+  if (!clubId) {
+    showToast({ title: $t('common.error'), message: $t('common.missingClubId'), mode: 'error', duration: 4000 });
+    return;
+  }
+
   const data = {
     firstName: firstName.value,
     secondName: secondName.value,
     lastName: lastName.value,
     gender: gender.value,
     birthDate: birthDate.value,
-    // clubID: omitted; backend derives from JWT
+    clubID: clubId,
     email: email.value,
     password: password.value,
     photo: photoFile.value,
@@ -252,7 +258,6 @@ async function submitForm(event) {
       lastName.value = ''
       gender.value = 'Male'
       birthDate.value = ''
-      clubID.value = 7
       email.value = ''
       password.value = ''
       photoPreview.value = ''
@@ -266,8 +271,18 @@ async function submitForm(event) {
       allergies.value = ''
       medicalNotes.value = ''
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || 'An error occurred while creating staff'
-      showToast({ title: 'Error', message: errorMessage, mode: 'error', duration: 4000 })
+      const apiData = error.response?.data;
+      if (apiData?.status === 'limit_reached') {
+        showToast({
+          title: $t('common.limitReachedTitle'),
+          message: $t('common.limitReachedMessage'),
+          mode: 'error',
+          duration: 12000
+        })
+      } else {
+        const errorMessage = apiData?.message || error.message || $t('common.staffCreateError') || 'An error occurred while creating staff'
+        showToast({ title: $t('common.error'), message: errorMessage, mode: 'error', duration: 4000 })
+      }
     }
   }
 

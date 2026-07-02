@@ -4,7 +4,8 @@ import axios from 'axios';
 // Example value in Vercel: https://pitchprobackend-production.up.railway.app
 const baseDomain = import.meta.env.VITE_API_URL || 'https://localhost:7057';
 const authTokenKey = 'pitchpro-auth-token';
-const sessionTokenKey = 'pitchpro-session-auth-token';let loginRedirectTimer = null;
+const sessionTokenKey = 'pitchpro-session-auth-token';
+let loginRedirectTimer = null;
 // 2. Clean up any trailing slashes from the domain to prevent double slashes (//api)
 const cleanDomain = baseDomain.replace(/\/+$/, '');
 
@@ -100,6 +101,25 @@ function getCurrentPlanFromJwt() {
   return null;
 }
 
+function getCurrentClubIdFromJwt() {
+  const token = getAuthToken();
+  const claims = parseJwt(token);
+  if (!claims) return null;
+
+  const clubId =
+    claims.clubId ||
+    claims.clubID ||
+    claims.ClubID ||
+    claims.club ||
+    claims.club_name ||
+    claims.organizationId ||
+    claims.organizationID ||
+    claims.tenantId ||
+    claims.tenantID;
+
+  return clubId ?? null;
+}
+
 function clearAuthToken() {
   localStorage.removeItem(authTokenKey);
   sessionStorage.removeItem(sessionTokenKey);
@@ -173,6 +193,6 @@ api.interceptors.response.use(
   }
 );
 
-export { clearAuthToken, getAuthToken, setAuthToken, getAuthTokenStorageType, getCurrentPlanFromJwt };
+export { clearAuthToken, getAuthToken, setAuthToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getCurrentClubIdFromJwt };
 
 export default api;
