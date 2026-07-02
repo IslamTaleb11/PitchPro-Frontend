@@ -196,9 +196,9 @@ const handleRegistration = async () => {
       duration: 2000
     })
     // Optionally redirect to login after a delay
-    setTimeout(() => {
-      router.push('/login')
-    }, 2000)
+    // setTimeout(() => {
+    //   router.push('/login')
+    // }, 2000)
   } catch (error) {
     const apiMessage = getApiErrorMessage(error)
 
