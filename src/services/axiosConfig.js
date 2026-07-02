@@ -101,7 +101,25 @@ function getCurrentPlanFromJwt() {
   }
 
   if (rawPlan && typeof rawPlan === 'object') {
-    return rawPlan.name || rawPlan.type || rawPlan.label || null;
+    const planValue =
+      rawPlan.name ||
+      rawPlan.type ||
+      rawPlan.label ||
+      rawPlan.plan ||
+      rawPlan.value ||
+      rawPlan.accountType ||
+      rawPlan.subscriptionType ||
+      rawPlan.tier ||
+      rawPlan.product ||
+      rawPlan.description;
+
+    if (typeof planValue === 'string' && planValue.trim().length > 0) {
+      return planValue.trim();
+    }
+
+    if (planValue != null) {
+      return String(planValue);
+    }
   }
 
   if (claims.premium === true || claims.isPremium === true) {
