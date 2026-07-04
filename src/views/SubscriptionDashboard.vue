@@ -194,10 +194,11 @@ onUnmounted(() => {
                   >
                     {{ isCheckingOut ? $t('subscription.processing') : $t('subscription.orderNow') }}
                   </button>
-                  <button v-else class="w-full border border-primary-container/50 bg-surface-container-low py-5 rounded-sm font-display font-black text-sm tracking-[0.2em] uppercase text-primary-container" type="button" disabled>
-                    {{ $t('subscription.currentPlan') }}
+                  <button v-else class="w-full bg-linear-to-r from-amber-400 to-orange-500 text-slate-950 py-5 rounded-sm font-display font-black text-sm tracking-[0.2em] uppercase shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed" type="button" @click="orderProPlan" :disabled="isCheckingOut">
+                    {{ isCheckingOut ? $t('subscription.processing') : $t('subscription.extendPremium') }}
                   </button>
-                  <p class="text-[10px] text-neutral-500 mt-4 uppercase text-center tracking-widest font-bold">{{ $t('subscription.cancelAnytime') }}</p>
+                  <p class="text-[10px] text-neutral-500 mt-2 uppercase text-center tracking-widest font-bold">{{ $t('subscription.renewalNote') }}</p>
+                  <p class="text-[10px] text-neutral-500 mt-2 uppercase text-center tracking-widest font-bold">{{ $t('subscription.cancelAnytime') }}</p>
                 </div>
               </div>
               <div class="flex flex-col">
