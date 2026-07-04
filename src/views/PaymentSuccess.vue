@@ -46,15 +46,15 @@ function goToSubscription() {
 
     <main
       :class="[
-          'pt-24 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-8 transition-all duration-300 lg:flex-1',
+          'pt-24 min-h-[calc(100vh-5rem)] overflow-y-auto bg-background p-4 sm:p-6 lg:p-8 transition-all duration-300 lg:flex-1',
           'ms-0',
       ]"
     >
       <div class="scanline"></div>
-      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[720px] bg-primary-container/5 rounded-full blur-[120px] pointer-events-none"></div>
+      <div class="absolute inset-x-0 top-0 h-[420px] bg-primary-container/5 blur-[120px] pointer-events-none"></div>
 
-      <div class="relative h-full flex items-center justify-center p-8">
-        <div class="w-full max-w-5xl grid gap-8 md:grid-cols-12 items-center">
+      <div class="relative flex justify-center py-4 sm:py-8">
+        <div class="w-full max-w-5xl grid gap-8 md:grid-cols-12 items-start">
           <div class="md:col-span-5 flex flex-col items-center text-center gap-8">
             <div class="relative mb-8">
               <div class="w-32 h-32 rounded-full border-4 border-primary flex items-center justify-center glow-effect animate-pulse">
