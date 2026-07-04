@@ -29,6 +29,10 @@ const isLoadingSubscriptionInfo = ref(false)
 
 async function fetchSubscriptionRemainingDays() {
   if (typeof window === 'undefined') return
+  if (isFreePlan.value) {
+    subscriptionRemainingDays.value = null
+    return
+  }
 
   try {
     isLoadingSubscriptionInfo.value = true
@@ -90,6 +94,11 @@ const isPremiumPlan = computed(() => {
   return plan.includes('premium') || plan.includes('pro')
 })
 
+const isFreePlan = computed(() => {
+  const plan = String(currentPlan.value ?? '').trim().toLowerCase()
+  return !plan || plan.includes('free') || plan.includes('basic') || plan.includes('starter')
+})
+
 const remainingDaysLabel = computed(() => {
   if (subscriptionRemainingDays.value == null) return null
 
@@ -136,7 +145,7 @@ function setLanguage(lang) {
       <span v-if="planLabel" class="hidden rounded border border-slate-500/20 bg-slate-900/80 px-2 py-0.5 text-[10px] font-bold text-slate-200 md:inline-flex">
         {{ planLabel }}
       </span>
-      <div v-if="remainingDaysLabel" class="hidden items-center gap-2 rounded-full border border-amber-400/20 bg-gradient-to-r from-amber-400/15 via-amber-500/10 to-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-amber-200 shadow-lg shadow-amber-500/10 md:inline-flex">
+      <div v-if="!isFreePlan && remainingDaysLabel" class="hidden items-center gap-2 rounded-full border border-amber-400/20 bg-gradient-to-r from-amber-400/15 via-amber-500/10 to-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-amber-200 shadow-lg shadow-amber-500/10 md:inline-flex">
         <span class="material-symbols-outlined text-sm">calendar_month</span>
         <span>{{ remainingDaysLabel }}</span>
       </div>
