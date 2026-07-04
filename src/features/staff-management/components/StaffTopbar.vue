@@ -85,7 +85,10 @@ const planLabel = computed(() => {
   return $t('topbar.planLabel', { plan })
 })
 
-const isPremiumPlan = computed(() => currentPlan.value === 'premium')
+const isPremiumPlan = computed(() => {
+  const plan = String(currentPlan.value ?? '').trim().toLowerCase()
+  return plan.includes('premium') || plan.includes('pro')
+})
 
 const remainingDaysLabel = computed(() => {
   if (subscriptionRemainingDays.value == null) return null

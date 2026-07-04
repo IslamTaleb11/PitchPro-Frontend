@@ -22,7 +22,15 @@ function updatePlan(evt) {
   currentPlan.value = getCurrentPlanFromJwt()
 }
 
-const isPremiumPlan = computed(() => currentPlan.value === 'premium')
+const isPremiumPlan = computed(() => {
+  const plan = String(currentPlan.value ?? '').trim().toLowerCase()
+  return plan.includes('premium') || plan.includes('pro')
+})
+
+const isFreePlan = computed(() => {
+  const plan = String(currentPlan.value ?? '').trim().toLowerCase()
+  return !plan || plan.includes('free') || plan.includes('basic') || plan.includes('starter')
+})
 
 async function orderProPlan() {
   if (isCheckingOut.value) return
@@ -153,7 +161,10 @@ onUnmounted(() => {
                 <span class="text-sm text-neutral-300 font-medium">{{ $t('subscription.featureFive') }}</span>
               </li>
             </ul>
-            <button class="w-full py-4 border border-outline-variant/50 text-white font-bold text-sm tracking-widest uppercase hover:bg-white hover:text-black transition-all">
+            <button v-if="isFreePlan" class="w-full py-4 border border-outline-variant/50 text-white font-bold text-sm tracking-widest uppercase hover:bg-white hover:text-black transition-all">
+              {{ $t('subscription.currentPlan') }}
+            </button>
+            <button v-else class="w-full py-4 border border-outline-variant/50 bg-surface-container-high text-neutral-400 font-bold text-sm tracking-widest uppercase" type="button" disabled>
               {{ $t('subscription.currentPlan') }}
             </button>
           </div>

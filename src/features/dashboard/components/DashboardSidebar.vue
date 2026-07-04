@@ -29,7 +29,10 @@ onUnmounted(() => {
   }
 })
 
-const isPremiumPlan = computed(() => currentPlan.value === 'premium')
+const isPremiumPlan = computed(() => {
+  const plan = String(currentPlan.value ?? '').trim().toLowerCase()
+  return plan.includes('premium') || plan.includes('pro')
+})
 
 defineEmits(['toggle-sidebar'])
 
