@@ -1,6 +1,35 @@
 <script setup>
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getCurrentPlanFromJwt, getPlanFromToken } from '../../../services/axiosConfig'
+
 const { t: $t } = useI18n()
+
+const currentPlan = ref(null)
+
+function updatePlan(evt) {
+  if (evt && evt.detail && evt.detail.token) {
+    currentPlan.value = getPlanFromToken(evt.detail.token) || getCurrentPlanFromJwt()
+    return
+  }
+
+  currentPlan.value = getCurrentPlanFromJwt()
+}
+
+onMounted(() => {
+  updatePlan()
+  if (typeof window !== 'undefined') {
+    window.addEventListener('auth:tokenChanged', updatePlan)
+  }
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('auth:tokenChanged', updatePlan)
+  }
+})
+
+const isPremiumPlan = computed(() => currentPlan.value === 'premium')
 
 defineEmits(['toggle-sidebar'])
 
@@ -77,7 +106,7 @@ const items = [
       </router-link>
     </nav>
 
-    <div class="mt-auto px-4 space-y-3">
+    <div v-if="!isPremiumPlan" class="mt-auto px-4 space-y-3">
       <router-link
         to="/dashboard/subscription"
         class="pressable flex w-full items-center justify-center gap-2 rounded bg-green-500 py-4 text-xs font-black uppercase tracking-[0.2em] text-slate-950 transition-all hover:bg-green-400"

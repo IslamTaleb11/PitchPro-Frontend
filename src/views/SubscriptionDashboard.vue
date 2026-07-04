@@ -1,15 +1,28 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.vue'
 import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
 import { useUiToast } from '../composables/useUiToast'
 import { paymentService } from '../services/paymentService'
+import { getCurrentPlanFromJwt, getPlanFromToken } from '../services/axiosConfig'
 
 const { t: $t } = useI18n()
 const isSidebarOpen = ref(true)
 const isCheckingOut = ref(false)
+const currentPlan = ref(null)
 const { showToast } = useUiToast()
+
+function updatePlan(evt) {
+  if (evt && evt.detail && evt.detail.token) {
+    currentPlan.value = getPlanFromToken(evt.detail.token) || getCurrentPlanFromJwt()
+    return
+  }
+
+  currentPlan.value = getCurrentPlanFromJwt()
+}
+
+const isPremiumPlan = computed(() => currentPlan.value === 'premium')
 
 async function orderProPlan() {
   if (isCheckingOut.value) return
@@ -52,6 +65,12 @@ async function orderProPlan() {
 }
 
 onMounted(() => {
+  updatePlan()
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('auth:tokenChanged', updatePlan)
+  }
+
   document.querySelectorAll('.glow-hover').forEach(card => {
     card.addEventListener('mousemove', e => {
       const rect = card.getBoundingClientRect()
@@ -61,6 +80,12 @@ onMounted(() => {
       card.style.setProperty('--mouse-y', `${y}px`)
     })
   })
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('auth:tokenChanged', updatePlan)
+  }
 })
 </script>
 
@@ -161,12 +186,16 @@ onMounted(() => {
                 </div>
                 <div class="mt-auto">
                   <button
+                    v-if="!isPremiumPlan"
                     class="w-full bg-linear-to-r from-green-400 to-emerald-500 text-slate-950 py-5 rounded-sm font-display font-black text-sm tracking-[0.2em] uppercase shadow-lg shadow-primary-container/20 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
                     type="button"
                     @click="orderProPlan"
                     :disabled="isCheckingOut"
                   >
                     {{ isCheckingOut ? $t('subscription.processing') : $t('subscription.orderNow') }}
+                  </button>
+                  <button v-else class="w-full border border-primary-container/50 bg-surface-container-low py-5 rounded-sm font-display font-black text-sm tracking-[0.2em] uppercase text-primary-container" type="button" disabled>
+                    {{ $t('subscription.currentPlan') }}
                   </button>
                   <p class="text-[10px] text-neutral-500 mt-4 uppercase text-center tracking-widest font-bold">{{ $t('subscription.cancelAnytime') }}</p>
                 </div>

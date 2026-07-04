@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { getCurrentPlanFromJwt, getPlanFromToken } from '../../../services/axiosConfig'
+import api, { getCurrentPlanFromJwt, getPlanFromToken } from '../../../services/axiosConfig'
 
 defineProps({
   sidebarOpen: {
@@ -24,13 +24,34 @@ const currentLangFlag = computed(() => {
 })
 
 const currentPlan = ref(null)
+const subscriptionRemainingDays = ref(null)
+const isLoadingSubscriptionInfo = ref(false)
+
+async function fetchSubscriptionRemainingDays() {
+  if (typeof window === 'undefined') return
+
+  try {
+    isLoadingSubscriptionInfo.value = true
+    const response = await api.get('/club/subscription/remaining')
+    const parsedValue = Number(response?.data)
+    subscriptionRemainingDays.value = Number.isFinite(parsedValue) ? parsedValue : null
+  } catch (error) {
+    subscriptionRemainingDays.value = null
+    console.error('Failed to load subscription remaining days', error)
+  } finally {
+    isLoadingSubscriptionInfo.value = false
+  }
+}
 
 function updatePlan(evt) {
   if (evt && evt.detail && evt.detail.token) {
     currentPlan.value = getPlanFromToken(evt.detail.token) || getCurrentPlanFromJwt()
+    fetchSubscriptionRemainingDays()
     return
   }
+
   currentPlan.value = getCurrentPlanFromJwt()
+  fetchSubscriptionRemainingDays()
 }
 
 onMounted(() => {
@@ -64,6 +85,25 @@ const planLabel = computed(() => {
   return $t('topbar.planLabel', { plan })
 })
 
+const isPremiumPlan = computed(() => currentPlan.value === 'premium')
+
+const remainingDaysLabel = computed(() => {
+  if (subscriptionRemainingDays.value == null) return null
+
+  const days = Number(subscriptionRemainingDays.value)
+  if (!Number.isFinite(days)) return null
+
+  if (days <= 0) {
+    return $t('topbar.subscriptionExpired')
+  }
+
+  if (days === 1) {
+    return $t('topbar.oneDayLeft', { count: days })
+  }
+
+  return $t('topbar.daysLeft', { count: days })
+})
+
 function setLanguage(lang) {
   locale.value = lang
   isLangDropdownOpen.value = false
@@ -93,6 +133,10 @@ function setLanguage(lang) {
       <span v-if="planLabel" class="hidden rounded border border-slate-500/20 bg-slate-900/80 px-2 py-0.5 text-[10px] font-bold text-slate-200 md:inline-flex">
         {{ planLabel }}
       </span>
+      <div v-if="remainingDaysLabel" class="hidden items-center gap-2 rounded-full border border-amber-400/20 bg-gradient-to-r from-amber-400/15 via-amber-500/10 to-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-amber-200 shadow-lg shadow-amber-500/10 md:inline-flex">
+        <span class="material-symbols-outlined text-sm">calendar_month</span>
+        <span>{{ remainingDaysLabel }}</span>
+      </div>
     </div>
     <div class="flex items-center gap-2 md:gap-4 lg:gap-6">
       <div class="relative hidden xl:block">
@@ -105,6 +149,7 @@ function setLanguage(lang) {
       </div>
       <div class="flex items-center gap-2 md:gap-4">
         <router-link
+          v-if="!isPremiumPlan"
           to="/dashboard/subscription"
           class="pressable hidden items-center gap-2 rounded-lg bg-green-400 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-slate-950 transition-colors hover:bg-green-300 md:inline-flex"
         >

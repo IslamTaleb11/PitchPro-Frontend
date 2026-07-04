@@ -114,7 +114,10 @@
     "premiumPlanLabel": "Premium Plan",
     "paidPlanLabel": "Paid Plan",
     "freePlanLabel": "Free Plan",
-    "planLabel": "Plan: {plan}"
+    "planLabel": "Plan: {plan}",
+    "daysLeft": "{count} days left",
+    "oneDayLeft": "1 day left",
+    "subscriptionExpired": "Subscription expired"
   },
   "subscription": {
     "banner": "SUBSCRIPTION CENTER",

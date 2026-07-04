@@ -115,7 +115,10 @@
     "premiumPlanLabel": "الخطة المميزة",
     "paidPlanLabel": "خطة مدفوعة",
     "freePlanLabel": "الخطة المجانية",
-    "planLabel": "الخطة: {plan}"
+    "planLabel": "الخطة: {plan}",
+    "daysLeft": "متبقي {count} يوم",
+    "oneDayLeft": "متبقي يوم واحد",
+    "subscriptionExpired": "انتهت الاشتراك"
   },
   "subscription": {
     "banner": "مركز الاشتراك",
