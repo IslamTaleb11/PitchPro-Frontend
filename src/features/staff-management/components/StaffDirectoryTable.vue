@@ -25,9 +25,29 @@ const clubID = ref(7)
 
 // 3. Filter State
 const showFilterModal = ref(false)
+const showActionModal = ref(false)
+const actionTarget = ref(null)
+const actionMode = ref('select')
 const selectedPrimaryRoleId = ref(null)
 const selectedRoleClassificationId = ref(null)
 const selectedCategoryIds = ref([])
+const updateForm = ref({
+  id: null,
+  firstName: '',
+  secondName: '',
+  lastName: '',
+  gender: 'Male',
+  birthDate: '',
+  email: '',
+  phoneNumber: '',
+  address: '',
+  primaryRoleID: '',
+  roleClassificationID: '',
+  categoriesIDs: [],
+  bloodTypeID: 1,
+  allergies: '',
+  medicalNotes: ''
+})
 
 // 4. Computed: classifications filtered by selected primary role
 const filteredClassifications = computed(() => {
@@ -190,6 +210,85 @@ function toggleCategory(categoryId) {
   }
 }
 
+function openActionModal(staff, mode = 'select') {
+  actionMode.value = mode
+  actionTarget.value = staff
+  showActionModal.value = true
+  if (mode === 'update' && staff) {
+    updateForm.value = {
+      id: staff.id ?? staff.ID ?? null,
+      firstName: staff.firstName ?? '',
+      lastName: staff.lastName ?? '',
+      secondName: staff.secondName ?? '',
+      gender: staff.gender === false || staff.gender === 'Female' ? 'Female' : 'Male',
+      birthDate: staff.birthDate ?? '',
+      email: staff.email ?? '',
+      phoneNumber: staff.phoneNumber ?? '',
+      address: staff.address ?? '',
+      primaryRoleID: staff.primaryRoleID ?? '',
+      roleClassificationID: staff.roleClassificationID ?? '',
+      categoriesIDs: staff.categoriesIDs ?? [],
+      bloodTypeID: staff.bloodTypeID ?? 1,
+      allergies: staff.allergies ?? '',
+      medicalNotes: staff.medicalNotes ?? ''
+    }
+  }
+}
+
+function closeActionModal() {
+  showActionModal.value = false
+  actionTarget.value = null
+}
+
+async function submitUpdate() {
+  try {
+    const payload = {
+      id: updateForm.value.id,
+      firstName: updateForm.value.firstName,
+      secondName: updateForm.value.secondName,
+      lastName: updateForm.value.lastName,
+      gender: updateForm.value.gender === 'Male',
+      birthDate: updateForm.value.birthDate,
+      email: updateForm.value.email,
+      phoneNumber: updateForm.value.phoneNumber,
+      address: updateForm.value.address,
+      primaryRoleID: Number(updateForm.value.primaryRoleID),
+      roleClassificationID: Number(updateForm.value.roleClassificationID),
+      categoriesIDs: updateForm.value.categoriesIDs.map(id => Number(id)),
+      bloodTypeID: Number(updateForm.value.bloodTypeID),
+      allergies: updateForm.value.allergies,
+      medicalNotes: updateForm.value.medicalNotes,
+      photo: null
+    }
+    await staffService.updateStaff(payload.id, payload)
+    showToast({ title: 'Updated', message: 'Staff member updated successfully.', mode: 'success' })
+    closeActionModal()
+    fetchStaff()
+  } catch (error) {
+    const message = error?.response?.data?.message || 'Failed to update staff.'
+    showToast({ title: 'Error', message, mode: 'error' })
+  }
+}
+
+async function deleteStaff() {
+  const staffName = actionTarget.value?.fullName || 'this staff member'
+  const confirmed = window.confirm(`Delete ${staffName}?`)
+
+  if (!confirmed) {
+    return
+  }
+
+  try {
+    await staffService.deleteStaff(actionTarget.value.id ?? actionTarget.value.ID)
+    showToast({ title: 'Deleted', message: 'Staff member deleted successfully.', mode: 'success' })
+    closeActionModal()
+    fetchStaff()
+  } catch (error) {
+    const message = error?.response?.data?.message || 'Failed to delete staff.'
+    showToast({ title: 'Error', message, mode: 'error' })
+  }
+}
+
 // 11. Lifecycle
 onMounted(() => {
   loadLookups()
@@ -254,7 +353,7 @@ onMounted(() => {
               </span>
             </td>
             <td class="px-6 py-5 text-right">
-              <button type="button" class="pressable p-2 text-slate-500 transition-colors hover:text-white">
+              <button type="button" class="pressable p-2 text-slate-500 transition-colors hover:text-white" @click="openActionModal(staff, 'select')">
                 <span class="material-symbols-outlined text-lg">more_vert</span>
               </button>
             </td>
@@ -300,9 +399,84 @@ onMounted(() => {
     </div>
   </div>
 
+  <!-- ACTION MODAL -->
+  <Teleport to="body">
+    <div v-if="showActionModal" class="fixed inset-0 z-110 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-background/80 backdrop-blur-md" @click="closeActionModal"></div>
+      <div class="relative w-full max-w-xl rounded-xl border border-white/10 bg-surface-container-low shadow-2xl overflow-hidden">
+        <div class="border-b border-white/5 p-6">
+          <div class="text-[10px] font-black uppercase tracking-[0.2em] text-green-400">{{ actionMode === 'update' ? 'Update Staff' : 'Staff Actions' }}</div>
+          <h2 class="text-xl font-black uppercase tracking-tight text-white">{{ actionTarget?.fullName || 'Staff Member' }}</h2>
+        </div>
+        <div v-if="actionMode === 'select'" class="p-6">
+          <p class="mb-4 text-sm text-slate-400">Choose an action for this staff member.</p>
+          <div class="flex flex-wrap gap-3">
+            <button type="button" class="rounded-md bg-primary-container px-4 py-2 text-[10px] font-black uppercase tracking-widest text-on-primary-fixed" @click="openActionModal(actionTarget, 'update')">Update</button>
+            <button type="button" class="rounded-md bg-red-500/20 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-400 hover:bg-red-500/30" @click="deleteStaff">Delete</button>
+          </div>
+        </div>
+        <div v-else-if="actionMode === 'update'" class="max-h-[70vh] space-y-4 overflow-y-auto p-6">
+          <div class="grid gap-4 md:grid-cols-2">
+            <div>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">First name</label>
+              <input v-model="updateForm.firstName" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
+            </div>
+            <div>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Last name</label>
+              <input v-model="updateForm.lastName" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
+            </div>
+          </div>
+          <div class="grid gap-4 md:grid-cols-2">
+            <div>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Email</label>
+              <input v-model="updateForm.email" type="email" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
+            </div>
+            <div>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Phone</label>
+              <input v-model="updateForm.phoneNumber" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
+            </div>
+          </div>
+          <div>
+            <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Address</label>
+            <input v-model="updateForm.address" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
+          </div>
+          <div class="grid gap-4 md:grid-cols-2">
+            <div>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Primary role</label>
+              <select v-model="updateForm.primaryRoleID" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white">
+                <option v-for="role in primaryRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Classification</label>
+              <select v-model="updateForm.roleClassificationID" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white">
+                <option v-for="cls in roleClassifications" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Categories</label>
+            <div class="flex flex-wrap gap-2">
+              <label v-for="cat in categories" :key="cat.id" class="rounded border border-white/10 bg-surface-container-lowest px-2 py-1 text-[10px] font-bold text-slate-300">
+                <input type="checkbox" :value="cat.id" v-model="updateForm.categoriesIDs" class="mr-2" />{{ cat.name }}
+              </label>
+            </div>
+          </div>
+        </div>
+        <div v-else class="p-6 text-sm text-slate-400">
+          Choose an action for this staff member.
+        </div>
+        <div class="flex items-center justify-end gap-3 border-t border-white/5 bg-surface-container-high/50 p-6">
+          <button type="button" class="rounded-md px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white/5" @click="closeActionModal">Cancel</button>
+          <button v-if="actionMode === 'update'" type="button" class="rounded-md bg-primary-container px-4 py-2 text-[10px] font-black uppercase tracking-widest text-on-primary-fixed" @click="submitUpdate">Save</button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
   <!-- FILTER MODAL -->
   <Teleport to="body">
-    <div v-if="showFilterModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div v-if="showFilterModal" class="fixed inset-0 z-100 flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-background/80 backdrop-blur-md" @click="toggleFilterModal"></div>
       <div class="relative bg-surface-container-low w-full max-w-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden">
         <div class="p-6 border-b border-white/5 flex items-center justify-between">
@@ -399,7 +573,7 @@ onMounted(() => {
           </button>
           <button
             type="button"
-            class="flex-[2] py-4 bg-primary-container text-on-primary-fixed font-black text-xs uppercase tracking-widest rounded-md shadow-lg shadow-green-900/20 hover:brightness-110 transition-all flex items-center justify-center gap-2"
+            class="flex-2 py-4 bg-primary-container text-on-primary-fixed font-black text-xs uppercase tracking-widest rounded-md shadow-lg shadow-green-900/20 hover:brightness-110 transition-all flex items-center justify-center gap-2"
             @click="applyFilters"
           >
             {{ $t('staffManagement.applyFilters') }}

@@ -65,7 +65,7 @@ export const staffService = {
   },
   async updateStaff(staffId, payload) {
     const formData = new FormData();
-    formData.append("StaffId", staffId);
+    formData.append("ID", staffId);
     formData.append("FirstName", payload.firstName);
     if (payload.secondName) formData.append("SecondName", payload.secondName);
     formData.append("LastName", payload.lastName);
