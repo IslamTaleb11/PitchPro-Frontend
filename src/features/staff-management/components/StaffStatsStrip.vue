@@ -10,16 +10,26 @@ const counts = ref({
   totalFitnessStaff: 0
 })
 
-onMounted(async () => {
+async function loadCounts() {
   try {
     const response = await staffService.getStaffCounts()
-    const data = response.data?.data || response.data || response;
+    const data = response.data?.data || response.data || response
     if (data && typeof data.totalActiveStaff !== 'undefined') {
       counts.value = data
     }
   } catch (error) {
     console.error('Failed to load staff counts', error?.response?.data || error)
   }
+}
+
+onMounted(loadCounts)
+
+function reloadCounts() {
+  return loadCounts()
+}
+
+defineExpose({
+  reloadCounts
 })
 
 const { t: $t } = useI18n()

@@ -161,6 +161,14 @@ async function fetchStaff() {
   }
 }
 
+function reloadStaff() {
+  return fetchStaff()
+}
+
+defineExpose({
+  reloadStaff
+})
+
 // 10. Pagination & Filter Handlers
 function nextPage() {
   if (currentPage.value < totalPages.value) {

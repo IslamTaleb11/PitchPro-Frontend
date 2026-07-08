@@ -7,7 +7,7 @@ import { lookupService } from '../../../services/lookupService'
 import { getCurrentClubIdFromJwt } from '../../../services/axiosConfig'
 import imageCompression from 'browser-image-compression'
 
-defineEmits(['deploy'])
+const emit = defineEmits(['deploy'])
 
 const photoPreview = ref('')
 const photoFile = ref(null)
@@ -252,6 +252,7 @@ async function submitForm(event) {
       const response = await staffService.createStaff(data)
       const result = response.data
       showToast({ title: $t('common.staffCreated'), message: result.message || $t('common.staffCreatedMsg'), mode: 'success', duration: 3000 })
+      emit('deploy')
       // Reset form fields
       firstName.value = ''
       secondName.value = ''

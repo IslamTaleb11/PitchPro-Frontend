@@ -12,23 +12,24 @@ import { useUiToast } from '../composables/useUiToast'
 const { showToast } = useUiToast()
 const { t: $t } = useI18n()
 const isSidebarOpen = ref(true)
+const staffTableRef = ref(null)
+const staffStatsRef = ref(null)
 
 async function onDeployStaff() {
-  showToast({
-    title: $t('common.deployingStaff'),
-    message: $t('common.deployingStaffMsg'),
-    mode: 'loading',
-    duration: 30000
-  })
+  const results = await Promise.allSettled([
+    staffTableRef.value?.reloadStaff(),
+    staffStatsRef.value?.reloadCounts()
+  ])
 
-  await new Promise(resolve => setTimeout(resolve, 2000))
-
-  showToast({
-    title: $t('common.staffCreated'),
-    message: $t('common.staffCreatedMsg'),
-    mode: 'success',
-    duration: 2000
-  })
+  const failed = results.filter(r => r.status === 'rejected')
+  if (failed.length > 0) {
+    showToast({
+      title: $t('common.error'),
+      message: $t('staffManagement.refreshError') || 'Failed to refresh staff data.',
+      mode: 'error',
+      duration: 4000
+    })
+  }
 }
 </script>
 
@@ -47,8 +48,8 @@ async function onDeployStaff() {
         <StaffCreationForm @deploy="onDeployStaff" />
 
         <section class="col-span-12 space-y-6 lg:col-span-7 xl:col-span-8">
-          <StaffStatsStrip />
-          <StaffDirectoryTable />
+          <StaffStatsStrip ref="staffStatsRef" />
+          <StaffDirectoryTable ref="staffTableRef" />
           <StaffInsightsCards />
         </section>
       </div>
