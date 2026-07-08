@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useUiToast } from '../composables/useUiToast'
 import { useI18n } from 'vue-i18n'
 import { login } from '../services/authService'
-import { setAuthToken } from '../services/axiosConfig'
+import { setAuthToken, setRefreshToken } from '../services/axiosConfig'
 
 const router = useRouter()
 const { showToast, showLoadingToast } = useUiToast()
@@ -36,13 +36,17 @@ async function handleLogin() {
 
   try {
     const response = await login(form.email.trim(), form.password)
-    const token = response?.data?.token
+    const accessToken = response?.data?.accessToken || response?.data?.token || response?.data?.access_token
+    const refreshToken = response?.data?.refreshToken || response?.data?.refresh_token
 
-    if (!token) {
-      throw new Error('Login succeeded but no token was returned.')
+    if (!accessToken) {
+      throw new Error('Login succeeded but no access token was returned.')
     }
 
-    setAuthToken(token, form.stayLoggedIn)
+    setAuthToken(accessToken, form.stayLoggedIn)
+    if (refreshToken) {
+      setRefreshToken(refreshToken, form.stayLoggedIn)
+    }
 
     showToast({
       title: t('login.toast.accessingTerminalSuccessTitle'),

@@ -4,13 +4,19 @@ import axios from 'axios';
 // Example value in Vercel: https://pitchprobackend-production.up.railway.app
 const baseDomain = import.meta.env.VITE_API_URL || 'https://localhost:7057';
 const authTokenKey = 'pitchpro-auth-token';
+const refreshTokenKey = 'pitchpro-refresh-token';
 const sessionTokenKey = 'pitchpro-session-auth-token';
+const sessionRefreshTokenKey = 'pitchpro-session-refresh-token';
 let loginRedirectTimer = null;
 // 2. Clean up any trailing slashes from the domain to prevent double slashes (//api)
-const cleanDomain = baseDomain.replace(/\/+$/, '');
+const cleanDomain = baseDomain.replace(/\/+$, '');
 
 function getAuthToken() {
   return localStorage.getItem(authTokenKey) || sessionStorage.getItem(sessionTokenKey);
+}
+
+function getRefreshToken() {
+  return localStorage.getItem(refreshTokenKey) || sessionStorage.getItem(sessionRefreshTokenKey);
 }
 
 function setAuthHeader(token) {
@@ -48,6 +54,22 @@ function setAuthToken(token, persist = false) {
       // ignore unsupported browsers
     }
   }
+}
+
+function setRefreshToken(token, persist = false) {
+  localStorage.removeItem(refreshTokenKey);
+  sessionStorage.removeItem(sessionRefreshTokenKey);
+
+  if (!token) {
+    return;
+  }
+
+  if (persist) {
+    localStorage.setItem(refreshTokenKey, token);
+    return;
+  }
+
+  sessionStorage.setItem(sessionRefreshTokenKey, token);
 }
 
 function getAuthTokenStorageType() {
@@ -225,7 +247,9 @@ function getCurrentClubIdFromJwt() {
 
 function clearAuthToken() {
   localStorage.removeItem(authTokenKey);
+  localStorage.removeItem(refreshTokenKey);
   sessionStorage.removeItem(sessionTokenKey);
+  sessionStorage.removeItem(sessionRefreshTokenKey);
   setAuthHeader(null);
   if (typeof window !== 'undefined') {
     try {
@@ -303,6 +327,6 @@ api.interceptors.response.use(
   }
 );
 
-export { clearAuthToken, getAuthToken, setAuthToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getPlanFromToken, getCurrentClubIdFromJwt };
+export { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken, setRefreshToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getPlanFromToken, getCurrentClubIdFromJwt };
 
 export default api;

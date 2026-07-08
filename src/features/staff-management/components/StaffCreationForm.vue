@@ -287,17 +287,39 @@ async function submitForm(event) {
     }
   }
 
+function normalizeApiMessage(message) {
+  if (typeof message === 'string') return message
+  if (Array.isArray(message)) return message.join(' ')
+  if (message && typeof message === 'object') {
+    return Object.values(message)
+      .flatMap((value) => {
+        if (typeof value === 'string') return [value]
+        if (Array.isArray(value)) return value
+        if (value && typeof value === 'object') return Object.values(value)
+        return []
+      })
+      .join(' ')
+  }
+  return String(message || '')
+}
+
 function getLocalizedStaffCreationError(apiData, error) {
-  const rawMessage = String(apiData?.message || error.message || '').trim()
+  const rawMessage = normalizeApiMessage(apiData?.message || error.message || '')
+    .trim()
   const lowerMsg = rawMessage.toLowerCase()
 
-  if (lowerMsg.includes('already registered') || lowerMsg.includes('already in use') || lowerMsg.includes('duplicate') && lowerMsg.includes('email')) {
+  if (
+    lowerMsg.includes('already registered') ||
+    lowerMsg.includes('already in use') ||
+    (lowerMsg.includes('duplicate') && lowerMsg.includes('email')) ||
+    lowerMsg.includes('email address') && lowerMsg.includes('already registered')
+  ) {
     return $t('common.emailAlreadyTaken')
   }
   if (lowerMsg.includes('invalid email')) {
     return $t('common.invalidEmailFormat')
   }
-  if (lowerMsg.includes('email is required') || lowerMsg.includes('email is required.')) {
+  if (lowerMsg.includes('email is required')) {
     return $t('common.emailRequired')
   }
 
