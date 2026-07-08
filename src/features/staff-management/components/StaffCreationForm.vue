@@ -281,11 +281,28 @@ async function submitForm(event) {
           duration: 12000
         })
       } else {
-        const errorMessage = apiData?.message || error.message || $t('common.staffCreateError') || 'An error occurred while creating staff'
+        const errorMessage = getLocalizedStaffCreationError(apiData, error)
         showToast({ title: $t('common.error'), message: errorMessage, mode: 'error', duration: 4000 })
       }
     }
   }
+
+function getLocalizedStaffCreationError(apiData, error) {
+  const rawMessage = String(apiData?.message || error.message || '').trim()
+  const lowerMsg = rawMessage.toLowerCase()
+
+  if (lowerMsg.includes('already registered') || lowerMsg.includes('already in use') || lowerMsg.includes('duplicate') && lowerMsg.includes('email')) {
+    return $t('common.emailAlreadyTaken')
+  }
+  if (lowerMsg.includes('invalid email')) {
+    return $t('common.invalidEmailFormat')
+  }
+  if (lowerMsg.includes('email is required') || lowerMsg.includes('email is required.')) {
+    return $t('common.emailRequired')
+  }
+
+  return rawMessage || $t('common.staffCreateError')
+}
 
 
 
