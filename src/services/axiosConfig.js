@@ -9,7 +9,7 @@ const sessionTokenKey = 'pitchpro-session-auth-token';
 const sessionRefreshTokenKey = 'pitchpro-session-refresh-token';
 let loginRedirectTimer = null;
 // 2. Clean up any trailing slashes from the domain to prevent double slashes (//api)
-const cleanDomain = baseDomain.replace(/\/+$, '');
+const cleanDomain = typeof baseDomain === 'string' ? baseDomain.replace(/\/+$/, '') : '';
 
 function getAuthToken() {
   return localStorage.getItem(authTokenKey) || sessionStorage.getItem(sessionTokenKey);
