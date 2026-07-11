@@ -7,7 +7,10 @@ const authTokenKey = 'pitchpro-auth-token';
 const refreshTokenKey = 'pitchpro-refresh-token';
 const sessionTokenKey = 'pitchpro-session-auth-token';
 const sessionRefreshTokenKey = 'pitchpro-session-refresh-token';
+const refreshIntervalMs = 15 * 60 * 1000;
 let loginRedirectTimer = null;
+let refreshTimer = null;
+let refreshRequestPromise = null;
 // 2. Clean up any trailing slashes from the domain to prevent double slashes (//api)
 const cleanDomain = typeof baseDomain === 'string' ? baseDomain.replace(/\/+$/, '') : '';
 
@@ -42,17 +45,22 @@ function setAuthToken(token, persist = false) {
         // ignore unsupported browsers
       }
     }
-    return;
+  } else {
+    sessionStorage.setItem(sessionTokenKey, token);
+    setAuthHeader(token);
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('auth:tokenChanged', { detail: { token } }));
+      } catch (e) {
+        // ignore unsupported browsers
+      }
+    }
   }
 
-  sessionStorage.setItem(sessionTokenKey, token);
-  setAuthHeader(token);
-  if (typeof window !== 'undefined') {
-    try {
-      window.dispatchEvent(new CustomEvent('auth:tokenChanged', { detail: { token } }));
-    } catch (e) {
-      // ignore unsupported browsers
-    }
+  if (token) {
+    scheduleTokenRefresh();
+  } else {
+    clearRefreshTimer();
   }
 }
 
@@ -61,15 +69,19 @@ function setRefreshToken(token, persist = false) {
   sessionStorage.removeItem(sessionRefreshTokenKey);
 
   if (!token) {
+    clearRefreshTimer();
     return;
   }
 
   if (persist) {
     localStorage.setItem(refreshTokenKey, token);
-    return;
+  } else {
+    sessionStorage.setItem(sessionRefreshTokenKey, token);
   }
 
-  sessionStorage.setItem(sessionRefreshTokenKey, token);
+  if (getAuthToken()) {
+    scheduleTokenRefresh();
+  }
 }
 
 function getAuthTokenStorageType() {
@@ -245,11 +257,19 @@ function getCurrentClubIdFromJwt() {
   return clubId ?? null;
 }
 
+function clearRefreshTimer() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+}
+
 function clearAuthToken() {
   localStorage.removeItem(authTokenKey);
   localStorage.removeItem(refreshTokenKey);
   sessionStorage.removeItem(sessionTokenKey);
   sessionStorage.removeItem(sessionRefreshTokenKey);
+  clearRefreshTimer();
   setAuthHeader(null);
   if (typeof window !== 'undefined') {
     try {
@@ -284,6 +304,70 @@ function getResponseHeader(headers, headerName) {
   return headers[normalizedHeaderName] || headers[headerName];
 }
 
+async function refreshAuthToken() {
+  const activeRefreshToken = getRefreshToken();
+  const activeAccessToken = getAuthToken();
+
+  if (!activeRefreshToken || !activeAccessToken) {
+    clearAuthToken();
+    return null;
+  }
+
+  if (refreshRequestPromise) {
+    return refreshRequestPromise;
+  }
+
+  refreshRequestPromise = api
+    .post('/auth/refresh', {
+      refreshToken: activeRefreshToken
+    })
+    .then((response) => {
+      const nextAccessToken = response?.data?.accessToken || response?.data?.token || response?.data?.access_token;
+      const nextRefreshToken = response?.data?.refreshToken || response?.data?.refresh_token || activeRefreshToken;
+
+      if (!nextAccessToken) {
+        throw new Error('Refresh succeeded but no access token was returned.');
+      }
+
+      const persist = localStorage.getItem(authTokenKey) ? true : false;
+      setAuthToken(nextAccessToken, persist);
+      setRefreshToken(nextRefreshToken, persist);
+
+      return response;
+    })
+    .catch((error) => {
+      clearAuthToken();
+      redirectToLogin();
+      throw error;
+    })
+    .finally(() => {
+      refreshRequestPromise = null;
+    });
+
+  return refreshRequestPromise;
+}
+
+function scheduleTokenRefresh() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  clearRefreshTimer();
+
+  const activeRefreshToken = getRefreshToken();
+  const activeAccessToken = getAuthToken();
+
+  if (!activeRefreshToken || !activeAccessToken) {
+    return;
+  }
+
+  refreshTimer = window.setInterval(() => {
+    refreshAuthToken().catch(() => {
+      // Refresh error already clears auth and redirects
+    });
+  }, refreshIntervalMs);
+}
+
 const api = axios.create({
   // This smoothly combines the domain and the global /api prefix
   baseURL: `${cleanDomain}/api`,
@@ -307,9 +391,27 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const status = error?.response?.status;
     const tokenExpired = Boolean(getResponseHeader(error?.response?.headers, 'Token-Expired'));
+    const isRetry = Boolean(error?.config?._retry);
+
+    if (status === 401 && !isRetry && getRefreshToken()) {
+      error.config._retry = true;
+
+      try {
+        await refreshAuthToken();
+        const refreshedToken = getAuthToken();
+
+        if (refreshedToken) {
+          error.config.headers = error.config.headers || {};
+          error.config.headers.Authorization = `Bearer ${refreshedToken}`;
+          return api.request(error.config);
+        }
+      } catch (refreshError) {
+        return Promise.reject(refreshError);
+      }
+    }
 
     if (status === 401) {
       if (tokenExpired) {
@@ -327,6 +429,10 @@ api.interceptors.response.use(
   }
 );
 
-export { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken, setRefreshToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getPlanFromToken, getCurrentClubIdFromJwt };
+if (typeof window !== 'undefined' && getAuthToken() && getRefreshToken()) {
+  scheduleTokenRefresh();
+}
+
+export { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken, setRefreshToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getPlanFromToken, getCurrentClubIdFromJwt, refreshAuthToken };
 
 export default api;
