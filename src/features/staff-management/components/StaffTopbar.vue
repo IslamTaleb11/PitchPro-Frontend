@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import api, { getCurrentPlanFromJwt, getPlanFromToken, clearAuthToken } from '../../../services/axiosConfig'
+import api, { getCurrentPlanFromJwt, getPlanFromToken, getRefreshToken, clearAuthToken } from '../../../services/axiosConfig'
 
 defineProps({
   sidebarOpen: {
@@ -126,10 +126,19 @@ function setLanguage(lang) {
 
 const router = useRouter()
 
-function logout() {
+async function logout() {
   try {
-    clearAuthToken()
+    const refreshToken = getRefreshToken()
+
+    if (refreshToken) {
+      await api.post('/auth/logout', {
+        refreshToken
+      })
+    }
+  } catch (error) {
+    console.warn('Logout backend request failed, clearing local auth anyway.', error)
   } finally {
+    clearAuthToken()
     router.push('/login')
   }
 }
