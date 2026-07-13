@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import api, { getCurrentPlanFromJwt, getPlanFromToken } from '../../../services/axiosConfig'
+import api, { getCurrentPlanFromJwt, getPlanFromToken, clearAuthToken } from '../../../services/axiosConfig'
 
 defineProps({
   sidebarOpen: {
@@ -122,6 +123,16 @@ function setLanguage(lang) {
   document.documentElement.lang = lang
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
 }
+
+const router = useRouter()
+
+function logout() {
+  try {
+    clearAuthToken()
+  } finally {
+    router.push('/login')
+  }
+}
 </script>
 
 <template>
@@ -219,6 +230,10 @@ function setLanguage(lang) {
             </button>
           </div>
         </div>
+
+        <button type="button" @click="logout" class="pressable hidden text-slate-400 transition-opacity hover:text-red-400 active:opacity-80 md:inline-flex" title="Logout">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
 
         <div class="h-9 w-9 rounded-full border-2 border-green-400/30 p-0.5 md:h-10 md:w-10">
           <img
