@@ -102,12 +102,18 @@ const router = createRouter({
   routes
 })
 
-// router.beforeEach((to) => {
-//   if (to.meta.requiresAuth && !getAuthToken()) {
-//     return { name: 'Login' }
-//   }
+router.beforeEach((to) => {
+  const isLoggedIn = Boolean(getAuthToken())
 
-//   return true
-// })
+  if (to.meta.requiresAuth && !isLoggedIn) {
+    return { name: 'Login' }
+  }
+
+  if (to.name === 'Login' && isLoggedIn) {
+    return { name: 'StaffManagementDashboard' }
+  }
+
+  return true
+})
 
 export default router
