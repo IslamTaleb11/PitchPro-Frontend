@@ -15,7 +15,7 @@ const isSubmitting = ref(false)
 const form = reactive({
   email: '',
   password: '',
-  stayLoggedIn: false
+  stayLoggedIn: true
 })
 
 async function handleLogin() {
