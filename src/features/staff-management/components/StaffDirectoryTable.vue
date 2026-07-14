@@ -28,6 +28,8 @@ const showFilterModal = ref(false)
 const showActionModal = ref(false)
 const actionTarget = ref(null)
 const actionMode = ref('select')
+const isEditLoading = ref(false)
+const isEditLoading = ref(false)
 const selectedPrimaryRoleId = ref(null)
 const selectedRoleClassificationId = ref(null)
 const selectedCategoryIds = ref([])
@@ -218,29 +220,44 @@ function toggleCategory(categoryId) {
   }
 }
 
-function openActionModal(staff, mode = 'select') {
+async function openActionModal(staff, mode = 'select') {
   actionMode.value = mode
   actionTarget.value = staff
-  showActionModal.value = true
+
   if (mode === 'update' && staff) {
-    updateForm.value = {
-      id: staff.id ?? staff.ID ?? null,
-      firstName: staff.firstName ?? '',
-      lastName: staff.lastName ?? '',
-      secondName: staff.secondName ?? '',
-      gender: staff.gender === false || staff.gender === 'Female' ? 'Female' : 'Male',
-      birthDate: staff.birthDate ?? '',
-      email: staff.email ?? '',
-      phoneNumber: staff.phoneNumber ?? '',
-      address: staff.address ?? '',
-      primaryRoleID: staff.primaryRoleID ?? '',
-      roleClassificationID: staff.roleClassificationID ?? '',
-      categoriesIDs: staff.categoriesIDs ?? [],
-      bloodTypeID: staff.bloodTypeID ?? 1,
-      allergies: staff.allergies ?? '',
-      medicalNotes: staff.medicalNotes ?? ''
+    isEditLoading.value = true
+    try {
+      const staffId = staff.id ?? staff.ID ?? staff.staffId ?? staff.staffID ?? staff.StaffID
+      const response = await staffService.getStaffById(staffId)
+      const staffDetails = response?.data ?? staff
+
+      updateForm.value = {
+        id: staffDetails.id ?? staffDetails.ID ?? staffDetails.staffId ?? staffDetails.staffID ?? null,
+        firstName: staffDetails.firstName ?? staffDetails.FirstName ?? '',
+        lastName: staffDetails.lastName ?? staffDetails.LastName ?? '',
+        secondName: staffDetails.secondName ?? staffDetails.SecondName ?? '',
+        gender: staffDetails.gender === false || staffDetails.gender === 'Female' ? 'Female' : 'Male',
+        birthDate: staffDetails.birthDate ?? staffDetails.BirthDate ?? '',
+        email: staffDetails.email ?? staffDetails.Email ?? '',
+        phoneNumber: staffDetails.phoneNumber ?? staffDetails.PhoneNumber ?? '',
+        address: staffDetails.address ?? staffDetails.Address ?? '',
+        primaryRoleID: staffDetails.primaryRoleID ?? staffDetails.PrimaryRoleID ?? staffDetails.primaryRoleId ?? staffDetails.PrimaryRoleId ?? '',
+        roleClassificationID: staffDetails.roleClassificationID ?? staffDetails.RoleClassificationID ?? staffDetails.roleClassificationId ?? staffDetails.RoleClassificationId ?? '',
+        categoriesIDs: staffDetails.categoriesIDs ?? staffDetails.CategoriesIDs ?? staffDetails.categoryIds ?? staffDetails.CategoryIDs ?? [],
+        bloodTypeID: staffDetails.bloodTypeID ?? staffDetails.BloodTypeID ?? 1,
+        allergies: staffDetails.allergies ?? staffDetails.Allergies ?? '',
+        medicalNotes: staffDetails.medicalNotes ?? staffDetails.MedicalNotes ?? ''
+      }
+    } catch (error) {
+      const message = error?.response?.data?.message || 'Failed to load staff details.'
+      showToast({ title: 'Error', message, mode: 'error' })
+      return
+    } finally {
+      isEditLoading.value = false
     }
   }
+
+  showActionModal.value = true
 }
 
 function closeActionModal() {
