@@ -104,12 +104,13 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   const isLoggedIn = Boolean(getAuthToken())
+  const authPages = ['Login', 'ClubRegistration', 'ClubPresidentRegistration']
 
   if (to.meta.requiresAuth && !isLoggedIn) {
     return { name: 'Login' }
   }
 
-  if (to.name === 'Login' && isLoggedIn) {
+  if (isLoggedIn && authPages.includes(to.name)) {
     return { name: 'StaffManagementDashboard' }
   }
 
