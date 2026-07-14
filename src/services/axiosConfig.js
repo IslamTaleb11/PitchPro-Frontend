@@ -79,9 +79,8 @@ function setRefreshToken(token, persist = false) {
     sessionStorage.setItem(sessionRefreshTokenKey, token);
   }
 
-  if (getAuthToken()) {
-    scheduleTokenRefresh();
-  }
+  // Arm (or re-arm) the proactive 30s refresh timer as soon as we hold a refresh token.
+  scheduleTokenRefresh();
 }
 
 function getAuthTokenStorageType() {
@@ -305,44 +304,46 @@ function getResponseHeader(headers, headerName) {
 }
 
 async function refreshAuthToken() {
-  const activeRefreshToken = getRefreshToken();
-  const activeAccessToken = getAuthToken();
+  const refreshToken = getRefreshToken();
 
-  if (!activeRefreshToken || !activeAccessToken) {
+  // Nothing to refresh with — drop the session.
+  if (!refreshToken) {
     clearAuthToken();
     return null;
   }
 
+  // De-duplicate concurrent refreshes so a slow request can't stack up.
   if (refreshRequestPromise) {
     return refreshRequestPromise;
   }
 
-  refreshRequestPromise = api
-    .post('/auth/refresh', {
-      refreshToken: activeRefreshToken
-    })
-    .then((response) => {
-      const nextAccessToken = response?.data?.accessToken || response?.data?.token || response?.data?.access_token;
-      const nextRefreshToken = response?.data?.refreshToken || response?.data?.refresh_token || activeRefreshToken;
+  refreshRequestPromise = (async () => {
+    try {
+      const response = await api.post('/auth/refresh', { refreshToken });
+
+      const nextAccessToken =
+        response?.data?.accessToken || response?.data?.token || response?.data?.access_token;
+      const nextRefreshToken =
+        response?.data?.refreshToken || response?.data?.refresh_token || refreshToken;
 
       if (!nextAccessToken) {
         throw new Error('Refresh succeeded but no access token was returned.');
       }
 
-      const persist = localStorage.getItem(authTokenKey) ? true : false;
+      // Keep the same storage type (local vs session) as the current session.
+      const persist = Boolean(localStorage.getItem(authTokenKey));
       setAuthToken(nextAccessToken, persist);
       setRefreshToken(nextRefreshToken, persist);
 
       return response;
-    })
-    .catch((error) => {
+    } catch (error) {
       clearAuthToken();
       redirectToLogin();
       throw error;
-    })
-    .finally(() => {
+    } finally {
       refreshRequestPromise = null;
-    });
+    }
+  })();
 
   return refreshRequestPromise;
 }
@@ -352,18 +353,16 @@ function scheduleTokenRefresh() {
     return;
   }
 
-  clearRefreshTimer();
-
-  const activeRefreshToken = getRefreshToken();
-  const activeAccessToken = getAuthToken();
-
-  if (!activeRefreshToken || !activeAccessToken) {
+  // A refresh token is all we need to proactively refresh the session.
+  if (!getRefreshToken()) {
     return;
   }
 
+  clearRefreshTimer();
+
   refreshTimer = window.setInterval(() => {
     refreshAuthToken().catch(() => {
-      // Refresh error already clears auth and redirects
+      // refreshAuthToken already clears auth and redirects on failure
     });
   }, refreshIntervalMs);
 }
