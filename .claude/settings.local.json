@@ -27,7 +27,9 @@
       "Bash(Select-Object -First 3 FullName)",
       "Bash(Get-ChildItem \"C:\\\\Users\\\\MSI\\\\AppData\\\\Local\\\\ms-playwright\" -Recurse -Filter \"headless_shell.exe\")",
       "Bash(node *)",
-      "Bash(pkill -f \"vite\")"
+      "Bash(pkill -f \"vite\")",
+      "Bash(dotnet --version)",
+      "Bash(pkill -f vite)"
     ]
   }
 }
