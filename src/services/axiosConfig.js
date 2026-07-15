@@ -446,6 +446,6 @@ if (typeof window !== 'undefined' && getAuthToken() && getRefreshToken()) {
   scheduleTokenRefresh();
 }
 
-export { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken, setRefreshToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getPlanFromToken, getCurrentClubIdFromJwt, refreshAuthToken, isAccessTokenExpired };
+export { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken, setRefreshToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getPlanFromToken, getCurrentClubIdFromJwt, refreshAuthToken, isAccessTokenExpired, parseJwt };
 
 export default api;
