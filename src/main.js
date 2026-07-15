@@ -50,9 +50,11 @@ async function bootstrapSession() {
   // every reload. Only refresh when there's no token or it has expired.
   const token = getAuthToken()
   if (token && !isAccessTokenExpired(token)) {
+    console.info('[auth] startup: access token still valid — skipping refresh.')
     return
   }
 
+  console.info('[auth] startup: no valid access token — refreshing.')
   try {
     await refreshAuthToken()
   } catch {
