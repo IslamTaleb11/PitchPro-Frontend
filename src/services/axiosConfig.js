@@ -115,6 +115,19 @@ function parseJwt(token) {
   }
 }
 
+// Returns true if the given access token is missing, unparsable, or has an
+// `exp` (Unix seconds) at/before now (plus an optional skew buffer). Used to
+// decide whether a refresh is actually necessary on app startup.
+function isAccessTokenExpired(token, skewSeconds = 30) {
+  const claims = parseJwt(token);
+  if (!claims || typeof claims.exp !== 'number') {
+    return true;
+  }
+
+  const expiresAtMs = claims.exp * 1000;
+  return expiresAtMs <= Date.now() + skewSeconds * 1000;
+}
+
 function normalizePlanValue(plan) {
   if (plan == null) return null;
   const normalized = String(plan).trim().toLowerCase();
@@ -432,6 +445,6 @@ if (typeof window !== 'undefined' && getAuthToken() && getRefreshToken()) {
   scheduleTokenRefresh();
 }
 
-export { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken, setRefreshToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getPlanFromToken, getCurrentClubIdFromJwt, refreshAuthToken };
+export { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken, setRefreshToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getPlanFromToken, getCurrentClubIdFromJwt, refreshAuthToken, isAccessTokenExpired };
 
 export default api;

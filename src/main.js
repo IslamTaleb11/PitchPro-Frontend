@@ -5,7 +5,7 @@ import router from './router'
 import { createI18n } from 'vue-i18n'
 import en from './locales/en.json'
 import ar from './locales/ar.json'
-import { getRefreshToken, refreshAuthToken } from './services/axiosConfig'
+import { getAuthToken, getRefreshToken, refreshAuthToken, isAccessTokenExpired } from './services/axiosConfig'
 
 const savedLocaleValue = localStorage.getItem('pitchpro-locale')
 const savedLocale = savedLocaleValue === 'en' || savedLocaleValue === 'ar' ? savedLocaleValue : 'ar'
@@ -42,6 +42,14 @@ app.use(i18n)
 // bounced to /login or hitting 401s on first render.
 async function bootstrapSession() {
   if (!getRefreshToken()) {
+    return
+  }
+
+  // If we already hold a valid (not-yet-expired) access token, skip the
+  // refresh entirely — no need to hit the endpoint or rotate the token on
+  // every reload. Only refresh when there's no token or it has expired.
+  const token = getAuthToken()
+  if (token && !isAccessTokenExpired(token)) {
     return
   }
 
