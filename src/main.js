@@ -5,7 +5,7 @@ import router from './router'
 import { createI18n } from 'vue-i18n'
 import en from './locales/en.json'
 import ar from './locales/ar.json'
-import { getAuthToken, getRefreshToken, refreshAuthToken } from './services/axiosConfig'
+import { getRefreshToken, refreshAuthToken } from './services/axiosConfig'
 
 const savedLocaleValue = localStorage.getItem('pitchpro-locale')
 const savedLocale = savedLocaleValue === 'en' || savedLocaleValue === 'ar' ? savedLocaleValue : 'ar'
@@ -53,11 +53,10 @@ async function bootstrapSession() {
   }
 }
 
+// Always mount the app. With no session the router shows the login page;
+// with a valid session the refreshed token is already in place. If the
+// refresh failed, refreshAuthToken() already cleared the session and
+// redirected to /login (which reloads the app), so mounting is harmless.
 bootstrapSession().finally(() => {
-  // Only mount if we still hold a usable access token. If the refresh
-  // failed (invalid/expired refresh token), refreshAuthToken() already
-  // cleared the session and redirected to /login, so there is no app to mount.
-  if (getAuthToken()) {
-    app.mount('#app')
-  }
+  app.mount('#app')
 })
