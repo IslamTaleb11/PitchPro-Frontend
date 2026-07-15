@@ -5,6 +5,7 @@ import router from './router'
 import { createI18n } from 'vue-i18n'
 import en from './locales/en.json'
 import ar from './locales/ar.json'
+import { getAuthToken, getRefreshToken, refreshAuthToken } from './services/axiosConfig'
 
 const savedLocaleValue = localStorage.getItem('pitchpro-locale')
 const savedLocale = savedLocaleValue === 'en' || savedLocaleValue === 'ar' ? savedLocaleValue : 'ar'
@@ -34,4 +35,29 @@ watch(i18n.global.locale, (newLocale) => {
 const app = createApp(App)
 app.use(router)
 app.use(i18n)
-app.mount('#app')
+
+// Proactively swap any stale access token for a fresh one BEFORE the app
+// mounts and before any dashboard API call is made. This keeps returning
+// users (who still hold a valid refresh token) logged in instead of being
+// bounced to /login or hitting 401s on first render.
+async function bootstrapSession() {
+  if (!getRefreshToken()) {
+    return
+  }
+
+  try {
+    await refreshAuthToken()
+  } catch {
+    // refreshAuthToken() already clears the session and redirects to /login
+    // when the refresh token is invalid/expired, so there is nothing to do here.
+  }
+}
+
+bootstrapSession().finally(() => {
+  // Only mount if we still hold a usable access token. If the refresh
+  // failed (invalid/expired refresh token), refreshAuthToken() already
+  // cleared the session and redirected to /login, so there is no app to mount.
+  if (getAuthToken()) {
+    app.mount('#app')
+  }
+})
