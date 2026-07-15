@@ -64,7 +64,7 @@ function setAuthToken(token, persist = false) {
   }
 }
 
-function setRefreshToken(token, persist = false) {
+function setRefreshToken(token) {
   localStorage.removeItem(refreshTokenKey);
   sessionStorage.removeItem(sessionRefreshTokenKey);
 
@@ -73,11 +73,11 @@ function setRefreshToken(token, persist = false) {
     return;
   }
 
-  if (persist) {
-    localStorage.setItem(refreshTokenKey, token);
-  } else {
-    sessionStorage.setItem(sessionRefreshTokenKey, token);
-  }
+  // Refresh tokens are ALWAYS persisted to localStorage so the session can be
+  // silently re-established after the browser/tab is closed (via the startup
+  // refresh in main.js). This is independent of the "stay logged in" choice,
+  // which only governs where the short-lived access token is stored.
+  localStorage.setItem(refreshTokenKey, token);
 
   // Arm (or re-arm) the proactive 30s refresh timer as soon as we hold a refresh token.
   scheduleTokenRefresh();
@@ -333,7 +333,7 @@ async function refreshAuthToken() {
       // Keep the same storage type (local vs session) as the current session.
       const persist = Boolean(localStorage.getItem(authTokenKey));
       setAuthToken(nextAccessToken, persist);
-      setRefreshToken(nextRefreshToken, persist);
+      setRefreshToken(nextRefreshToken);
 
       return response;
     } catch (error) {

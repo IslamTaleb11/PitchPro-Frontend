@@ -45,7 +45,7 @@ async function handleLogin() {
 
     setAuthToken(accessToken, form.stayLoggedIn)
     if (refreshToken) {
-      setRefreshToken(refreshToken, form.stayLoggedIn)
+      setRefreshToken(refreshToken)
     }
 
     showToast({
