@@ -7,8 +7,8 @@ const authTokenKey = 'pitchpro-auth-token';
 const refreshTokenKey = 'pitchpro-refresh-token';
 const sessionTokenKey = 'pitchpro-session-auth-token';
 const sessionRefreshTokenKey = 'pitchpro-session-refresh-token';
-// Proactively refresh 30 seconds before the 15-minute access token expires.
-const refreshIntervalMs = Number(import.meta.env.VITE_REFRESH_INTERVAL_MS) || 14.5 * 60 * 1000;
+// TEST ONLY — access tokens last 1 min (see GeneralHelper.cs); refresh every 30s. Revert to `14.5 * 60 * 1000`.
+const refreshIntervalMs = Number(import.meta.env.VITE_REFRESH_INTERVAL_MS) || 30 * 1000;
 let loginRedirectTimer = null;
 let refreshTimer = null;
 let syncTimer = null;
