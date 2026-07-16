@@ -68,6 +68,16 @@ async function bootstrapSession() {
   console.info('[auth] startup: no valid access token — refreshing.')
   try {
     await refreshAuthToken()
+    // Surface the *new* token's remaining life so it's obvious the refresh
+    // succeeded and produced a fresh (positive) expiry.
+    const fresh = getAuthToken()
+    if (fresh) {
+      const claims = parseJwt(fresh)
+      if (claims?.exp) {
+        const secsLeft = Math.round((claims.exp * 1000 - getServerNowMs()) / 1000)
+        console.info(`[auth] startup: refreshed — new access token expires in ${secsLeft}s.`)
+      }
+    }
   } catch {
     // refreshAuthToken() already clears the session and redirects to /login
     // when the refresh token is invalid/expired, so there is nothing to do here.
