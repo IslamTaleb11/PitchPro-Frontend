@@ -21,6 +21,7 @@ const isFilterMode = ref(false)
 const primaryRoles = ref([])
 const roleClassifications = ref([])
 const categories = ref([])
+const bloodTypes = ref([])
 const clubID = ref(7)
 
 // 3. Filter State
@@ -100,11 +101,11 @@ function normalizeLookupArray(data) {
 }
 
 // 7. Load lookup data
-async function loadLookups() {
   const results = await Promise.allSettled([
     lookupService.getPrimaryRoles(),
     lookupService.getRoleClassifications(),
-    lookupService.getCategories(clubID.value)
+    lookupService.getCategories(clubID.value),
+    lookupService.getBloodTypes()
   ])
   if (results[0].status === 'fulfilled') primaryRoles.value = normalizeLookupArray(results[0].value.data)
   else console.error('Primary roles error:', results[0].reason)
@@ -112,6 +113,8 @@ async function loadLookups() {
   else console.error('Classifications error:', results[1].reason)
   if (results[2].status === 'fulfilled') categories.value = normalizeLookupArray(results[2].value.data)
   else console.error('Categories error:', results[2].reason)
+  if (results[3].status === 'fulfilled') bloodTypes.value = normalizeLookupArray(results[3].value.data)
+  else console.error('Blood types error:', results[3].reason)
 }
 
 // 8. Watch: reset classification when primary role changes
@@ -228,7 +231,9 @@ async function openActionModal(staff, mode = 'select') {
     try {
       const staffId = staff.id ?? staff.ID ?? staff.staffId ?? staff.staffID ?? staff.StaffID
       const response = await staffService.getStaffById(staffId)
-      const staffDetails = response?.data ?? staff
+      // The endpoint returns the staff object directly (response.data), but be
+      // defensive in case it is ever wrapped in { data: ... }.
+      const staffDetails = response?.data?.data ?? response?.data ?? staff
 
       updateForm.value = {
         id: staffDetails.id ?? staffDetails.ID ?? staffDetails.staffId ?? staffDetails.staffID ?? null,
@@ -236,7 +241,7 @@ async function openActionModal(staff, mode = 'select') {
         lastName: staffDetails.lastName ?? staffDetails.LastName ?? '',
         secondName: staffDetails.secondName ?? staffDetails.SecondName ?? '',
         gender: staffDetails.gender === false || staffDetails.gender === 'Female' ? 'Female' : 'Male',
-        birthDate: staffDetails.birthDate ?? staffDetails.BirthDate ?? '',
+        birthDate: formatDateForInput(staffDetails.birthDate ?? staffDetails.BirthDate),
         email: staffDetails.email ?? staffDetails.Email ?? '',
         phoneNumber: staffDetails.phoneNumber ?? staffDetails.PhoneNumber ?? '',
         address: staffDetails.address ?? staffDetails.Address ?? '',
