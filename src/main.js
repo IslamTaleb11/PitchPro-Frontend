@@ -5,7 +5,7 @@ import router from './router'
 import { createI18n } from 'vue-i18n'
 import en from './locales/en.json'
 import ar from './locales/ar.json'
-import { getAuthToken, getRefreshToken, refreshAuthToken, isAccessTokenExpired, parseJwt } from './services/axiosConfig'
+import { getAuthToken, getRefreshToken, refreshAuthToken, isAccessTokenExpired, parseJwt, getServerNowMs } from './services/axiosConfig'
 
 const savedLocaleValue = localStorage.getItem('pitchpro-locale')
 const savedLocale = savedLocaleValue === 'en' || savedLocaleValue === 'ar' ? savedLocaleValue : 'ar'
@@ -53,7 +53,7 @@ async function bootstrapSession() {
     const claims = parseJwt(token)
     const exp = claims?.exp
     if (typeof exp === 'number') {
-      const secsLeft = Math.round((exp * 1000 - Date.now()) / 1000)
+      const secsLeft = Math.round((exp * 1000 - getServerNowMs()) / 1000)
       console.info(`[auth] startup: access token expires in ${secsLeft}s.`)
     } else {
       console.info('[auth] startup: access token present but unparsable (no exp claim).')

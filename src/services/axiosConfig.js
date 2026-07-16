@@ -15,6 +15,57 @@ let refreshRequestPromise = null;
 // 2. Clean up any trailing slashes from the domain to prevent double slashes (//api)
 const cleanDomain = typeof baseDomain === 'string' ? baseDomain.replace(/\/+$/, '') : '';
 
+// --- Clock-skew compensation -------------------------------------------------
+// JWT `exp` is stamped by the SERVER's clock. Comparing it against the client's
+// `Date.now()` only works when the user's machine clock is correct — which we
+// cannot assume. We measure the offset between the server's time (read from the
+// HTTP `Date` response header) and the local clock, then add it back so every
+// expiry check runs in server-relative time. This keeps auth working correctly
+// even when the client clock is hours off, wrong timezone, or unset.
+let serverTimeOffsetMs = null;
+const SERVER_TIME_OFFSET_KEY = 'pitchpro-server-time-offset';
+
+function loadServerTimeOffset() {
+  try {
+    const raw = localStorage.getItem(SERVER_TIME_OFFSET_KEY);
+    if (raw != null) {
+      const parsed = Number(raw);
+      if (Number.isFinite(parsed)) {
+        serverTimeOffsetMs = parsed;
+      }
+    }
+  } catch {
+    // Storage may be unavailable (private mode) — fall back to local clock.
+  }
+}
+
+function saveServerTimeOffset() {
+  try {
+    if (serverTimeOffsetMs != null) {
+      localStorage.setItem(SERVER_TIME_OFFSET_KEY, String(serverTimeOffsetMs));
+    }
+  } catch {
+    // Ignore write failures.
+  }
+}
+
+// Server-relative "now" in ms. Falls back to the local clock only when we have
+// not yet measured the server time.
+function getServerNowMs() {
+  return serverTimeOffsetMs != null ? Date.now() + serverTimeOffsetMs : Date.now();
+}
+
+// Recompute the offset from a response's `Date` header (RFC 1123 GMT). Called
+// from the response interceptor on every API call so the offset self-corrects
+// if the user later fixes their clock or crosses a DST boundary.
+function captureServerTime(dateHeader) {
+  if (!dateHeader) return;
+  const serverMs = Date.parse(dateHeader);
+  if (!Number.isFinite(serverMs)) return;
+  serverTimeOffsetMs = serverMs - Date.now();
+  saveServerTimeOffset();
+}
+
 function getAuthToken() {
   return localStorage.getItem(authTokenKey) || sessionStorage.getItem(sessionTokenKey);
 }
@@ -118,15 +169,25 @@ function parseJwt(token) {
 
 // Returns true if the given access token is missing, unparsable, or has an
 // `exp` (Unix seconds) at/before now (plus an optional skew buffer). Used to
-// decide whether a refresh is actually necessary on app startup.
+// decide whether a refresh is actually necessary on app startup. All time
+// comparisons use getServerNowMs() (server-relative) so a wrong client clock
+// cannot make a perfectly valid token look expired.
 function isAccessTokenExpired(token, skewSeconds = 30) {
   const claims = parseJwt(token);
   if (!claims || typeof claims.exp !== 'number') {
     return true;
   }
 
+  // If we have never measured the server clock, don't trust the local clock —
+  // conservatively treat the token as expired so startup refreshes and
+  // calibrates the offset. Once measured (persisted across loads), this is
+  // skipped.
+  if (serverTimeOffsetMs == null) {
+    return true;
+  }
+
   const expiresAtMs = claims.exp * 1000;
-  return expiresAtMs <= Date.now() + skewSeconds * 1000;
+  return expiresAtMs <= getServerNowMs() + skewSeconds * 1000;
 }
 
 function normalizePlanValue(plan) {
@@ -403,8 +464,19 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Calibrate the server clock from the response's Date header so future
+    // expiry checks are clock-skew safe.
+    captureServerTime(getResponseHeader(response.headers, 'Date'));
+    return response;
+  },
   async (error) => {
+    // Error responses still carry a Date header — keep the offset fresh.
+    const errHeaders = error?.response?.headers;
+    if (errHeaders) {
+      captureServerTime(getResponseHeader(errHeaders, 'Date'));
+    }
+
     const status = error?.response?.status;
     const tokenExpired = Boolean(getResponseHeader(error?.response?.headers, 'Token-Expired'));
     const isRetry = Boolean(error?.config?._retry);
@@ -446,6 +518,10 @@ if (typeof window !== 'undefined' && getAuthToken() && getRefreshToken()) {
   scheduleTokenRefresh();
 }
 
-export { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken, setRefreshToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getPlanFromToken, getCurrentClubIdFromJwt, refreshAuthToken, isAccessTokenExpired, parseJwt };
+// Restore the last measured server-time offset so the very first load of a
+// session already does correct, clock-skew-safe expiry checks.
+loadServerTimeOffset();
+
+export { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken, setRefreshToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getPlanFromToken, getCurrentClubIdFromJwt, refreshAuthToken, isAccessTokenExpired, parseJwt, getServerNowMs };
 
 export default api;
