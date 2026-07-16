@@ -11,6 +11,7 @@ const sessionRefreshTokenKey = 'pitchpro-session-refresh-token';
 const refreshIntervalMs = Number(import.meta.env.VITE_REFRESH_INTERVAL_MS) || 14.5 * 60 * 1000;
 let loginRedirectTimer = null;
 let refreshTimer = null;
+let syncTimer = null;
 let refreshRequestPromise = null;
 // 2. Clean up any trailing slashes from the domain to prevent double slashes (//api)
 const cleanDomain = typeof baseDomain === 'string' ? baseDomain.replace(/\/+$/, '') : '';
@@ -57,13 +58,33 @@ function getServerNowMs() {
 
 // Recompute the offset from a response's `Date` header (RFC 1123 GMT). Called
 // from the response interceptor on every API call so the offset self-corrects
-// if the user later fixes their clock or crosses a DST boundary.
+// if the user later fixes their clock or crosses a DST boundary. This is a
+// best-effort secondary source — see syncServerTime() for the authoritative one.
 function captureServerTime(dateHeader) {
   if (!dateHeader) return;
   const serverMs = Date.parse(dateHeader);
   if (!Number.isFinite(serverMs)) return;
   serverTimeOffsetMs = serverMs - Date.now();
   saveServerTimeOffset();
+}
+
+// Authoritative clock sync. Asks the server for its current Unix time (ms) via
+// a dedicated endpoint whose value lives in the JSON body (so it is never
+// stripped by CORS/proxies the way the `Date` response header can be). The
+// client computes offset = serverTime - Date.now() and stores it, giving
+// server-relative time for all expiry checks regardless of the client clock.
+async function syncServerTime() {
+  try {
+    const res = await api.get('/auth/server-time');
+    const serverMs = res?.data?.serverTime;
+    if (typeof serverMs === 'number' && Number.isFinite(serverMs)) {
+      serverTimeOffsetMs = serverMs - Date.now();
+      saveServerTimeOffset();
+    }
+  } catch {
+    // Network/endpoint failure: keep any previously known offset (or fall back
+    // to the local clock). The proactive refresh timer is the safety net.
+  }
 }
 
 function getAuthToken() {
@@ -336,6 +357,10 @@ function clearRefreshTimer() {
     clearInterval(refreshTimer);
     refreshTimer = null;
   }
+  if (syncTimer) {
+    clearInterval(syncTimer);
+    syncTimer = null;
+  }
 }
 
 function clearAuthToken() {
@@ -440,6 +465,12 @@ function scheduleTokenRefresh() {
       // refreshAuthToken already clears auth and redirects on failure
     });
   }, refreshIntervalMs);
+
+  // Keep the clock-skew offset fresh over long sessions (in case the user's
+  // clock changes mid-session). Cheap, unauthenticated GET — no DB work.
+  syncTimer = window.setInterval(() => {
+    syncServerTime().catch(() => {});
+  }, 5 * 60 * 1000);
 }
 
 const api = axios.create({
@@ -522,6 +553,6 @@ if (typeof window !== 'undefined' && getAuthToken() && getRefreshToken()) {
 // session already does correct, clock-skew-safe expiry checks.
 loadServerTimeOffset();
 
-export { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken, setRefreshToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getPlanFromToken, getCurrentClubIdFromJwt, refreshAuthToken, isAccessTokenExpired, parseJwt, getServerNowMs };
+export { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken, setRefreshToken, getAuthTokenStorageType, getCurrentPlanFromJwt, getPlanFromToken, getCurrentClubIdFromJwt, refreshAuthToken, isAccessTokenExpired, parseJwt, getServerNowMs, syncServerTime };
 
 export default api;

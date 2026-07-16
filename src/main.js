@@ -5,7 +5,7 @@ import router from './router'
 import { createI18n } from 'vue-i18n'
 import en from './locales/en.json'
 import ar from './locales/ar.json'
-import { getAuthToken, getRefreshToken, refreshAuthToken, isAccessTokenExpired, parseJwt, getServerNowMs } from './services/axiosConfig'
+import { getAuthToken, getRefreshToken, refreshAuthToken, isAccessTokenExpired, parseJwt, getServerNowMs, syncServerTime } from './services/axiosConfig'
 
 const savedLocaleValue = localStorage.getItem('pitchpro-locale')
 const savedLocale = savedLocaleValue === 'en' || savedLocaleValue === 'ar' ? savedLocaleValue : 'ar'
@@ -44,6 +44,11 @@ async function bootstrapSession() {
   if (!getRefreshToken()) {
     return
   }
+
+  // Calibrate the client<->server clock skew from an authoritative server
+  // endpoint BEFORE deciding whether to refresh. This is what stops a wrong
+  // client clock from forcing a refresh on every page load.
+  await syncServerTime()
 
   // If we already hold a valid (not-yet-expired) access token, skip the
   // refresh entirely — no need to hit the endpoint or rotate the token on
