@@ -100,7 +100,20 @@ function normalizeLookupArray(data) {
   return array.map(normalizeLookupItem).filter(item => item.id !== 'Unknown')
 }
 
+// Helper: convert an ISO date/time string (or Date) to a yyyy-MM-dd string
+// suitable for an <input type="date"> binding.
+function formatDateForInput(value) {
+  if (!value) return ''
+  const d = new Date(value)
+  if (isNaN(d.getTime())) return ''
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 // 7. Load lookup data
+async function loadLookups() {
   const results = await Promise.allSettled([
     lookupService.getPrimaryRoles(),
     lookupService.getRoleClassifications(),
@@ -276,7 +289,7 @@ async function submitUpdate() {
       firstName: updateForm.value.firstName,
       secondName: updateForm.value.secondName,
       lastName: updateForm.value.lastName,
-      gender: updateForm.value.gender === 'Male',
+      gender: updateForm.value.gender,
       birthDate: updateForm.value.birthDate,
       email: updateForm.value.email,
       phoneNumber: updateForm.value.phoneNumber,
@@ -445,14 +458,37 @@ onMounted(() => {
           </div>
         </div>
         <div v-else-if="actionMode === 'update'" class="max-h-[70vh] space-y-4 overflow-y-auto p-6">
-          <div class="grid gap-4 md:grid-cols-2">
+          <div class="grid gap-4 md:grid-cols-3">
             <div>
               <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">First name</label>
               <input v-model="updateForm.firstName" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
             </div>
             <div>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Second name</label>
+              <input v-model="updateForm.secondName" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
+            </div>
+            <div>
               <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Last name</label>
               <input v-model="updateForm.lastName" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
+            </div>
+          </div>
+          <div class="grid gap-4 md:grid-cols-3">
+            <div>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Gender</label>
+              <select v-model="updateForm.gender" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Birth date</label>
+              <input v-model="updateForm.birthDate" type="date" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
+            </div>
+            <div>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Blood type</label>
+              <select v-model="updateForm.bloodTypeID" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white">
+                <option v-for="bt in bloodTypes" :key="bt.id" :value="bt.id">{{ bt.name }}</option>
+              </select>
             </div>
           </div>
           <div class="grid gap-4 md:grid-cols-2">
@@ -489,6 +525,16 @@ onMounted(() => {
               <label v-for="cat in categories" :key="cat.id" class="rounded border border-white/10 bg-surface-container-lowest px-2 py-1 text-[10px] font-bold text-slate-300">
                 <input type="checkbox" :value="cat.id" v-model="updateForm.categoriesIDs" class="mr-2" />{{ cat.name }}
               </label>
+            </div>
+          </div>
+          <div class="grid gap-4 md:grid-cols-2">
+            <div>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Allergies</label>
+              <textarea v-model="updateForm.allergies" rows="2" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white"></textarea>
+            </div>
+            <div>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Medical notes</label>
+              <textarea v-model="updateForm.medicalNotes" rows="2" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white"></textarea>
             </div>
           </div>
         </div>
