@@ -257,11 +257,14 @@ function toggleCategory(categoryId) {
 }
 
 async function openActionModal(staff, mode = 'select') {
-  actionMode.value = mode
   actionTarget.value = staff
 
+  // UPDATE: fetch the staff details first, then reveal the form. We never flip
+  // into 'update' mode (and never show the empty form) until the data is ready —
+  // a loading modal is shown while getStaffById runs.
   if (mode === 'update' && staff) {
     isEditLoading.value = true
+    showActionModal.value = false // hide any currently open (select) modal
     try {
       // Make sure every option (all categories / roles / classifications) is loaded
       // from the lookup endpoints before we open the form.
@@ -298,15 +301,21 @@ async function openActionModal(staff, mode = 'select') {
         allergies: staffDetails.allergies ?? staffDetails.Allergies ?? '',
         medicalNotes: staffDetails.medicalNotes ?? staffDetails.MedicalNotes ?? ''
       }
+
+      // Data is ready — now switch into update mode and reveal the populated form.
+      actionMode.value = 'update'
+      showActionModal.value = true
     } catch (error) {
       const message = error?.response?.data?.message || 'Failed to load staff details.'
       showToast({ title: 'Error', message, mode: 'error' })
-      return
     } finally {
       isEditLoading.value = false
     }
+    return
   }
 
+  // SELECT (or any other) mode — no fetch needed.
+  actionMode.value = mode
   showActionModal.value = true
 }
 
@@ -320,6 +329,14 @@ function closeActionModal() {
 // that actually belongs to the newly selected role.
 function onUpdatePrimaryRoleChange() {
   updateForm.value.roleClassificationID = ''
+}
+
+// Toggle a category on/off in the update form's selected-categories list.
+function toggleUpdateCategory(id) {
+  const ids = updateForm.value.categoriesIDs
+  const idx = ids.indexOf(id)
+  if (idx === -1) ids.push(id)
+  else ids.splice(idx, 1)
 }
 
 async function submitUpdate() {
@@ -481,6 +498,17 @@ onMounted(() => {
     </div>
   </div>
 
+  <!-- LOADING MODAL (shown while the staff details endpoint is being fetched) -->
+  <Teleport to="body">
+    <div v-if="isEditLoading" class="fixed inset-0 z-[120] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-background/80 backdrop-blur-md"></div>
+      <div class="relative flex flex-col items-center gap-4 rounded-xl border border-white/10 bg-surface-container-low px-10 py-12 shadow-2xl">
+        <span class="material-symbols-outlined animate-spin text-4xl text-green-400">progress_activity</span>
+        <span class="text-sm font-bold text-slate-300">Loading staff details…</span>
+      </div>
+    </div>
+  </Teleport>
+
   <!-- ACTION MODAL -->
   <Teleport to="body">
     <div v-if="showActionModal" class="fixed inset-0 z-110 flex items-center justify-center p-4">
@@ -560,11 +588,22 @@ onMounted(() => {
             </div>
           </div>
           <div>
-            <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Categories</label>
+            <label class="mb-2 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Categories</label>
             <div class="flex flex-wrap gap-2">
-              <label v-for="cat in categories" :key="cat.id" class="rounded border border-white/10 bg-surface-container-lowest px-2 py-1 text-[10px] font-bold text-slate-300">
-                <input type="checkbox" :value="Number(cat.id)" v-model="updateForm.categoriesIDs" class="mr-2" />{{ cat.name }}
-              </label>
+              <button
+                v-for="cat in categories"
+                :key="cat.id"
+                type="button"
+                @click="toggleUpdateCategory(Number(cat.id))"
+                :class="[
+                  'px-3 py-1.5 text-[10px] font-black rounded-full uppercase tracking-wider border transition-colors',
+                  updateForm.categoriesIDs.includes(Number(cat.id))
+                    ? 'bg-green-400/10 border-green-400/30 text-green-400 hover:bg-green-400/20'
+                    : 'bg-surface-container-lowest border-white/5 text-slate-500 hover:text-white'
+                ]"
+              >
+                {{ cat.name }}
+              </button>
             </div>
           </div>
           <div class="grid gap-4 md:grid-cols-2">
