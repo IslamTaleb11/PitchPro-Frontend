@@ -49,7 +49,7 @@ async function onDeployStaff() {
 
         <section class="col-span-12 space-y-6 lg:col-span-7 xl:col-span-8">
           <StaffStatsStrip ref="staffStatsRef" />
-          <StaffDirectoryTable ref="staffTableRef" />
+          <StaffDirectoryTable ref="staffTableRef" @staff-updated="staffStatsRef?.reloadCounts()" />
           <StaffInsightsCards />
         </section>
       </div>

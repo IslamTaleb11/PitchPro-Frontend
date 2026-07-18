@@ -9,6 +9,10 @@ import imageCompression from 'browser-image-compression'
 const { showToast } = useUiToast()
 const { t: $t } = useI18n()
 
+// Notify the parent (dashboard) that staff data changed so it can refresh the
+// count endpoint (StaffStatsStrip.reloadCounts → staffService.getStaffCounts).
+const emit = defineEmits(['staff-updated'])
+
 // 1. State Management
 const staffList = ref([])
 const currentPage = ref(1)
@@ -444,6 +448,8 @@ async function confirmDelete() {
     showDeleteConfirm.value = false
     closeActionModal()
     fetchStaff()
+    // Refresh the dashboard staff counts (getStaffCounts) so the numbers update.
+    emit('staff-updated')
   } catch (error) {
     const message = error?.response?.data?.message || $t('staffManagement.deleteFailedMessage')
     showToast({
