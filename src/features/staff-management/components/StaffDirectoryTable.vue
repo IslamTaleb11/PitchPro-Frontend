@@ -23,6 +23,7 @@ const roleClassifications = ref([])
 const categories = ref([])
 const bloodTypes = ref([])
 const clubID = ref(7)
+const lookupsLoaded = ref(false)
 
 // 3. Filter State
 const showFilterModal = ref(false)
@@ -128,6 +129,15 @@ async function loadLookups() {
   else console.error('Categories error:', results[2].reason)
   if (results[3].status === 'fulfilled') bloodTypes.value = normalizeLookupArray(results[3].value.data)
   else console.error('Blood types error:', results[3].reason)
+}
+
+// Loads ALL categories / primary roles / role classifications / blood types from
+// the existing lookup endpoints. Guarded so it only runs once; used both on mount
+// and right before opening the update form so the selects always have every option.
+async function ensureLookups() {
+  if (lookupsLoaded.value) return
+  await loadLookups()
+  lookupsLoaded.value = true
 }
 
 // 8. Watch: reset classification when primary role changes
@@ -242,6 +252,10 @@ async function openActionModal(staff, mode = 'select') {
   if (mode === 'update' && staff) {
     isEditLoading.value = true
     try {
+      // Make sure every option (all categories / roles / classifications) is loaded
+      // from the lookup endpoints before we open the form.
+      await ensureLookups()
+
       const staffId = staff.id ?? staff.ID ?? staff.staffId ?? staff.staffID ?? staff.StaffID
       if (!staffId || staffId <= 0) {
         showToast({ title: 'Error', message: 'This staff member is missing a valid ID. Please refresh the list and try again.', mode: 'error' })
@@ -251,6 +265,10 @@ async function openActionModal(staff, mode = 'select') {
       // The endpoint returns the staff object directly (response.data), but be
       // defensive in case it is ever wrapped in { data: ... }.
       const staffDetails = response?.data?.data ?? response?.data ?? staff
+
+      // Coerce IDs to numbers so they match the <option>/checkbox values (which we
+      // also force to numbers in the template) and the selects auto-select by id.
+      const rawCategoryIds = staffDetails.categoriesIDs ?? staffDetails.CategoriesIDs ?? staffDetails.categoryIds ?? staffDetails.CategoryIDs ?? []
 
       updateForm.value = {
         id: staffDetails.id ?? staffDetails.ID ?? staffDetails.staffId ?? staffDetails.staffID ?? null,
@@ -262,10 +280,10 @@ async function openActionModal(staff, mode = 'select') {
         email: staffDetails.email ?? staffDetails.Email ?? '',
         phoneNumber: staffDetails.phoneNumber ?? staffDetails.PhoneNumber ?? '',
         address: staffDetails.address ?? staffDetails.Address ?? '',
-        primaryRoleID: staffDetails.primaryRoleID ?? staffDetails.PrimaryRoleID ?? staffDetails.primaryRoleId ?? staffDetails.PrimaryRoleId ?? '',
-        roleClassificationID: staffDetails.roleClassificationID ?? staffDetails.RoleClassificationID ?? staffDetails.roleClassificationId ?? staffDetails.RoleClassificationId ?? '',
-        categoriesIDs: staffDetails.categoriesIDs ?? staffDetails.CategoriesIDs ?? staffDetails.categoryIds ?? staffDetails.CategoryIDs ?? [],
-        bloodTypeID: staffDetails.bloodTypeID ?? staffDetails.BloodTypeID ?? 1,
+        primaryRoleID: Number(staffDetails.primaryRoleID ?? staffDetails.PrimaryRoleID ?? staffDetails.primaryRoleId ?? staffDetails.PrimaryRoleId ?? 0),
+        roleClassificationID: Number(staffDetails.roleClassificationID ?? staffDetails.RoleClassificationID ?? staffDetails.roleClassificationId ?? staffDetails.RoleClassificationId ?? 0),
+        categoriesIDs: rawCategoryIds.map(id => Number(id)),
+        bloodTypeID: Number(staffDetails.bloodTypeID ?? staffDetails.BloodTypeID ?? 1),
         allergies: staffDetails.allergies ?? staffDetails.Allergies ?? '',
         medicalNotes: staffDetails.medicalNotes ?? staffDetails.MedicalNotes ?? ''
       }
@@ -513,13 +531,13 @@ onMounted(() => {
             <div>
               <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Primary role</label>
               <select v-model="updateForm.primaryRoleID" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white">
-                <option v-for="role in primaryRoles" :key="role.id" :value="role.id">{{ role.name }}</option>
+                <option v-for="role in primaryRoles" :key="role.id" :value="Number(role.id)">{{ role.name }}</option>
               </select>
             </div>
             <div>
               <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Classification</label>
               <select v-model="updateForm.roleClassificationID" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white">
-                <option v-for="cls in roleClassifications" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
+                <option v-for="cls in roleClassifications" :key="cls.id" :value="Number(cls.id)">{{ cls.name }}</option>
               </select>
             </div>
           </div>
@@ -527,7 +545,7 @@ onMounted(() => {
             <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Categories</label>
             <div class="flex flex-wrap gap-2">
               <label v-for="cat in categories" :key="cat.id" class="rounded border border-white/10 bg-surface-container-lowest px-2 py-1 text-[10px] font-bold text-slate-300">
-                <input type="checkbox" :value="cat.id" v-model="updateForm.categoriesIDs" class="mr-2" />{{ cat.name }}
+                <input type="checkbox" :value="Number(cat.id)" v-model="updateForm.categoriesIDs" class="mr-2" />{{ cat.name }}
               </label>
             </div>
           </div>
