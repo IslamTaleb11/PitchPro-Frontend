@@ -243,6 +243,10 @@ async function openActionModal(staff, mode = 'select') {
     isEditLoading.value = true
     try {
       const staffId = staff.id ?? staff.ID ?? staff.staffId ?? staff.staffID ?? staff.StaffID
+      if (!staffId || staffId <= 0) {
+        showToast({ title: 'Error', message: 'This staff member is missing a valid ID. Please refresh the list and try again.', mode: 'error' })
+        return
+      }
       const response = await staffService.getStaffById(staffId)
       // The endpoint returns the staff object directly (response.data), but be
       // defensive in case it is ever wrapped in { data: ... }.
