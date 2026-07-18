@@ -17,6 +17,9 @@
   --color-on-tertiary-fixed: #291800; /* Dark brown for button text */
   --color-tertiary-fixed-dim: #ffb950;
   --color-tertiary-container: #ffd6a1;
+  --color-on-tertiary-container: #855700;
+  --color-secondary-container: #3a4b5d;
+  --color-on-secondary-container: #a9bad0;
   --color-error-container: #93000a;
   --color-error: #ffb4ab;
   --color-on-primary: #003907;

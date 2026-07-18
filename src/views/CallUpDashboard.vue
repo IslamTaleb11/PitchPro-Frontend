@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.vue'
 import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
 import { useUiToast } from '../composables/useUiToast'
-import { categoryService } from '../services/categoryService'
+import { lookupService } from '../services/lookupService'
 
 const { t: $t } = useI18n()
 const { showLoadingToast } = useUiToast()
@@ -96,28 +96,49 @@ function loadRoster(categoryId) {
   players.value = DEMO_ROSTER[categoryId] ?? []
 }
 
-// ── Load the squad categories from the same endpoint the rest of the
-//    dashboard uses (categoryService.getAllCategories → /dashboard/category).
-//    Falls back to the demo categories if the request fails, so the page is
-//    never left without options. ─────────────────────────────────────────────
-function normalizeCategory(c) {
-  return {
-    id: c?.id ?? c?.categoryId ?? c?._id,
-    name: c?.name ?? c?.categoryName ?? c?.title,
+// ── Load the squad categories from the same /lookups/categories endpoint the
+//    rest of the dashboard uses (PlayerAcquisition, Schedule, Training, Staff).
+//    Normalization mirrors the PitchPro lookup standard so any field-naming
+//    convention from the API works. Falls back to the demo categories if the
+//    request fails, so the page is never left without options. ────────────────
+function normalizeLookupItem(item) {
+  if (!item) return { id: 'Unknown', name: 'Unknown' }
+  if (typeof item === 'string' || typeof item === 'number') {
+    return { id: item, name: String(item) }
   }
+  const idCandidates = ['id', 'Id', 'ID', 'value', 'categoryId', 'categoryID']
+  const nameCandidates = ['name', 'Name', 'label', 'title', 'categoryName']
+  let id = null
+  let name = null
+  for (const key of idCandidates) {
+    if (item[key] !== undefined && item[key] !== null) { id = item[key]; break }
+  }
+  for (const key of nameCandidates) {
+    if (item[key] !== undefined && item[key] !== null) { name = item[key]; break }
+  }
+  return { id: id ?? name ?? 'Unknown', name: name ?? String(id ?? 'Unknown') }
+}
+
+function normalizeLookupArray(data) {
+  let array = data
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    array = data.data || data.items || data.result || data.value || data.$values || []
+  }
+  if (!Array.isArray(array)) return []
+  return array.map(normalizeLookupItem).filter((item) => item.id !== 'Unknown')
 }
 
 async function loadCategories() {
   isLoadingCategories.value = true
   try {
-    const response = await categoryService.getAllCategories(1, 50)
-    const list = response?.data?.data
-    if (Array.isArray(list) && list.length) {
-      categories.value = list.map(normalizeCategory)
+    const response = await lookupService.getCategories()
+    const list = normalizeLookupArray(response?.data)
+    if (list.length) {
+      categories.value = list
     }
   } catch (error) {
     // Keep the default demo categories already in state.
-    console.warn('Call-Up: could not load categories from API, using defaults.', error)
+    console.warn('Call-Up: could not load categories from /lookups/categories, using defaults.', error)
   } finally {
     isLoadingCategories.value = false
   }
