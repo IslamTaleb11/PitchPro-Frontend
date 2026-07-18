@@ -32,6 +32,7 @@ const showActionModal = ref(false)
 const actionTarget = ref(null)
 const actionMode = ref('select')
 const isEditLoading = ref(false)
+const isUpdateSubmitting = ref(false)
 const selectedPrimaryRoleId = ref(null)
 const selectedRoleClassificationId = ref(null)
 const selectedCategoryIds = ref([])
@@ -379,6 +380,7 @@ async function onUpdatePhotoChange(event) {
 }
 
 async function submitUpdate() {
+  isUpdateSubmitting.value = true
   try {
     const payload = {
       id: updateForm.value.id,
@@ -407,6 +409,8 @@ async function submitUpdate() {
   } catch (error) {
     const message = error?.response?.data?.message || 'Failed to update staff.'
     showToast({ title: 'Error', message, mode: 'error' })
+  } finally {
+    isUpdateSubmitting.value = false
   }
 }
 
@@ -550,6 +554,17 @@ onMounted(() => {
     </div>
   </Teleport>
 
+  <!-- UPDATE LOADING MODAL (shown while the staff update is being saved) -->
+  <Teleport to="body">
+    <div v-if="isUpdateSubmitting" class="fixed inset-0 z-[120] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-background/80 backdrop-blur-md"></div>
+      <div class="relative flex flex-col items-center gap-4 rounded-xl border border-white/10 bg-surface-container-low px-10 py-12 shadow-2xl">
+        <span class="material-symbols-outlined animate-spin text-4xl text-green-400">progress_activity</span>
+        <span class="text-sm font-bold text-slate-300">Updating staff member…</span>
+      </div>
+    </div>
+  </Teleport>
+
   <!-- ACTION MODAL -->
   <Teleport to="body">
     <div v-if="showActionModal" class="fixed inset-0 z-110 flex items-center justify-center p-4">
@@ -681,7 +696,7 @@ onMounted(() => {
         </div>
         <div class="flex items-center justify-end gap-3 border-t border-white/5 bg-surface-container-high/50 p-6">
           <button type="button" class="rounded-md px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white/5" @click="closeActionModal">Cancel</button>
-          <button v-if="actionMode === 'update'" type="button" class="rounded-md bg-primary-container px-4 py-2 text-[10px] font-black uppercase tracking-widest text-on-primary-fixed" @click="submitUpdate">Save</button>
+          <button v-if="actionMode === 'update'" type="button" :disabled="isUpdateSubmitting" class="rounded-md bg-primary-container px-4 py-2 text-[10px] font-black uppercase tracking-widest text-on-primary-fixed transition-opacity disabled:cursor-not-allowed disabled:opacity-60" @click="submitUpdate">{{ isUpdateSubmitting ? 'Saving…' : 'Save' }}</button>
         </div>
       </div>
     </div>
