@@ -61,6 +61,17 @@ const filteredClassifications = computed(() => {
   })
 })
 
+// Same cascading behaviour, but driven by the role chosen inside the UPDATE form
+// (updateForm.primaryRoleID) instead of the filter modal's selection.
+const updateFilteredClassifications = computed(() => {
+  const roleId = updateForm.value.primaryRoleID
+  if (!roleId) return roleClassifications.value
+  return roleClassifications.value.filter(c => {
+    const pRoleId = c.staffPrimaryRoleID ?? c.staffPrimaryRoleId ?? c.primary_role_id ?? c.primaryRoleId ?? c.PrimaryRoleId ?? c.primaryRoleID ?? c.PrimaryRoleID ?? c.roleId ?? c.RoleID
+    return pRoleId == null || String(pRoleId) === String(roleId)
+  })
+})
+
 // 5. Computed: UI helpers
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize.value)))
 const startIndex = computed(() => totalCount.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1)
@@ -304,6 +315,13 @@ function closeActionModal() {
   actionTarget.value = null
 }
 
+// When the primary role changes in the update form, the available classifications
+// change too — drop the current classification selection so the user re-picks one
+// that actually belongs to the newly selected role.
+function onUpdatePrimaryRoleChange() {
+  updateForm.value.roleClassificationID = ''
+}
+
 async function submitUpdate() {
   try {
     const payload = {
@@ -530,14 +548,14 @@ onMounted(() => {
           <div class="grid gap-4 md:grid-cols-2">
             <div>
               <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Primary role</label>
-              <select v-model="updateForm.primaryRoleID" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white">
+              <select v-model="updateForm.primaryRoleID" @change="onUpdatePrimaryRoleChange" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white">
                 <option v-for="role in primaryRoles" :key="role.id" :value="Number(role.id)">{{ role.name }}</option>
               </select>
             </div>
             <div>
               <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Classification</label>
               <select v-model="updateForm.roleClassificationID" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white">
-                <option v-for="cls in roleClassifications" :key="cls.id" :value="Number(cls.id)">{{ cls.name }}</option>
+                <option v-for="cls in updateFilteredClassifications" :key="cls.id" :value="Number(cls.id)">{{ cls.name }}</option>
               </select>
             </div>
           </div>
