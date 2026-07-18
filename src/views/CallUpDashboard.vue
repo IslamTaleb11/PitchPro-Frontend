@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.vue'
 import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
 import { useUiToast } from '../composables/useUiToast'
+import { categoryService } from '../services/categoryService'
 
 const { t: $t } = useI18n()
 const { showLoadingToast } = useUiToast()
@@ -56,6 +57,7 @@ const DEMO_ROSTER = {
 
 const players = ref([])
 const searchQuery = ref('')
+const isLoadingCategories = ref(false)
 
 // Track image load failures so we can fall back to initials.
 const imgErrors = reactive({})
@@ -92,6 +94,33 @@ function loadRoster(categoryId) {
   // For this tactical call-up demo we use the static roster above so the page
   // is fully functional without a backing players endpoint.
   players.value = DEMO_ROSTER[categoryId] ?? []
+}
+
+// ── Load the squad categories from the same endpoint the rest of the
+//    dashboard uses (categoryService.getAllCategories → /dashboard/category).
+//    Falls back to the demo categories if the request fails, so the page is
+//    never left without options. ─────────────────────────────────────────────
+function normalizeCategory(c) {
+  return {
+    id: c?.id ?? c?.categoryId ?? c?._id,
+    name: c?.name ?? c?.categoryName ?? c?.title,
+  }
+}
+
+async function loadCategories() {
+  isLoadingCategories.value = true
+  try {
+    const response = await categoryService.getAllCategories(1, 50)
+    const list = response?.data?.data
+    if (Array.isArray(list) && list.length) {
+      categories.value = list.map(normalizeCategory)
+    }
+  } catch (error) {
+    // Keep the default demo categories already in state.
+    console.warn('Call-Up: could not load categories from API, using defaults.', error)
+  } finally {
+    isLoadingCategories.value = false
+  }
 }
 
 const filteredPlayers = computed(() => {
@@ -135,7 +164,7 @@ function finaliseSquad() {
   })
 }
 
-onMounted(() => loadRoster(selectedCategory.value))
+onMounted(loadCategories)
 watch(selectedCategory, (id) => loadRoster(id))
 </script>
 
