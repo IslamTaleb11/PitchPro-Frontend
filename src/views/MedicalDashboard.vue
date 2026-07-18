@@ -64,6 +64,17 @@ const unavailableCount = computed(() => injuries.value.filter((i) => !i.ready).l
 const matchFit = computed(() => SQUAD_TOTAL - unavailableCount.value)
 const squadAvailability = computed(() => `${Math.round((matchFit.value / SQUAD_TOTAL) * 100)}%`)
 
+// ── Category filter for the injury ledger ────────────────────────────────────
+// Options are derived from the categories actually present in the ledger so the
+// filter always reflects what is shown, regardless of the demo/API category mix.
+const selectedInjuryCategory = ref('')
+const injuryCategories = computed(() => [...new Set(injuries.value.map((i) => i.category))])
+const filteredInjuries = computed(() =>
+  selectedInjuryCategory.value
+    ? injuries.value.filter((i) => i.category === selectedInjuryCategory.value)
+    : injuries.value
+)
+
 // ── Categories (loaded from /lookups/categories, same as the rest of app) ────
 const categories = ref(['First Team', 'U-21 Squad', 'U-18 Squad'])
 const isLoadingCategories = ref(false)
@@ -283,6 +294,33 @@ onMounted(loadCategories)
             </div>
           </div>
 
+          <!-- Category filter -->
+          <div class="flex flex-wrap items-center gap-2 bg-surface-container-high/50 p-3 rounded-lg">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mr-1">{{ $t('medical.filterByCategory') }}</span>
+            <button
+              type="button"
+              @click="selectedInjuryCategory = ''"
+              :class="[
+                'px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all',
+                selectedInjuryCategory === ''
+                  ? 'bg-gradient-to-br from-green-400 to-green-300 text-slate-950'
+                  : 'text-on-surface-variant hover:text-white'
+              ]"
+            >{{ $t('medical.allCategories') }}</button>
+            <button
+              v-for="cat in injuryCategories"
+              :key="cat"
+              type="button"
+              @click="selectedInjuryCategory = cat"
+              :class="[
+                'px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all',
+                selectedInjuryCategory === cat
+                  ? 'bg-gradient-to-br from-green-400 to-green-300 text-slate-950'
+                  : 'text-on-surface-variant hover:text-white'
+              ]"
+            >{{ cat }}</button>
+          </div>
+
           <div class="bg-surface-container-low overflow-hidden rounded-lg">
             <table class="w-full text-left font-body">
               <thead>
@@ -295,7 +333,7 @@ onMounted(loadCategories)
                 </tr>
               </thead>
               <tbody class="divide-y divide-outline-variant/10">
-                <tr v-for="injury in injuries" :key="injury.id" class="hover:bg-surface-container-high/30 transition-colors">
+                <tr v-for="injury in filteredInjuries" :key="injury.id" class="hover:bg-surface-container-high/30 transition-colors">
                   <td class="px-6 py-4 flex items-center gap-3">
                     <div class="w-10 h-10 rounded bg-surface-container-lowest border border-outline-variant/20 overflow-hidden flex-shrink-0">
                       <img
@@ -332,9 +370,9 @@ onMounted(loadCategories)
                   </td>
                 </tr>
 
-                <tr v-if="injuries.length === 0">
+                <tr v-if="filteredInjuries.length === 0">
                   <td colspan="5" class="px-6 py-16 text-center text-on-surface-variant text-sm">
-                    {{ $t('medical.noInjuries') }}
+                    {{ selectedInjuryCategory ? $t('medical.noInjuriesInCategory') : $t('medical.noInjuries') }}
                   </td>
                 </tr>
               </tbody>
