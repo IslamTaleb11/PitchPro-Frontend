@@ -61,6 +61,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/dashboard/call-up',
+    name: 'CallUpDashboard',
+    component: () => import('../views/CallUpDashboard.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/dashboard/training',
     name: 'TrainingDashboard',
     component: () => import('../views/TrainingDashboard.vue'),

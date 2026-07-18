@@ -1,0 +1,404 @@
+<script setup>
+import { ref, computed, onMounted, watch, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
+import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.vue'
+import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
+import { useUiToast } from '../composables/useUiToast'
+
+const { t: $t } = useI18n()
+const { showLoadingToast } = useUiToast()
+
+const isSidebarOpen = ref(true)
+
+// ── Squad configuration ───────────────────────────────────────────────────────
+const SQUAD_LIMIT = 23
+const RING_RADIUS = 40
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS // ≈ 251.327
+
+// ── Category selector (drives the roster) ─────────────────────────────────────
+// These mirror the squads in the provided mockup. In production the category
+// list and the roster would come from the API (categoryService + a future
+// playerService.getPlayersByCategory call) — see loadRoster() for the seam.
+const categories = ref([
+  { id: 'senior', name: $t('callUp.categorySenior') },
+  { id: 'u19', name: $t('callUp.categoryU19') },
+  { id: 'u16', name: $t('callUp.categoryU16') },
+])
+const selectedCategory = ref('senior')
+
+// ── Demo roster, keyed by category id ─────────────────────────────────────────
+// Fitness status drives availability: only injured players are blocked from
+// selection. `tag` is either a market value (number, rendered with the
+// "Market Value" label) or a translation key for a role badge.
+const DEMO_ROSTER = {
+  senior: [
+    { id: 'p-haaland', name: 'Erling Haaland', position: 'FWD', jersey: '09', fitness: 'fit',    tag: { market: 180 }, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC1_l3X8ftBQAu6csjuAb8DTlnrRR6pMKOUhDiAyxlhM3PXnQru3dsGJjrstu5PHhjiE3Ze2gIeDVbjWKf-805RdHIwk8RFffFE4HhTYud3NKxVYaDJqDPZClQ_pA_nfU6LJ4edqRl1NO0O9MLs57E6cUHOFRGP_UVfquAhu-0BAj25WpHs7wRGhKopgMtjISydoQXlYbmTHL3V-pVD3u4-1zDBWHq3tUh4XETq-IN7kobwaRHJTqLF' },
+    { id: 'p-kdb',     name: 'Kevin De Bruyne', position: 'MID', jersey: '17', fitness: 'light',  tag: { key: 'callUp.captainEligible' }, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCKvkoq1zZ6bx8YrtJMRjowX4HfkW_7zB2lofQgJodNyXQpS1gqsPjlFHzQJF4cbPHy3jMyf6jCbpmhvXX4Jmg-WA-qhHsH0W63mAZOQrrwJJWwS9Of57jTAni3LL7Wul_4ITKqQw2vO6kKa6d-4TPKxY89KeDAo77JUfrJuSzbvwnHfZmiSQ_ToDPPRybXKURhqyXEpaEs_PQT76i9f9T6PA4z5Mg3XpIyCjpCbihC0ZUVPENsyDoq' },
+    { id: 'p-ederson', name: 'Ederson Santana', position: 'GK',  jersey: '31', fitness: 'injured', tag: { key: 'callUp.medicalDischarge' }, blocked: true, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC9LLV9Ts4rbYjyOa0tw2CPxItrGW-yxYRy8moI8xCbRo9zSO75FhIaozhh7bP28GeaWbpFiuAz1DXrzZkJyz5YKht-guIrSFsiBewYJj6gwE-Asg0jsAImtFNAn4o0sQlQd11Ebblnl2Urjg1fC4C8qaSK9fCMGatCS5jODrpFfQcY4QEe1B7DHOM2TmIu8c9tfzfaZCLtVBtIHBsh57Z4j645V2slbI_pV88iNu3DAYvlOKgL1W9U' },
+    { id: 'p-dias',    name: 'Ruben Dias', position: 'DEF', jersey: '03', fitness: 'fit',    tag: { key: 'callUp.keyDefender' }, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC-XM6vbt8wFrOABht7BhQ8ltypqzwkhAcUStkGUPfg9-jLUSJWo_YqkFJXyEtW4sDXJ8lWUkwR10itGtQCOrVMO4Qa5tqENEIW75gae7fi5xvyvnYz9mZZxcxB4SFCynusEXIOZUpPJiN01NrJYGgNrJEiZNyfpn5k2d9O2JIUBzkAENxqqG5hiVD7A0bU8qjvABu0KMXR-psdAIZoBY1JalPi2-4jc26FnRIo0foiGYs8eSHPdZsD' },
+    { id: 'p-grealish', name: 'Jack Grealish', position: 'FWD', jersey: '10', fitness: 'fit',    tag: { key: 'callUp.squadRotation' }, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDslDJGnUsAEtBzKkZLf1LxVhKdi7uT6PiXZctLNKJnJ5fBfzylDBxGYFmSMKFgbbh3BDMKvus56KDhDvgW9jLk_pxzi3Kwb3Zl67094aanlB4spzxOwWupKbedtqMmVbbtdqqeb_bI1FdPB36a7S_ItGU-wmshqHVcg6c3Isn5t5v94mPeFXmwTXGJ0NinGNYY8E0cnRlv23zTNpBdLV-kM36ivx3n_rU6vUDsPoL1nQvcPzoCIOLl' },
+  ],
+  u19: [
+    { id: 'p-foden',   name: 'Phil Foden', position: 'MID', jersey: '47', fitness: 'fit',    tag: { key: 'callUp.keyDefender' } },
+    { id: 'p-palmer',  name: 'Cole Palmer', position: 'MID', jersey: '80', fitness: 'light' },
+    { id: 'p-lewis',   name: 'Rico Lewis', position: 'DEF', jersey: '82', fitness: 'fit' },
+    { id: 'p-mcatee',  name: 'James McAtee', position: 'FWD', jersey: '87', fitness: 'fit' },
+    { id: 'p-ortega',  name: 'Stefan Ortega', position: 'GK', jersey: '18', fitness: 'injured', tag: { key: 'callUp.kneeInjury' }, blocked: true },
+  ],
+  u16: [
+    { id: 'p-delap',   name: 'Liam Delap', position: 'FWD', jersey: '09', fitness: 'fit' },
+    { id: 'p-bobb',    name: 'Oscar Bobb', position: 'MID', jersey: '24', fitness: 'fit' },
+    { id: 'p-oreilly', name: "Nico O'Reilly", position: 'DEF', jersey: '31', fitness: 'light' },
+    { id: 'p-hamilton', name: 'Micah Hamilton', position: 'FWD', jersey: '56', fitness: 'fit' },
+    { id: 'p-fletcher', name: 'Luca Fletcher', position: 'GK', jersey: '01', fitness: 'injured', tag: { key: 'callUp.medicalDischarge' }, blocked: true },
+  ],
+}
+
+const players = ref([])
+const searchQuery = ref('')
+
+// Track image load failures so we can fall back to initials.
+const imgErrors = reactive({})
+
+// ── Selection state (persists across category switches) ───────────────────────
+const selectedIds = ref([])
+
+const isSelected = (id) => selectedIds.value.includes(id)
+const selectedCount = computed(() => selectedIds.value.length)
+const remainingSlots = computed(() => Math.max(0, SQUAD_LIMIT - selectedCount.value))
+const ringOffset = computed(() =>
+  RING_CIRCUMFERENCE * (1 - selectedCount.value / SQUAD_LIMIT)
+)
+
+function toggleSelect(player) {
+  if (player.blocked) return
+  const idx = selectedIds.value.indexOf(player.id)
+  if (idx === -1) {
+    selectedIds.value = [...selectedIds.value, player.id]
+  } else {
+    selectedIds.value = selectedIds.value.filter((id) => id !== player.id)
+  }
+}
+
+function resetSelection() {
+  selectedIds.value = []
+}
+
+// ── Roster loading (with a clear API integration seam) ───────────────────────
+function loadRoster(categoryId) {
+  // INTEGRATION SEAM: in production this would call the API, e.g.
+  //   const res = await playerService.getPlayersByCategory(categoryId)
+  //   players.value = res.data
+  // For this tactical call-up demo we use the static roster above so the page
+  // is fully functional without a backing players endpoint.
+  players.value = DEMO_ROSTER[categoryId] ?? []
+}
+
+const filteredPlayers = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return players.value
+  return players.value.filter(
+    (p) =>
+      p.name.toLowerCase().includes(q) ||
+      p.position.toLowerCase().includes(q)
+  )
+})
+
+function initials(name) {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
+
+// ── Fitness status presentation ───────────────────────────────────────────────
+function fitnessDotClass(status) {
+  if (status === 'fit') return 'bg-green-400'
+  if (status === 'light') return 'bg-amber-400'
+  return 'bg-red-500'
+}
+function fitnessTextClass(status) {
+  if (status === 'injured') return 'text-red-400'
+  return 'text-on-surface'
+}
+
+// ── Finalise the match squad ──────────────────────────────────────────────────
+function finaliseSquad() {
+  if (selectedCount.value === 0) return
+  showLoadingToast({
+    title: $t('callUp.finalisingTitle'),
+    message: $t('callUp.finalisingMessage'),
+    successTitle: $t('callUp.finalisedTitle'),
+    successMessage: $t('callUp.finalisedMessage', { count: selectedCount.value }),
+  })
+}
+
+onMounted(() => loadRoster(selectedCategory.value))
+watch(selectedCategory, (id) => loadRoster(id))
+</script>
+
+<template>
+  <div class="min-h-screen bg-background text-on-surface lg:flex lg:items-stretch">
+    <DashboardSidebar active-item="call-up" :is-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
+    <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
+
+    <main
+      class="pt-24 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-8 transition-all duration-300 lg:flex-1"
+    >
+      <div class="space-y-8">
+
+        <!-- ── Page Header ── -->
+        <section class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div class="space-y-2">
+            <span class="text-[10px] font-bold tracking-[0.2em] text-green-400 font-headline uppercase">{{ $t('callUp.sectionTitle') }}</span>
+            <h2 class="text-4xl font-black font-headline tracking-tighter text-white">
+              {{ $t('callUp.pageTitle') }} <span class="text-slate-500">{{ $t('callUp.pageSubtitle') }}</span>
+            </h2>
+          </div>
+        </section>
+
+        <!-- ── Match Details & Counter Bento Grid ── -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          <!-- Match Card -->
+          <div class="lg:col-span-8 bg-surface-container-high rounded-xl p-6 relative overflow-hidden flex flex-col justify-between border-l-4 border-green-400">
+            <div class="relative z-10">
+              <span class="font-label text-[10px] uppercase tracking-[0.2em] text-green-400 mb-2 block">{{ $t('callUp.nextFixture') }}</span>
+              <div class="flex flex-wrap items-end gap-x-8 gap-y-4">
+                <div>
+                  <h2 class="font-headline text-4xl font-bold text-on-surface uppercase tracking-tight">Arsenal FC <span class="text-outline-variant font-light mx-2">VS</span> MCFC</h2>
+                  <p class="font-body text-on-surface-variant mt-2 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">calendar_today</span> Oct 24, 2023 • 20:00 BST
+                  </p>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <span class="font-body text-xs text-on-surface-variant flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">location_on</span> Emirates Stadium, London
+                  </span>
+                  <span class="font-body text-xs text-on-surface-variant flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">stadium</span> Premier League • Gameweek 9
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="absolute -right-12 -top-12 opacity-5 pointer-events-none">
+              <span class="material-symbols-outlined text-[240px]" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
+            </div>
+          </div>
+
+          <!-- Squad Limit Counter -->
+          <div class="lg:col-span-4 bg-surface-container-lowest rounded-xl p-6 flex flex-col items-center justify-center text-center border border-outline-variant/10 shadow-xl">
+            <span class="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface-variant mb-1">{{ $t('callUp.squadCapacity') }}</span>
+            <div class="relative">
+              <svg class="w-24 h-24 transform -rotate-90">
+                <circle class="text-surface-container-highest" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" stroke-width="4"></circle>
+                <circle
+                  class="text-green-400 transition-all duration-1000"
+                  cx="48" cy="48" fill="transparent" r="40"
+                  stroke="currentColor"
+                  :stroke-dasharray="RING_CIRCUMFERENCE.toFixed(1)"
+                  :stroke-dashoffset="ringOffset.toFixed(1)"
+                  stroke-width="6"
+                ></circle>
+              </svg>
+              <div class="absolute inset-0 flex items-center justify-center flex-col">
+                <span class="font-headline text-3xl font-black text-on-surface">{{ selectedCount }}</span>
+                <span class="text-[10px] text-outline-variant font-bold">/ {{ SQUAD_LIMIT }}</span>
+              </div>
+            </div>
+            <p class="font-body text-xs text-on-surface-variant mt-3">
+              <template v-if="remainingSlots > 0">{{ $t('callUp.slotsRemaining', { count: remainingSlots }) }}</template>
+              <template v-else>{{ $t('callUp.squadFull') }}</template>
+            </p>
+          </div>
+        </div>
+
+        <!-- ── Roster Interface ── -->
+        <div class="bg-surface-container-low rounded-2xl overflow-hidden shadow-2xl border border-outline-variant/5">
+          <!-- Table Controls -->
+          <div class="p-6 flex flex-col md:flex-row gap-4 justify-between items-center bg-surface-container-high/50">
+            <!-- Category selector -->
+            <div class="relative group w-full md:w-48">
+              <button
+                type="button"
+                class="w-full flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded-lg text-[10px] font-bold uppercase tracking-widest text-on-surface hover:border-green-400 transition-all"
+              >
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-sm text-green-400">groups</span>
+                  {{ categories.find((c) => c.id === selectedCategory)?.name || $t('callUp.categorySenior') }}
+                </div>
+                <span class="material-symbols-outlined text-xs">expand_more</span>
+              </button>
+              <div class="absolute top-full left-0 mt-2 w-full bg-surface-container-high border border-outline-variant/20 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50 overflow-hidden">
+                <div class="p-1">
+                  <button
+                    v-for="cat in categories"
+                    :key="cat.id"
+                    type="button"
+                    @click="selectedCategory = cat.id"
+                    :class="[
+                      'w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors',
+                      cat.id === selectedCategory
+                        ? 'text-green-400 bg-green-400/10'
+                        : 'text-on-surface-variant hover:bg-surface-bright hover:text-on-surface'
+                    ]"
+                  >{{ cat.name }}</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Search -->
+            <div class="relative w-full md:w-96">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+              <input
+                v-model="searchQuery"
+                class="w-full bg-surface-container-lowest border-none rounded-lg pl-10 pr-4 py-3 text-sm focus:ring-1 focus:ring-green-400 text-on-surface placeholder:text-outline-variant"
+                :placeholder="$t('callUp.searchPlaceholder')"
+                type="text"
+              />
+            </div>
+
+            <!-- Filter + Reset -->
+            <div class="flex gap-3 w-full md:w-auto">
+              <button type="button" class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-surface-container-highest rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-surface-bright transition-colors">
+                <span class="material-symbols-outlined text-sm">filter_list</span> {{ $t('callUp.filter') }}
+              </button>
+              <button
+                type="button"
+                @click="resetSelection"
+                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-surface-container-highest/50 border border-outline-variant/20 rounded-lg text-xs font-bold uppercase tracking-widest text-error hover:bg-error-container/20 transition-colors"
+              >
+                <span class="material-symbols-outlined text-sm">restart_alt</span> {{ $t('callUp.reset') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Table Content -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-surface-container-low border-b border-outline-variant/10">
+                  <th class="px-6 py-4 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.colPlayer') }}</th>
+                  <th class="px-6 py-4 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.colPosition') }}</th>
+                  <th class="px-6 py-4 font-label text-[10px] uppercase tracking-widest text-on-surface-variant text-center">{{ $t('callUp.colJersey') }}</th>
+                  <th class="px-6 py-4 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.colFitness') }}</th>
+                  <th class="px-6 py-4 font-label text-[10px] uppercase tracking-widest text-on-surface-variant text-right">{{ $t('callUp.colSelection') }}</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-outline-variant/5">
+                <tr
+                  v-for="player in filteredPlayers"
+                  :key="player.id"
+                  :class="[
+                    'group hover:bg-surface-container-high/40 transition-colors',
+                    isSelected(player.id) ? 'bg-green-400/[0.04]' : '',
+                    player.blocked ? 'opacity-60 grayscale' : ''
+                  ]"
+                >
+                  <!-- Player -->
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-md bg-surface-container-highest flex-shrink-0 overflow-hidden border border-outline-variant/10">
+                        <img
+                          v-if="!imgErrors[player.id] && player.avatar"
+                          :src="player.avatar"
+                          :alt="player.name"
+                          class="w-full h-full object-cover"
+                          @error="imgErrors[player.id] = true"
+                        />
+                        <div v-else class="w-full h-full flex items-center justify-center text-[10px] font-black text-on-surface-variant">
+                          {{ initials(player.name) }}
+                        </div>
+                      </div>
+                      <div>
+                        <p class="font-headline font-bold text-on-surface">{{ player.name }}</p>
+                        <p v-if="player.tag?.market" class="text-[10px] text-outline-variant uppercase font-bold tracking-tighter">
+                          {{ $t('callUp.marketValue') }}: £{{ player.tag.market }}M
+                        </p>
+                        <p v-else-if="player.tag?.key" class="text-[10px] text-outline-variant uppercase font-bold tracking-tighter">
+                          {{ $t(player.tag.key) }}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Position -->
+                  <td class="px-6 py-4">
+                    <span class="px-2 py-1 bg-surface-container-highest text-on-surface-variant text-[10px] font-bold rounded uppercase">{{ player.position }}</span>
+                  </td>
+
+                  <!-- Jersey -->
+                  <td class="px-6 py-4 text-center font-headline font-black text-green-400">{{ player.jersey }}</td>
+
+                  <!-- Fitness -->
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-2">
+                      <span :class="['w-2 h-2 rounded-full', fitnessDotClass(player.fitness), player.fitness === 'fit' ? 'animate-pulse' : '']"></span>
+                      <span :class="['text-xs font-medium', fitnessTextClass(player.fitness)]">
+                        {{ $t(player.fitness === 'fit' ? 'callUp.fit' : player.fitness === 'light' ? 'callUp.lightTraining' : 'callUp.thighStrain') }}
+                      </span>
+                    </div>
+                  </td>
+
+                  <!-- Selection -->
+                  <td class="px-6 py-4 text-right">
+                    <button
+                      v-if="!player.blocked"
+                      type="button"
+                      @click="toggleSelect(player)"
+                      :class="[
+                        'w-6 h-6 rounded-md flex items-center justify-center transition-all',
+                        isSelected(player.id)
+                          ? 'bg-green-400 text-slate-950 border-2 border-green-400'
+                          : 'border-2 border-outline-variant group-hover:border-green-400'
+                      ]"
+                    >
+                      <span :class="['material-symbols-outlined text-sm font-bold', isSelected(player.id) ? '' : 'opacity-0']">check</span>
+                    </button>
+                    <span v-else class="material-symbols-outlined text-outline-variant" :title="$t('callUp.blocked')">block</span>
+                  </td>
+                </tr>
+
+                <!-- Empty state -->
+                <tr v-if="filteredPlayers.length === 0">
+                  <td colspan="5" class="px-6 py-16 text-center text-on-surface-variant text-sm">
+                    {{ $t('callUp.emptyRoster') }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Spacer for bottom floating actions -->
+        <div class="h-24"></div>
+      </div>
+    </main>
+
+    <!-- ── Floating Action Bar ── -->
+    <div class="fixed bottom-0 right-0 left-0 lg:left-64 p-6 pointer-events-none z-30">
+      <div class="max-w-7xl mx-auto flex justify-end pointer-events-auto">
+        <div class="bg-surface-container-highest/80 backdrop-blur-xl p-4 rounded-2xl flex items-center gap-6 shadow-[0_10px_50px_rgba(0,230,57,0.15)] border border-outline-variant/10">
+          <div class="hidden md:block">
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest leading-none">{{ $t('callUp.draftSelection') }}</p>
+            <p class="text-sm font-headline font-bold text-on-surface mt-1">{{ $t('callUp.matchReady') }}: <span class="text-green-400">{{ selectedCount }}</span> {{ $t('callUp.playersLabel') }}</p>
+          </div>
+          <button
+            type="button"
+            :disabled="selectedCount === 0"
+            @click="finaliseSquad"
+            :class="[
+              'font-headline font-bold text-sm uppercase tracking-tighter rounded-lg px-8 py-4 shadow-lg transition-all flex items-center gap-2',
+              selectedCount > 0
+                ? 'bg-gradient-to-br from-green-400 to-green-300 text-slate-950 hover:scale-[1.02] active:scale-95'
+                : 'bg-surface-container-high text-slate-600 cursor-not-allowed'
+            ]"
+          >
+            {{ $t('callUp.finalise') }} <span class="material-symbols-outlined">send</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
