@@ -206,8 +206,8 @@ async function fetchStaff() {
       }
     }
   } catch (error) {
-    const message = error?.response?.data?.message || 'Failed to fetch staff.'
-    showToast({ title: 'Error', message, mode: 'error' })
+    const message = error?.response?.data?.message || $t('staffManagement.failedFetchStaff')
+    showToast({ title: $t('common.error'), message, mode: 'error' })
   } finally {
     isLoading.value = false
   }
@@ -286,7 +286,7 @@ async function openActionModal(staff, mode = 'select') {
 
       const staffId = staff.id ?? staff.ID ?? staff.staffId ?? staff.staffID ?? staff.StaffID
       if (!staffId || staffId <= 0) {
-        showToast({ title: 'Error', message: 'This staff member is missing a valid ID. Please refresh the list and try again.', mode: 'error' })
+        showToast({ title: $t('common.error'), message: $t('staffManagement.missingValidId'), mode: 'error' })
         return
       }
       const response = await staffService.getStaffById(staffId)
@@ -324,8 +324,8 @@ async function openActionModal(staff, mode = 'select') {
       actionMode.value = 'update'
       showActionModal.value = true
     } catch (error) {
-      const message = error?.response?.data?.message || 'Failed to load staff details.'
-      showToast({ title: 'Error', message, mode: 'error' })
+      const message = error?.response?.data?.message || $t('staffManagement.failedLoadDetails')
+      showToast({ title: $t('common.error'), message, mode: 'error' })
     } finally {
       isEditLoading.value = false
     }
@@ -365,12 +365,12 @@ async function onUpdatePhotoChange(event) {
 
   const validTypes = ['image/jpeg', 'image/png', 'image/webp']
   if (!validTypes.includes(file.type)) {
-    showToast({ title: 'Invalid file', message: 'Please choose a JPG, PNG, or WEBP image.', mode: 'error' })
+    showToast({ title: $t('common.invalidFile'), message: $t('common.invalidFileMsg'), mode: 'error' })
     event.target.value = ''
     return
   }
   if (file.size > 2 * 1024 * 1024) {
-    showToast({ title: 'File too large', message: 'Image must be under 2MB.', mode: 'error' })
+    showToast({ title: $t('common.fileTooLarge'), message: $t('common.fileTooLargeMsg'), mode: 'error' })
     event.target.value = ''
     return
   }
@@ -406,14 +406,14 @@ async function submitUpdate() {
       photo: photoFile.value
     }
     await staffService.updateStaff(payload.id, payload)
-    showToast({ title: 'Updated', message: 'Staff member updated successfully.', mode: 'success' })
+    showToast({ title: $t('staffManagement.updatedTitle'), message: $t('staffManagement.updatedMessage'), mode: 'success' })
     photoFile.value = null
     photoPreview.value = ''
     closeActionModal()
     fetchStaff()
   } catch (error) {
-    const message = error?.response?.data?.message || 'Failed to update staff.'
-    showToast({ title: 'Error', message, mode: 'error' })
+    const message = error?.response?.data?.message || $t('staffManagement.updateFailedMessage')
+    showToast({ title: $t('common.error'), message, mode: 'error' })
   } finally {
     isUpdateSubmitting.value = false
   }
@@ -576,7 +576,7 @@ onMounted(() => {
       <div class="absolute inset-0 bg-background/80 backdrop-blur-md"></div>
       <div class="relative flex flex-col items-center gap-4 rounded-xl border border-white/10 bg-surface-container-low px-10 py-12 shadow-2xl">
         <span class="material-symbols-outlined animate-spin text-4xl text-green-400">progress_activity</span>
-        <span class="text-sm font-bold text-slate-300">Loading staff details…</span>
+        <span class="text-sm font-bold text-slate-300">{{ $t('staffManagement.loadingStaffDetails') }}</span>
       </div>
     </div>
   </Teleport>
@@ -587,7 +587,7 @@ onMounted(() => {
       <div class="absolute inset-0 bg-background/80 backdrop-blur-md"></div>
       <div class="relative flex flex-col items-center gap-4 rounded-xl border border-white/10 bg-surface-container-low px-10 py-12 shadow-2xl">
         <span class="material-symbols-outlined animate-spin text-4xl text-green-400">progress_activity</span>
-        <span class="text-sm font-bold text-slate-300">Updating staff member…</span>
+        <span class="text-sm font-bold text-slate-300">{{ $t('staffManagement.updatingStaffMember') }}</span>
       </div>
     </div>
   </Teleport>
@@ -633,14 +633,14 @@ onMounted(() => {
       <div class="absolute inset-0 bg-background/80 backdrop-blur-md" @click="closeActionModal"></div>
       <div class="relative w-full max-w-xl rounded-xl border border-white/10 bg-surface-container-low shadow-2xl overflow-hidden">
         <div class="border-b border-white/5 p-6">
-          <div class="text-[10px] font-black uppercase tracking-[0.2em] text-green-400">{{ actionMode === 'update' ? 'Update Staff' : 'Staff Actions' }}</div>
-          <h2 class="text-xl font-black uppercase tracking-tight text-white">{{ actionTarget?.fullName || 'Staff Member' }}</h2>
+          <div class="text-[10px] font-black uppercase tracking-[0.2em] text-green-400">{{ actionMode === 'update' ? $t('staffManagement.updateStaffTitle') : $t('staffManagement.staffActionsTitle') }}</div>
+          <h2 class="text-xl font-black uppercase tracking-tight text-white">{{ actionTarget?.fullName || $t('staffManagement.staffMemberFallback') }}</h2>
         </div>
         <div v-if="actionMode === 'select'" class="p-6">
-          <p class="mb-4 text-sm text-slate-400">Choose an action for this staff member.</p>
+          <p class="mb-4 text-sm text-slate-400">{{ $t('staffManagement.chooseAction') }}</p>
           <div class="flex flex-wrap gap-3">
-            <button type="button" class="rounded-md bg-primary-container px-4 py-2 text-[10px] font-black uppercase tracking-widest text-on-primary-fixed" @click="openActionModal(actionTarget, 'update')">Update</button>
-            <button type="button" class="rounded-md bg-red-500/20 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-400 hover:bg-red-500/30" @click="openDeleteConfirm">Delete</button>
+            <button type="button" class="rounded-md bg-primary-container px-4 py-2 text-[10px] font-black uppercase tracking-widest text-on-primary-fixed" @click="openActionModal(actionTarget, 'update')">{{ $t('staffManagement.update') }}</button>
+            <button type="button" class="rounded-md bg-red-500/20 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-400 hover:bg-red-500/30" @click="openDeleteConfirm">{{ $t('common.delete') }}</button>
           </div>
         </div>
         <div v-else-if="actionMode === 'update'" class="max-h-[70vh] space-y-4 overflow-y-auto p-6">
@@ -652,44 +652,44 @@ onMounted(() => {
               <img v-if="photoPreview" :src="photoPreview" alt="Staff photo" class="h-full w-full rounded-xl object-cover" />
               <template v-else>
                 <span class="material-symbols-outlined text-slate-600 transition-colors group-hover:text-green-400">add_a_photo</span>
-                <span class="mt-1 text-[8px] font-bold uppercase text-slate-500">Photo</span>
+                <span class="mt-1 text-[8px] font-bold uppercase text-slate-500">{{ $t('staffManagement.photo') }}</span>
               </template>
               <input class="absolute inset-0 cursor-pointer opacity-0" type="file" accept=".jpg,.jpeg,.png,.webp" @change="onUpdatePhotoChange" />
             </label>
             <div class="text-[10px] text-slate-500">
-              <div class="font-bold uppercase tracking-wider text-slate-400">Profile photo</div>
-              <div>Click the avatar to change the picture. Leave it to keep the current one.</div>
+              <div class="font-bold uppercase tracking-wider text-slate-400">{{ $t('staffManagement.profilePhoto') }}</div>
+              <div>{{ $t('staffManagement.photoHint') }}</div>
             </div>
           </div>
 
           <div class="grid gap-4 md:grid-cols-3">
             <div>
-              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">First name</label>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.firstName') }}</label>
               <input v-model="updateForm.firstName" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
             </div>
             <div>
-              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Second name</label>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.secondName') }}</label>
               <input v-model="updateForm.secondName" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
             </div>
             <div>
-              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Last name</label>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.lastName') }}</label>
               <input v-model="updateForm.lastName" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
             </div>
           </div>
           <div class="grid gap-4 md:grid-cols-3">
             <div>
-              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Gender</label>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.gender') }}</label>
               <select v-model="updateForm.gender" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white">
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
+                <option value="Male">{{ $t('staffManagement.male') }}</option>
+                <option value="Female">{{ $t('staffManagement.female') }}</option>
               </select>
             </div>
             <div>
-              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Birth date</label>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.birthDate') }}</label>
               <input v-model="updateForm.birthDate" type="date" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
             </div>
             <div>
-              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Blood type</label>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.bloodType') }}</label>
               <select v-model="updateForm.bloodTypeID" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white">
                 <option v-for="bt in bloodTypes" :key="bt.id" :value="bt.id">{{ bt.name }}</option>
               </select>
@@ -697,34 +697,34 @@ onMounted(() => {
           </div>
           <div class="grid gap-4 md:grid-cols-2">
             <div>
-              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Email</label>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.email') }}</label>
               <input v-model="updateForm.email" type="email" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
             </div>
             <div>
-              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Phone</label>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.phone') }}</label>
               <input v-model="updateForm.phoneNumber" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
             </div>
           </div>
           <div>
-            <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Address</label>
+            <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.address') }}</label>
             <input v-model="updateForm.address" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white" />
           </div>
           <div class="grid gap-4 md:grid-cols-2">
             <div>
-              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Primary role</label>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.primaryRole') }}</label>
               <select v-model="updateForm.primaryRoleID" @change="onUpdatePrimaryRoleChange" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white">
                 <option v-for="role in primaryRoles" :key="role.id" :value="Number(role.id)">{{ role.name }}</option>
               </select>
             </div>
             <div>
-              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Classification</label>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.classification') }}</label>
               <select v-model="updateForm.roleClassificationID" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white">
                 <option v-for="cls in updateFilteredClassifications" :key="cls.id" :value="Number(cls.id)">{{ cls.name }}</option>
               </select>
             </div>
           </div>
           <div>
-            <label class="mb-2 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Categories</label>
+            <label class="mb-2 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.categories') }}</label>
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="cat in categories"
@@ -744,21 +744,21 @@ onMounted(() => {
           </div>
           <div class="grid gap-4 md:grid-cols-2">
             <div>
-              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Allergies</label>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.allergies') }}</label>
               <textarea v-model="updateForm.allergies" rows="2" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white"></textarea>
             </div>
             <div>
-              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Medical notes</label>
+              <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $t('staffManagement.medicalNotes') }}</label>
               <textarea v-model="updateForm.medicalNotes" rows="2" class="w-full rounded-md border-none bg-surface-container-lowest px-3 py-2 text-sm font-medium text-white"></textarea>
             </div>
           </div>
         </div>
         <div v-else class="p-6 text-sm text-slate-400">
-          Choose an action for this staff member.
+          {{ $t('staffManagement.chooseAction') }}
         </div>
         <div class="flex items-center justify-end gap-3 border-t border-white/5 bg-surface-container-high/50 p-6">
-          <button type="button" class="rounded-md px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white/5" @click="closeActionModal">Cancel</button>
-          <button v-if="actionMode === 'update'" type="button" :disabled="isUpdateSubmitting" class="rounded-md bg-primary-container px-4 py-2 text-[10px] font-black uppercase tracking-widest text-on-primary-fixed transition-opacity disabled:cursor-not-allowed disabled:opacity-60" @click="submitUpdate">{{ isUpdateSubmitting ? 'Saving…' : 'Save' }}</button>
+          <button type="button" class="rounded-md px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white/5" @click="closeActionModal">{{ $t('common.cancel') }}</button>
+          <button v-if="actionMode === 'update'" type="button" :disabled="isUpdateSubmitting" class="rounded-md bg-primary-container px-4 py-2 text-[10px] font-black uppercase tracking-widest text-on-primary-fixed transition-opacity disabled:cursor-not-allowed disabled:opacity-60" @click="submitUpdate">{{ isUpdateSubmitting ? $t('common.saving') : $t('common.save') }}</button>
         </div>
       </div>
     </div>
