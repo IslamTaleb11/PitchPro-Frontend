@@ -353,7 +353,8 @@
     "finalisingMessage": "تثبيت اللاعبين المختارين للمباراة القادمة...",
     "finalisedTitle": "تم تثبيت التشكيلة",
     "finalisedMessage": "تم تأكيد تشكيلة المباراة بـ {count} لاعبين.",
-    "emptyRoster": "لا يوجد لاعبون متاحون في هذه الفئة."
+    "emptyRoster": "لا يوجد لاعبون متاحون في هذه الفئة.",
+    "selectCategoryFirst": "اختر فئة أولاً"
   },
   "clubRegistration": {
     "title": "أساسيات النادي",

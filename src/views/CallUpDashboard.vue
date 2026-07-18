@@ -24,7 +24,7 @@ const categories = ref([
   { id: 'u19', name: $t('callUp.categoryU19') },
   { id: 'u16', name: $t('callUp.categoryU16') },
 ])
-const selectedCategory = ref('senior')
+const selectedCategory = ref('')
 
 // ── Demo roster, keyed by category id ─────────────────────────────────────────
 // Fitness status drives availability: only injured players are blocked from
@@ -163,7 +163,7 @@ watch(selectedCategory, (id) => loadRoster(id))
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           <!-- Match Card -->
           <div class="lg:col-span-8 bg-surface-container-high rounded-xl p-6 relative overflow-hidden flex flex-col justify-between border-l-4 border-green-400">
-            <div class="relative z-10">
+            <div v-if="selectedCategory" class="relative z-10">
               <span class="font-label text-[10px] uppercase tracking-[0.2em] text-green-400 mb-2 block">{{ $t('callUp.nextFixture') }}</span>
               <div class="flex flex-wrap items-end gap-x-8 gap-y-4">
                 <div>
@@ -181,6 +181,10 @@ watch(selectedCategory, (id) => loadRoster(id))
                   </span>
                 </div>
               </div>
+            </div>
+            <div v-else class="relative z-10 flex flex-col items-center justify-center text-center py-10">
+              <span class="material-symbols-outlined text-4xl text-on-surface-variant mb-3">tune</span>
+              <p class="font-headline font-bold text-on-surface">{{ $t('callUp.selectCategoryFirst') }}</p>
             </div>
             <div class="absolute -right-12 -top-12 opacity-5 pointer-events-none">
               <span class="material-symbols-outlined text-[240px]" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
@@ -226,7 +230,7 @@ watch(selectedCategory, (id) => loadRoster(id))
               >
                 <div class="flex items-center gap-2">
                   <span class="material-symbols-outlined text-sm text-green-400">groups</span>
-                  {{ categories.find((c) => c.id === selectedCategory)?.name || $t('callUp.categorySenior') }}
+                  {{ selectedCategory ? (categories.find((c) => c.id === selectedCategory)?.name) : $t('callUp.selectCategoryFirst') }}
                 </div>
                 <span class="material-symbols-outlined text-xs">expand_more</span>
               </button>
@@ -363,7 +367,7 @@ watch(selectedCategory, (id) => loadRoster(id))
                 <!-- Empty state -->
                 <tr v-if="filteredPlayers.length === 0">
                   <td colspan="5" class="px-6 py-16 text-center text-on-surface-variant text-sm">
-                    {{ $t('callUp.emptyRoster') }}
+                    {{ selectedCategory ? $t('callUp.emptyRoster') : $t('callUp.selectCategoryFirst') }}
                   </td>
                 </tr>
               </tbody>

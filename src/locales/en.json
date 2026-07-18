@@ -352,7 +352,8 @@
     "finalisingMessage": "Locking in selected players for the upcoming match...",
     "finalisedTitle": "Squad Finalised",
     "finalisedMessage": "Match squad confirmed with {count} players.",
-    "emptyRoster": "No players available in this category."
+    "emptyRoster": "No players available in this category.",
+    "selectCategoryFirst": "Select a category first"
   },
   "clubRegistration": {
     "title": "Club Essentials",
