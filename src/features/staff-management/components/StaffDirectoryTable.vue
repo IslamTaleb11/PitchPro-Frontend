@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { staffService } from '../../../services/staffService'
 import { lookupService } from '../../../services/lookupService'
 import { useUiToast } from '../../../composables/useUiToast'
+import imageCompression from 'browser-image-compression'
 
 const { showToast } = useUiToast()
 const { t: $t } = useI18n()
@@ -49,8 +50,15 @@ const updateForm = ref({
   categoriesIDs: [],
   bloodTypeID: 1,
   allergies: '',
-  medicalNotes: ''
+  medicalNotes: '',
+  photo: null
 })
+
+// Photo handling for the update form: photoFile holds a newly chosen (compressed)
+// image to upload; photoPreview shows either that new image or the staff member's
+// current photo (so we never lose the existing picture unless a new one is picked).
+const photoFile = ref(null)
+const photoPreview = ref('')
 
 // 4. Computed: classifications filtered by selected primary role
 const filteredClassifications = computed(() => {
@@ -299,8 +307,12 @@ async function openActionModal(staff, mode = 'select') {
         categoriesIDs: rawCategoryIds.map(id => Number(id)),
         bloodTypeID: Number(staffDetails.bloodTypeID ?? staffDetails.BloodTypeID ?? 1),
         allergies: staffDetails.allergies ?? staffDetails.Allergies ?? '',
-        medicalNotes: staffDetails.medicalNotes ?? staffDetails.MedicalNotes ?? ''
+        medicalNotes: staffDetails.medicalNotes ?? staffDetails.MedicalNotes ?? '',
+        photo: staffDetails.photo ?? staffDetails.Photo ?? staffDetails.PhotoURL ?? null
       }
+      // Show the staff member's current photo by default; no new upload yet.
+      photoPreview.value = updateForm.value.photo ?? ''
+      photoFile.value = null
 
       // Data is ready — now switch into update mode and reveal the populated form.
       actionMode.value = 'update'
@@ -339,6 +351,33 @@ function toggleUpdateCategory(id) {
   else ids.splice(idx, 1)
 }
 
+// Pick a new photo for the staff member: validate type/size, compress to stay
+// under the backend's 2MB limit, and preview it (replacing the current photo).
+async function onUpdatePhotoChange(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp']
+  if (!validTypes.includes(file.type)) {
+    showToast({ title: 'Invalid file', message: 'Please choose a JPG, PNG, or WEBP image.', mode: 'error' })
+    event.target.value = ''
+    return
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    showToast({ title: 'File too large', message: 'Image must be under 2MB.', mode: 'error' })
+    event.target.value = ''
+    return
+  }
+
+  try {
+    const compressed = await imageCompression(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1920, useWebWorker: true })
+    photoFile.value = compressed
+  } catch {
+    photoFile.value = file
+  }
+  photoPreview.value = URL.createObjectURL(photoFile.value)
+}
+
 async function submitUpdate() {
   try {
     const payload = {
@@ -357,10 +396,12 @@ async function submitUpdate() {
       bloodTypeID: Number(updateForm.value.bloodTypeID),
       allergies: updateForm.value.allergies,
       medicalNotes: updateForm.value.medicalNotes,
-      photo: null
+      photo: photoFile.value
     }
     await staffService.updateStaff(payload.id, payload)
     showToast({ title: 'Updated', message: 'Staff member updated successfully.', mode: 'success' })
+    photoFile.value = null
+    photoPreview.value = ''
     closeActionModal()
     fetchStaff()
   } catch (error) {
@@ -526,6 +567,24 @@ onMounted(() => {
           </div>
         </div>
         <div v-else-if="actionMode === 'update'" class="max-h-[70vh] space-y-4 overflow-y-auto p-6">
+          <!-- Photo -->
+          <div class="flex items-center gap-4">
+            <label
+              class="group relative flex h-20 w-20 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-700 bg-surface-container-lowest transition-colors hover:border-green-400/50"
+            >
+              <img v-if="photoPreview" :src="photoPreview" alt="Staff photo" class="h-full w-full rounded-xl object-cover" />
+              <template v-else>
+                <span class="material-symbols-outlined text-slate-600 transition-colors group-hover:text-green-400">add_a_photo</span>
+                <span class="mt-1 text-[8px] font-bold uppercase text-slate-500">Photo</span>
+              </template>
+              <input class="absolute inset-0 cursor-pointer opacity-0" type="file" accept=".jpg,.jpeg,.png,.webp" @change="onUpdatePhotoChange" />
+            </label>
+            <div class="text-[10px] text-slate-500">
+              <div class="font-bold uppercase tracking-wider text-slate-400">Profile photo</div>
+              <div>Click the avatar to change the picture. Leave it to keep the current one.</div>
+            </div>
+          </div>
+
           <div class="grid gap-4 md:grid-cols-3">
             <div>
               <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">First name</label>
