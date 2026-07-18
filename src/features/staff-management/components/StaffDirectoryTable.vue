@@ -33,6 +33,7 @@ const actionTarget = ref(null)
 const actionMode = ref('select')
 const isEditLoading = ref(false)
 const isUpdateSubmitting = ref(false)
+const showDeleteConfirm = ref(false)
 const selectedPrimaryRoleId = ref(null)
 const selectedRoleClassificationId = ref(null)
 const selectedCategoryIds = ref([])
@@ -414,22 +415,42 @@ async function submitUpdate() {
   }
 }
 
-async function deleteStaff() {
-  const staffName = actionTarget.value?.fullName || 'this staff member'
-  const confirmed = window.confirm(`Delete ${staffName}?`)
+// Open the styled delete-confirmation modal (replaces the native window.confirm).
+function openDeleteConfirm() {
+  showActionModal.value = false
+  showDeleteConfirm.value = true
+}
 
-  if (!confirmed) {
-    return
-  }
+// Actually send the delete request once the user confirms "yes".
+async function confirmDelete() {
+  if (!actionTarget.value) return
+  const staffId = actionTarget.value.id ?? actionTarget.value.ID
+
+  // Loading toast (duration 0 keeps it visible until the request resolves).
+  showToast({
+    title: $t('staffManagement.deletingTitle'),
+    message: $t('staffManagement.deletingMessage'),
+    mode: 'loading',
+    duration: 0,
+  })
 
   try {
-    await staffService.deleteStaff(actionTarget.value.id ?? actionTarget.value.ID)
-    showToast({ title: 'Deleted', message: 'Staff member deleted successfully.', mode: 'success' })
+    await staffService.deleteStaff(staffId)
+    showToast({
+      title: $t('staffManagement.deletedTitle'),
+      message: $t('staffManagement.deletedMessage'),
+      mode: 'success',
+    })
+    showDeleteConfirm.value = false
     closeActionModal()
     fetchStaff()
   } catch (error) {
-    const message = error?.response?.data?.message || 'Failed to delete staff.'
-    showToast({ title: 'Error', message, mode: 'error' })
+    const message = error?.response?.data?.message || $t('staffManagement.deleteFailedMessage')
+    showToast({
+      title: $t('staffManagement.deleteFailedTitle'),
+      message,
+      mode: 'error',
+    })
   }
 }
 
@@ -565,6 +586,41 @@ onMounted(() => {
     </div>
   </Teleport>
 
+  <!-- DELETE CONFIRMATION MODAL -->
+  <Teleport to="body">
+    <div v-if="showDeleteConfirm" class="fixed inset-0 z-[130] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-background/80 backdrop-blur-md" @click="showDeleteConfirm = false"></div>
+      <div class="relative w-full max-w-md overflow-hidden rounded-xl border border-red-500/20 bg-surface-container-low shadow-2xl">
+        <div class="flex flex-col items-center p-6 text-center">
+          <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-500/15">
+            <span class="material-symbols-outlined text-3xl text-red-400">warning</span>
+          </div>
+          <h2 class="font-headline text-lg font-black uppercase tracking-tight text-white">{{ $t('staffManagement.deleteConfirmTitle') }}</h2>
+          <p class="mt-3 text-sm text-on-surface-variant">
+            {{ $t('staffManagement.deleteConfirmMessage', { name: actionTarget?.fullName || $t('staffManagement.thisStaffMember') }) }}
+          </p>
+        </div>
+        <div class="flex gap-3 border-t border-white/5 p-4">
+          <button
+            type="button"
+            @click="showDeleteConfirm = false"
+            class="flex-1 rounded-md py-3 text-[10px] font-black uppercase tracking-widest text-on-surface-variant transition-colors hover:bg-surface-container-high"
+          >
+            {{ $t('common.cancel') }}
+          </button>
+          <button
+            type="button"
+            @click="confirmDelete"
+            class="flex-1 rounded-md bg-red-500 py-3 text-[10px] font-black uppercase tracking-widest text-white transition-colors hover:bg-red-600"
+          >
+            <span class="material-symbols-outlined mr-1 align-middle text-sm">delete_forever</span>
+            {{ $t('staffManagement.confirmDelete') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
   <!-- ACTION MODAL -->
   <Teleport to="body">
     <div v-if="showActionModal" class="fixed inset-0 z-110 flex items-center justify-center p-4">
@@ -578,7 +634,7 @@ onMounted(() => {
           <p class="mb-4 text-sm text-slate-400">Choose an action for this staff member.</p>
           <div class="flex flex-wrap gap-3">
             <button type="button" class="rounded-md bg-primary-container px-4 py-2 text-[10px] font-black uppercase tracking-widest text-on-primary-fixed" @click="openActionModal(actionTarget, 'update')">Update</button>
-            <button type="button" class="rounded-md bg-red-500/20 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-400 hover:bg-red-500/30" @click="deleteStaff">Delete</button>
+            <button type="button" class="rounded-md bg-red-500/20 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-400 hover:bg-red-500/30" @click="openDeleteConfirm">Delete</button>
           </div>
         </div>
         <div v-else-if="actionMode === 'update'" class="max-h-[70vh] space-y-4 overflow-y-auto p-6">
