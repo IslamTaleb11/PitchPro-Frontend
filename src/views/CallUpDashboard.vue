@@ -92,13 +92,15 @@ function normalizeUpcomingMatch(data) {
   const dateRaw = pick(m, ['matchDate', 'MatchDate', 'date', 'Date', 'kickoff', 'Kickoff', 'dateTime', 'DateTime', 'startTime', 'StartTime'])
   const venue = pick(m, ['venue', 'Venue', 'stadium', 'Stadium', 'location', 'Location'])
   const competition = pick(m, ['competition', 'Competition', 'league', 'League'])
+  const round = pick(m, ['round', 'Round', 'gameweek', 'Gameweek', 'matchweek', 'Matchweek', 'stage', 'Stage'])
+  const referee = pick(m, ['referee', 'Referee'])
 
   const homeLabel = home || null
   const awayLabel = away || opponent || null
   const dateLabel = dateRaw ? formatMatchDate(dateRaw) : ''
 
-  if (!homeLabel && !awayLabel && !dateLabel && !venue && !competition) return null
-  return { homeLabel, awayLabel, dateLabel, venue, competition }
+  if (!homeLabel && !awayLabel && !dateLabel && !venue && !competition && !round && !referee) return null
+  return { homeLabel, awayLabel, dateLabel, venue, competition, round, referee }
 }
 
 // Format an ISO/.NET date string as "Oct 24, 2023 • 20:00" (locale time, no TZ label).
@@ -284,35 +286,68 @@ watch(selectedCategory, (id) => {
           <!-- Match Card -->
           <div class="lg:col-span-8 bg-surface-container-high rounded-xl p-6 relative overflow-hidden flex flex-col justify-between border-l-4 border-green-400">
             <div v-if="selectedCategory" class="relative z-10">
-              <span class="font-label text-[10px] uppercase tracking-[0.2em] text-green-400 mb-2 block">{{ $t('callUp.nextFixture') }}</span>
+              <div class="flex items-center justify-between mb-5">
+                <span class="font-label text-[10px] uppercase tracking-[0.2em] text-green-400">{{ $t('callUp.nextFixture') }}</span>
+                <span v-if="upcomingMatch?.competition" class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant bg-surface-container-lowest px-3 py-1 rounded-full">
+                  {{ upcomingMatch.competition }}
+                </span>
+              </div>
 
-              <div v-if="isLoadingMatch" class="flex items-center gap-2 text-on-surface-variant">
+              <div v-if="isLoadingMatch" class="flex items-center gap-2 text-on-surface-variant py-6">
                 <span class="material-symbols-outlined text-sm animate-spin">progress_activity</span>
                 <span class="text-sm">{{ $t('callUp.loadingMatch') }}</span>
               </div>
 
               <template v-else-if="upcomingMatch">
-                <div class="flex flex-wrap items-end gap-x-8 gap-y-4">
-                  <div>
-                    <h2 class="font-headline text-4xl font-bold text-on-surface uppercase tracking-tight">
-                      <template v-if="upcomingMatch.homeLabel">{{ upcomingMatch.homeLabel }} <span class="text-outline-variant font-light mx-2">{{ $t('callUp.vs') }}</span></template>{{ upcomingMatch.awayLabel }}
-                    </h2>
-                    <p v-if="upcomingMatch.dateLabel" class="font-body text-on-surface-variant mt-2 flex items-center gap-2">
-                      <span class="material-symbols-outlined text-sm">calendar_today</span> {{ upcomingMatch.dateLabel }}
-                    </p>
+                <!-- Teams -->
+                <div class="flex items-center justify-between gap-4">
+                  <div class="flex-1 text-right min-w-0">
+                    <div class="font-headline text-2xl md:text-3xl font-black text-on-surface uppercase truncate">{{ upcomingMatch.homeLabel || $t('callUp.tbd') }}</div>
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">{{ $t('callUp.home') }}</div>
                   </div>
-                  <div class="flex flex-col gap-1">
-                    <span v-if="upcomingMatch.venue" class="font-body text-xs text-on-surface-variant flex items-center gap-2">
-                      <span class="material-symbols-outlined text-sm">location_on</span> {{ upcomingMatch.venue }}
-                    </span>
-                    <span v-if="upcomingMatch.competition" class="font-body text-xs text-on-surface-variant flex items-center gap-2">
-                      <span class="material-symbols-outlined text-sm">stadium</span> {{ upcomingMatch.competition }}
-                    </span>
+                  <div class="flex flex-col items-center px-2 md:px-6">
+                    <span class="font-headline text-xl md:text-2xl font-black text-green-400">{{ $t('callUp.vs') }}</span>
+                  </div>
+                  <div class="flex-1 text-left min-w-0">
+                    <div class="font-headline text-2xl md:text-3xl font-black text-on-surface uppercase truncate">{{ upcomingMatch.awayLabel || $t('callUp.tbd') }}</div>
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">{{ $t('callUp.away') }}</div>
+                  </div>
+                </div>
+
+                <!-- Match details -->
+                <div class="mt-7 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div v-if="upcomingMatch.dateLabel" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-green-400 text-xl">calendar_today</span>
+                    <div class="min-w-0">
+                      <div class="text-[9px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.kickoff') }}</div>
+                      <div class="text-sm font-bold text-on-surface truncate">{{ upcomingMatch.dateLabel }}</div>
+                    </div>
+                  </div>
+                  <div v-if="upcomingMatch.venue" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-green-400 text-xl">location_on</span>
+                    <div class="min-w-0">
+                      <div class="text-[9px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.venue') }}</div>
+                      <div class="text-sm font-bold text-on-surface truncate">{{ upcomingMatch.venue }}</div>
+                    </div>
+                  </div>
+                  <div v-if="upcomingMatch.round" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-green-400 text-xl">emoji_events</span>
+                    <div class="min-w-0">
+                      <div class="text-[9px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.round') }}</div>
+                      <div class="text-sm font-bold text-on-surface truncate">{{ upcomingMatch.round }}</div>
+                    </div>
+                  </div>
+                  <div v-if="upcomingMatch.referee" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-green-400 text-xl">gavel</span>
+                    <div class="min-w-0">
+                      <div class="text-[9px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.referee') }}</div>
+                      <div class="text-sm font-bold text-on-surface truncate">{{ upcomingMatch.referee }}</div>
+                    </div>
                   </div>
                 </div>
               </template>
 
-              <p v-else class="font-headline font-bold text-on-surface">{{ $t('callUp.noUpcomingMatch') }}</p>
+              <p v-else class="font-headline font-bold text-on-surface py-6">{{ $t('callUp.noUpcomingMatch') }}</p>
             </div>
             <div v-else class="relative z-10 flex flex-col items-center justify-center text-center py-10">
               <span class="material-symbols-outlined text-4xl text-on-surface-variant mb-3">tune</span>

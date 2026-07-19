@@ -357,6 +357,13 @@
     "emptyRoster": "No players available in this category.",
     "selectCategoryFirst": "Select a category first",
     "vs": "VS",
+    "home": "Home",
+    "away": "Away",
+    "kickoff": "Kickoff",
+    "venue": "Venue",
+    "round": "Round",
+    "referee": "Referee",
+    "tbd": "TBD",
     "loadingMatch": "Loading upcoming match...",
     "noUpcomingMatch": "No upcoming match scheduled for this squad."
   },
