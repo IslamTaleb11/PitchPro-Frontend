@@ -76,9 +76,9 @@ function pick(obj, keys) {
 }
 
 // Normalize the GET /api/matches/upcoming/{id} response into the shape the
-// fixture card expects. The body may be a bare object, an array (take the first
-// match), or wrapped in an envelope under any key. Team/date/venue/competition
-// fields are tolerated loosely — including nested team objects ({ home: { name } }).
+// fixture card expects. The real API returns: opponentName, stadiumName, date,
+// kickoffTime, isHome, isCompleted, endTime (plus ids). We also accept common
+// alternative field names and envelope wrappers for resilience.
 function normalizeUpcomingMatch(data) {
   if (!data) return null
   let m = data
@@ -90,7 +90,7 @@ function normalizeUpcomingMatch(data) {
   if (Array.isArray(m)) m = m[0]
   if (!m || typeof m !== 'object') return null
 
-  // Resolve a value that may be a plain string or a team/venue object with a name.
+  // Resolve a value that may be a plain string or an object with a name.
   const asText = (v) => {
     if (v == null) return null
     if (typeof v === 'string') return v
@@ -100,21 +100,24 @@ function normalizeUpcomingMatch(data) {
     return null
   }
 
-  const home = asText(pick(m, ['homeTeam', 'HomeTeam', 'home', 'Home', 'homeTeamName', 'HomeTeamName', 'teamA', 'TeamA', 'firstTeam', 'FirstTeam', 'homeClub', 'HomeClub']))
-  const away = asText(pick(m, ['awayTeam', 'AwayTeam', 'away', 'Away', 'awayTeamName', 'AwayTeamName', 'teamB', 'TeamB', 'secondTeam', 'SecondTeam', 'awayClub', 'AwayClub']))
-  const opponent = asText(pick(m, ['opponent', 'Opponent', 'opponentTeam', 'OpponentTeam', 'vsTeam', 'VsTeam']))
-  const dateRaw = pick(m, ['matchDate', 'MatchDate', 'date', 'Date', 'kickoff', 'Kickoff', 'dateTime', 'DateTime', 'startTime', 'StartTime', 'time', 'Time'])
-  const venue = asText(pick(m, ['venue', 'Venue', 'stadium', 'Stadium', 'location', 'Location', 'ground', 'Ground']))
-  const competition = asText(pick(m, ['competition', 'Competition', 'league', 'League', 'tournament', 'Tournament']))
-  const round = asText(pick(m, ['round', 'Round', 'gameweek', 'Gameweek', 'matchweek', 'Matchweek', 'stage', 'Stage', 'roundNumber', 'RoundNumber']))
-  const referee = asText(pick(m, ['referee', 'Referee']))
+  const opponent = asText(pick(m, ['opponentName', 'OpponentName', 'opponent', 'Opponent', 'opponentTeam', 'OpponentTeam', 'vsTeam', 'VsTeam']))
+  const stadium = asText(pick(m, ['stadiumName', 'StadiumName', 'venue', 'Venue', 'stadium', 'Stadium', 'location', 'Location', 'ground', 'Ground']))
+  const dateRaw = pick(m, ['date', 'Date', 'matchDate', 'MatchDate', 'dateTime', 'DateTime'])
+  const kickoff = pick(m, ['kickoffTime', 'KickoffTime', 'kickoff', 'Kickoff', 'startTime', 'StartTime', 'time', 'Time'])
+  const isHome = m.isHome ?? m.IsHome ?? null
+  const isCompleted = m.isCompleted ?? m.IsCompleted ?? null
+  const endTime = asText(pick(m, ['endTime', 'EndTime']))
 
-  const homeLabel = home || null
-  const awayLabel = away || opponent || null
-  const dateLabel = dateRaw ? formatMatchDate(dateRaw) : ''
+  // Build the kickoff label by combining the date with the kickoff time.
+  let dateLabel = ''
+  if (dateRaw) {
+    const base = String(dateRaw).split('T')[0]
+    const combined = kickoff ? `${base}T${kickoff}` : `${base}T00:00:00`
+    dateLabel = formatMatchDate(combined)
+  }
 
-  if (!homeLabel && !awayLabel && !dateLabel && !venue && !competition && !round && !referee) return null
-  return { homeLabel, awayLabel, dateLabel, venue, competition, round, referee }
+  if (!opponent && !dateLabel && !stadium && isHome == null && isCompleted == null) return null
+  return { opponentName: opponent, isHome, isCompleted, stadiumName: stadium, endTime, dateLabel }
 }
 
 // Format an ISO/.NET date string as "Oct 24, 2023 • 20:00" (locale time, no TZ label).
@@ -132,7 +135,6 @@ async function loadUpcomingMatch(categoryId) {
   isLoadingMatch.value = true
   try {
     const response = await matchService.getUpcomingMatch(categoryId)
-    console.log('[Call-Up] raw upcoming match response:', response?.data)
     upcomingMatch.value = normalizeUpcomingMatch(response?.data)
   } catch (error) {
     // No upcoming match (or endpoint unavailable) — leave the card in its empty state.
@@ -142,6 +144,21 @@ async function loadUpcomingMatch(categoryId) {
     isLoadingMatch.value = false
   }
 }
+
+// The API only returns the opponent and an isHome flag — our own squad is the
+// currently selected category. Place the opponent on the correct side (home/away)
+// so the fixture reads correctly.
+const ourSquadName = computed(() =>
+  categories.value.find((c) => c.id === selectedCategory.value)?.name || ''
+)
+const homeTeamName = computed(() => {
+  if (!upcomingMatch.value) return ''
+  return upcomingMatch.value.isHome ? ourSquadName.value : upcomingMatch.value.opponentName || ''
+})
+const awayTeamName = computed(() => {
+  if (!upcomingMatch.value) return ''
+  return upcomingMatch.value.isHome ? upcomingMatch.value.opponentName || '' : ourSquadName.value
+})
 
 // Track image load failures so we can fall back to initials.
 const imgErrors = reactive({})
@@ -303,8 +320,10 @@ watch(selectedCategory, (id) => {
             <div v-if="selectedCategory" class="relative z-10">
               <div class="flex items-center justify-between mb-5">
                 <span class="font-label text-[10px] uppercase tracking-[0.2em] text-green-400">{{ $t('callUp.nextFixture') }}</span>
-                <span v-if="upcomingMatch?.competition" class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant bg-surface-container-lowest px-3 py-1 rounded-full">
-                  {{ upcomingMatch.competition }}
+                <span v-if="upcomingMatch?.isCompleted != null" class="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full"
+                  :class="upcomingMatch.isCompleted ? 'bg-surface-container-lowest text-on-surface-variant' : 'bg-green-400/10 text-green-400'"
+                >
+                  {{ upcomingMatch.isCompleted ? $t('callUp.completed') : $t('callUp.upcoming') }}
                 </span>
               </div>
 
@@ -317,20 +336,20 @@ watch(selectedCategory, (id) => {
                 <!-- Teams -->
                 <div class="flex items-center justify-between gap-4">
                   <div class="flex-1 text-right min-w-0">
-                    <div class="font-headline text-2xl md:text-3xl font-black text-on-surface uppercase truncate">{{ upcomingMatch.homeLabel || $t('callUp.tbd') }}</div>
+                    <div class="font-headline text-2xl md:text-3xl font-black text-on-surface uppercase truncate">{{ homeTeamName || $t('callUp.tbd') }}</div>
                     <div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">{{ $t('callUp.home') }}</div>
                   </div>
                   <div class="flex flex-col items-center px-2 md:px-6">
                     <span class="font-headline text-xl md:text-2xl font-black text-green-400">{{ $t('callUp.vs') }}</span>
                   </div>
                   <div class="flex-1 text-left min-w-0">
-                    <div class="font-headline text-2xl md:text-3xl font-black text-on-surface uppercase truncate">{{ upcomingMatch.awayLabel || $t('callUp.tbd') }}</div>
+                    <div class="font-headline text-2xl md:text-3xl font-black text-on-surface uppercase truncate">{{ awayTeamName || $t('callUp.tbd') }}</div>
                     <div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">{{ $t('callUp.away') }}</div>
                   </div>
                 </div>
 
                 <!-- Match details -->
-                <div class="mt-7 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="mt-7 grid grid-cols-2 lg:grid-cols-3 gap-3">
                   <div v-if="upcomingMatch.dateLabel" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
                     <span class="material-symbols-outlined text-green-400 text-xl">calendar_today</span>
                     <div class="min-w-0">
@@ -338,25 +357,18 @@ watch(selectedCategory, (id) => {
                       <div class="text-sm font-bold text-on-surface truncate">{{ upcomingMatch.dateLabel }}</div>
                     </div>
                   </div>
-                  <div v-if="upcomingMatch.venue" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
+                  <div v-if="upcomingMatch.stadiumName" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
                     <span class="material-symbols-outlined text-green-400 text-xl">location_on</span>
                     <div class="min-w-0">
                       <div class="text-[9px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.venue') }}</div>
-                      <div class="text-sm font-bold text-on-surface truncate">{{ upcomingMatch.venue }}</div>
+                      <div class="text-sm font-bold text-on-surface truncate">{{ upcomingMatch.stadiumName }}</div>
                     </div>
                   </div>
-                  <div v-if="upcomingMatch.round" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
-                    <span class="material-symbols-outlined text-green-400 text-xl">emoji_events</span>
+                  <div v-if="upcomingMatch.isHome != null" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-green-400 text-xl">{{ upcomingMatch.isHome ? 'home' : 'flight' }}</span>
                     <div class="min-w-0">
-                      <div class="text-[9px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.round') }}</div>
-                      <div class="text-sm font-bold text-on-surface truncate">{{ upcomingMatch.round }}</div>
-                    </div>
-                  </div>
-                  <div v-if="upcomingMatch.referee" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
-                    <span class="material-symbols-outlined text-green-400 text-xl">gavel</span>
-                    <div class="min-w-0">
-                      <div class="text-[9px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.referee') }}</div>
-                      <div class="text-sm font-bold text-on-surface truncate">{{ upcomingMatch.referee }}</div>
+                      <div class="text-[9px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.fixture') }}</div>
+                      <div class="text-sm font-bold text-on-surface truncate">{{ upcomingMatch.isHome ? $t('callUp.home') : $t('callUp.away') }}</div>
                     </div>
                   </div>
                 </div>

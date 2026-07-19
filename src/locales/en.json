@@ -363,6 +363,9 @@
     "venue": "Venue",
     "round": "Round",
     "referee": "Referee",
+    "fixture": "Fixture",
+    "upcoming": "Upcoming",
+    "completed": "Completed",
     "tbd": "TBD",
     "loadingMatch": "Loading upcoming match...",
     "noUpcomingMatch": "No upcoming match scheduled for this squad."
