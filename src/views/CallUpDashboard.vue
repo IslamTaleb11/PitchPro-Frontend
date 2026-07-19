@@ -284,7 +284,7 @@ watch(selectedCategory, (id) => loadRoster(id))
                 </div>
                 <span class="material-symbols-outlined text-xs">expand_more</span>
               </button>
-              <div class="absolute top-full left-0 mt-2 w-full bg-surface-container-high border border-outline-variant/20 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50 overflow-hidden">
+              <div class="absolute top-full left-0 w-full bg-surface-container-high border border-outline-variant/20 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50 overflow-hidden before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-['']">
                 <div class="p-1">
                   <button
                     v-for="cat in categories"
