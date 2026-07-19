@@ -206,10 +206,42 @@ function bodyPartLabelKey(id) {
 }
 
 // Flexibly normalize the player list returned by /players/by-category/{id}.
-// The backend shape is not guaranteed (it may be a bare array, or wrapped in
-// an envelope under any key), so we tolerate several common wrappers and
-// field-naming conventions — including default .NET PascalCase serialization.
+// We do NOT trust the backend shape: it may be a bare array, wrapped in an
+// envelope under any key, nested arbitrarily deep, or even returned as a JSON
+// string. We tolerate many id/name/jersey field names, including default .NET
+// PascalCase serialization.
+function deepFindPlayerArray(node, depth = 0) {
+  if (Array.isArray(node)) {
+    if (node.length === 0 || typeof node[0] !== 'object' || node[0] === null) return null
+    return node
+  }
+  if (node && typeof node === 'object' && depth < 6) {
+    let best = null
+    for (const key of Object.keys(node)) {
+      const found = deepFindPlayerArray(node[key], depth + 1)
+      if (found) {
+        const item = found[0] || {}
+        const score = ['id', 'playerId', 'Id', 'name', 'fullName', 'Name'].reduce(
+          (s, k) => s + (k in item ? 1 : 0),
+          0
+        )
+        if (!best || score > best.score) best = { arr: found, score }
+      }
+    }
+    return best ? best.arr : null
+  }
+  return null
+}
+
 function normalizePlayers(data) {
+  // The API sometimes returns the body as a JSON string rather than parsed JSON.
+  if (typeof data === 'string') {
+    try {
+      data = JSON.parse(data)
+    } catch {
+      return []
+    }
+  }
   let array = data
   if (data && typeof data === 'object' && !Array.isArray(data)) {
     array =
@@ -223,15 +255,8 @@ function normalizePlayers(data) {
       data.content ||
       data.list ||
       null
-    // Fallback: the envelope can use any key — grab the first array property.
-    if (!array) {
-      for (const key of Object.keys(data)) {
-        if (Array.isArray(data[key])) {
-          array = data[key]
-          break
-        }
-      }
-    }
+    // Fallback: scan the envelope for the first array-shaped collection.
+    if (!array) array = deepFindPlayerArray(data)
   }
   if (!Array.isArray(array)) return []
   return array
@@ -275,7 +300,11 @@ watch(incidentCategory, async (categoryId) => {
   isLoadingIncidentPlayers.value = true
   try {
     const response = await playerService.getPlayersByCategory(categoryId)
+    // TEMP DEBUG — remove once the dropdown is confirmed working.
+    console.log('[MEDICAL DEBUG] categoryId=', categoryId, '| status=', response?.status, '| dataType=', typeof response?.data)
+    console.log('[MEDICAL DEBUG] raw=', response?.data)
     incidentPlayers.value = normalizePlayers(response?.data)
+    console.log('[MEDICAL DEBUG] normalized players=', incidentPlayers.value.length, incidentPlayers.value)
   } catch (error) {
     console.warn('Medical: could not load players for category', categoryId, error)
     incidentPlayers.value = []
