@@ -180,38 +180,58 @@ const isLoadingIncidentPlayers = ref(false)
 // Body-part catalogue. The numeric `id` is what gets stored on a record and is
 // the canonical value the medical API is expected to use.
 const bodyParts = [
-  { id: 1, label: 'Head' },
-  { id: 2, label: 'Neck' },
-  { id: 3, label: 'Shoulder' },
-  { id: 4, label: 'Arm' },
-  { id: 5, label: 'Elbow' },
-  { id: 6, label: 'Wrist' },
-  { id: 7, label: 'Hand' },
-  { id: 8, label: 'Chest' },
-  { id: 9, label: 'Back' },
-  { id: 10, label: 'Abdomen' },
-  { id: 11, label: 'Hip' },
-  { id: 12, label: 'Groin' },
-  { id: 13, label: 'Thigh' },
-  { id: 14, label: 'Hamstring' },
-  { id: 15, label: 'Knee' },
-  { id: 16, label: 'Calf' },
-  { id: 17, label: 'Shin' },
-  { id: 18, label: 'Ankle' },
-  { id: 19, label: 'Foot' },
+  { id: 1, labelKey: 'medical.bodyPartHead' },
+  { id: 2, labelKey: 'medical.bodyPartNeck' },
+  { id: 3, labelKey: 'medical.bodyPartShoulder' },
+  { id: 4, labelKey: 'medical.bodyPartArm' },
+  { id: 5, labelKey: 'medical.bodyPartElbow' },
+  { id: 6, labelKey: 'medical.bodyPartWrist' },
+  { id: 7, labelKey: 'medical.bodyPartHand' },
+  { id: 8, labelKey: 'medical.bodyPartChest' },
+  { id: 9, labelKey: 'medical.bodyPartBack' },
+  { id: 10, labelKey: 'medical.bodyPartAbdomen' },
+  { id: 11, labelKey: 'medical.bodyPartHip' },
+  { id: 12, labelKey: 'medical.bodyPartGroin' },
+  { id: 13, labelKey: 'medical.bodyPartThigh' },
+  { id: 14, labelKey: 'medical.bodyPartHamstring' },
+  { id: 15, labelKey: 'medical.bodyPartKnee' },
+  { id: 16, labelKey: 'medical.bodyPartCalf' },
+  { id: 17, labelKey: 'medical.bodyPartShin' },
+  { id: 18, labelKey: 'medical.bodyPartAnkle' },
+  { id: 19, labelKey: 'medical.bodyPartFoot' },
 ]
-function bodyPartLabel(id) {
+function bodyPartLabelKey(id) {
   const found = bodyParts.find((p) => p.id === id)
-  return found ? found.label : id
+  return found ? found.labelKey : null
 }
 
 // Flexibly normalize the player list returned by /players/by-category/{id}.
-// The backend shape is not guaranteed, so we tolerate several common field
-// names for id, name and jersey number.
+// The backend shape is not guaranteed (it may be a bare array, or wrapped in
+// an envelope under any key), so we tolerate several common wrappers and
+// field-naming conventions — including default .NET PascalCase serialization.
 function normalizePlayers(data) {
   let array = data
   if (data && typeof data === 'object' && !Array.isArray(data)) {
-    array = data.data || data.items || data.result || data.value || data.$values || data.players || []
+    array =
+      data.data ||
+      data.items ||
+      data.result ||
+      data.value ||
+      data.$values ||
+      data.players ||
+      data.records ||
+      data.content ||
+      data.list ||
+      null
+    // Fallback: the envelope can use any key — grab the first array property.
+    if (!array) {
+      for (const key of Object.keys(data)) {
+        if (Array.isArray(data[key])) {
+          array = data[key]
+          break
+        }
+      }
+    }
   }
   if (!Array.isArray(array)) return []
   return array
@@ -220,14 +240,17 @@ function normalizePlayers(data) {
       const id = item.id ?? item.playerId ?? item.Id ?? item.ID ?? item.value
       const name =
         item.fullName ||
+        item.FullName ||
         item.full_name ||
         item.name ||
         item.Name ||
         item.playerName ||
+        item.PlayerName ||
         [item.firstName, item.lastName].filter(Boolean).join(' ') ||
         [item.first_name, item.last_name].filter(Boolean).join(' ') ||
         String(id ?? '')
-      const jersey = item.jerseyNumber ?? item.jersey ?? item.shirtNumber ?? null
+      const jersey =
+        item.jerseyNumber ?? item.JerseyNumber ?? item.jersey ?? item.shirtNumber ?? item.ShirtNumber ?? null
       if (id == null) return null
       return { id, name: name || 'Unknown Player', jersey }
     })
@@ -265,10 +288,10 @@ const selectedBodyPart = ref('')
 // (Minor = 1, Moderate = 2, Severe = 3, Critical = 4) and is the canonical
 // value the medical API is expected to use.
 const severityLevels = [
-  { level: 1, dot: 'bg-green-400', badge: 'bg-secondary-container text-on-secondary-container', labelKey: 'medical.severityMinor', label: 'Minor' },
-  { level: 2, dot: 'bg-yellow-400', badge: 'bg-tertiary-container text-on-tertiary-container', labelKey: 'medical.severityModerate', label: 'Moderate' },
-  { level: 3, dot: 'bg-orange-400', badge: 'bg-tertiary-container text-on-tertiary-container', labelKey: 'medical.severitySevere', label: 'Severe' },
-  { level: 4, dot: 'bg-error', badge: 'bg-error-container text-on-error-container', labelKey: 'medical.severityCritical', label: 'Critical' },
+  { level: 1, dot: 'bg-green-400', badge: 'bg-secondary-container text-on-secondary-container', labelKey: 'medical.severityMinor' },
+  { level: 2, dot: 'bg-yellow-400', badge: 'bg-tertiary-container text-on-tertiary-container', labelKey: 'medical.severityModerate' },
+  { level: 3, dot: 'bg-orange-400', badge: 'bg-tertiary-container text-on-tertiary-container', labelKey: 'medical.severitySevere' },
+  { level: 4, dot: 'bg-error', badge: 'bg-error-container text-on-error-container', labelKey: 'medical.severityCritical' },
 ]
 const selectedSeverity = ref('')
 const erdText = ref('')
@@ -324,7 +347,7 @@ function submitIncident() {
       name: playerLabel,
       jersey,
       category: categoryName(incidentCategory.value) || categories.value[0]?.name || 'Senior A',
-      injury: `${bodyPartLabel(selectedBodyPart.value)} Injury`,
+      injury: `${$t(bodyPartLabelKey(selectedBodyPart.value))} ${$t('medical.injurySuffix')}`,
       detail: 'Newly recorded incident',
       bodyPart: selectedBodyPart.value,
       severity: selectedSeverity.value,
@@ -582,7 +605,7 @@ onMounted(loadCategories)
                     type="button"
                     @click="selectedBodyPart = part.id"
                     :class="['bg-surface-container-lowest py-2 text-[10px] border rounded uppercase font-bold transition-colors', selectedBodyPart === part.id ? 'border-green-400 text-green-400' : 'border-outline-variant/20 text-on-surface-variant hover:border-green-400']"
-                  >{{ part.label }}</button>
+                  >{{ $t(part.labelKey) }}</button>
                 </div>
               </div>
               <div class="space-y-1">
@@ -596,7 +619,7 @@ onMounted(loadCategories)
                     :class="['flex-1 bg-surface-container-lowest p-3 rounded flex flex-col items-center gap-1 cursor-pointer border transition-colors', selectedSeverity === tier.level ? 'border-green-400' : 'border-transparent hover:border-green-400']"
                   >
                     <span :class="['w-2 h-2 rounded-full', tier.dot]"></span>
-                    <span class="text-[9px] font-bold uppercase">{{ tier.label }}</span>
+                    <span class="text-[9px] font-bold uppercase">{{ $t(tier.labelKey) }}</span>
                     <span class="text-[8px] text-on-surface-variant">{{ tier.level }}</span>
                   </button>
                 </div>
