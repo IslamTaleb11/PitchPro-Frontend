@@ -407,7 +407,7 @@
     "primaryBodyPart": "Primary Body Part",
     "severityTier": "Severity Tier",
     "expectedReturn": "Expected Return (ERD)",
-    "expectedReturnPlaceholder": "e.g. 4 Weeks",
+    "expectedReturnPlaceholder": "Select return date",
     "commit": "Commit to Database",
     "incidentMissingFields": "Please choose a player, body part and severity tier.",
     "incidentRecordedTitle": "Incident Recorded",

@@ -7,7 +7,7 @@ import { useUiToast } from '../composables/useUiToast'
 import { lookupService } from '../services/lookupService'
 import { playerService } from '../services/playerService'
 
-const { t: $t } = useI18n()
+const { t: $t, locale } = useI18n()
 const { showToast } = useUiToast()
 
 const isSidebarOpen = ref(true)
@@ -319,7 +319,24 @@ const severityLevels = [
   { level: 4, dot: 'bg-error', badge: 'bg-error-container text-on-error-container', labelKey: 'medical.severityCritical' },
 ]
 const selectedSeverity = ref('')
-const erdText = ref('')
+// Expected return date, stored as a YYYY-MM-DD string from a native date input.
+const erdDateInput = ref('')
+
+// Format a YYYY-MM-DD date string for display, localized to the active locale.
+function formatErdDate(dateStr) {
+  if (!dateStr) return '—'
+  const d = new Date(`${dateStr}T00:00:00`)
+  if (isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString(locale.value, { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+// Whole days from today until the given YYYY-MM-DD date (negative = in the past).
+function daysUntilErd(dateStr) {
+  const target = new Date(`${dateStr}T00:00:00`)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return Math.round((target.getTime() - today.getTime()) / 86400000)
+}
 // Recorded status of the player for this incident: 'fit' or 'injured'.
 const incidentStatus = ref('injured')
 
@@ -360,11 +377,18 @@ function submitIncident() {
   const selectedPlayer = incidentPlayers.value.find((p) => p.id === incidentPlayer.value)
   const playerLabel = playerName(incidentPlayer.value)
   const jersey = selectedPlayer?.jersey ? String(selectedPlayer.jersey) : '—'
-  const erdLabel = erdText.value.trim()
-    ? erdText.value.trim().toUpperCase()
+  const erdValue = erdDateInput.value
+  const erdLabel = erdValue
+    ? isMinor
+      ? 'READY'
+      : (() => {
+          const days = daysUntilErd(erdValue)
+          return days <= 0 ? 'READY' : `${days} DAYS`
+        })()
     : isMinor
       ? 'READY'
       : 'TBD'
+  const erdDisplayDate = erdValue ? formatErdDate(erdValue) : '—'
 
   injuries.value = [
     {
@@ -378,7 +402,7 @@ function submitIncident() {
       severity: selectedSeverity.value,
       status: incidentStatus.value,
       erdLabel,
-      erdDate: incidentDate.value || '—',
+      erdDate: erdDisplayDate,
       ready: isMinor,
       avatar: null,
     },
@@ -392,7 +416,7 @@ function submitIncident() {
   selectedBodyPart.value = ''
   selectedSeverity.value = ''
   incidentStatus.value = 'injured'
-  erdText.value = ''
+  erdDateInput.value = ''
 
   showToast({
     title: $t('medical.incidentRecordedTitle'),
@@ -658,7 +682,7 @@ onMounted(loadCategories)
               </div>
               <div class="space-y-1">
                 <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('medical.expectedReturn') }}</label>
-                <input v-model="erdText" :placeholder="$t('medical.expectedReturnPlaceholder')" type="text" class="w-full bg-surface-container-lowest border-none text-on-surface text-sm p-3 rounded focus:ring-1 focus:ring-green-400" />
+                <input v-model="erdDateInput" :placeholder="$t('medical.expectedReturnPlaceholder')" type="date" class="w-full bg-surface-container-lowest border-none text-on-surface text-sm p-3 rounded focus:ring-1 focus:ring-green-400 scheme-dark" />
               </div>
               <button type="submit" class="w-full bg-gradient-to-r from-green-400 to-green-300 text-slate-950 py-4 rounded-md text-sm font-black uppercase tracking-widest mt-4 shadow-lg shadow-green-900/20 hover:brightness-110 transition-all">
                 {{ $t('medical.commit') }}

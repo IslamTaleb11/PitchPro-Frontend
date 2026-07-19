@@ -408,7 +408,7 @@
     "primaryBodyPart": "العضو المصاب",
     "severityTier": "درجة الخطورة",
     "expectedReturn": "العودة المتوقعة",
-    "expectedReturnPlaceholder": "مثال: 4 أسابيع",
+    "expectedReturnPlaceholder": "اختر تاريخ العودة",
     "commit": "تثبيت في قاعدة البيانات",
     "incidentMissingFields": "يرجى اختيار اللاعب والعضو المصاب ودرجة الخطورة.",
     "incidentRecordedTitle": "تم تسجيل الحادثة",
