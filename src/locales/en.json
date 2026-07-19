@@ -216,6 +216,7 @@
     "eventClassificationLabel": "Event Classification",
     "all": "All",
     "allCategories": "All Categories",
+    "selectCategoryToView": "Select a category to view its injuries.",
     "eventTerminal": "Event Terminal",
     "match": "Match",
     "training": "Training",
