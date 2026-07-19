@@ -22,9 +22,6 @@ const SQUAD_TOTAL = 28
 const categoryInjuries = ref([])
 const isLoadingCategoryInjuries = ref(false)
 
-// Total squad size used to derive the readiness matrix.
-const SQUAD_TOTAL = 28
-
 // ── Readiness matrix (derived from the injuries shown for the selected category) ─
 const unavailableCount = computed(() => categoryInjuries.value.length)
 const matchFit = computed(() => SQUAD_TOTAL - unavailableCount.value)
@@ -58,7 +55,7 @@ function normalizeCategoryInjuries(data) {
       if (!item || typeof item !== 'object') return null
       const id = item.id ?? item.ID ?? item.injuryId ?? item.InjuryId ?? null
       const name = item.playerName ?? item.PlayerName ?? ''
-      const avatar = item.playerImage ?? item.PlayerImage || null
+      const avatar = item.playerImage ?? item.PlayerImage ?? null
       const category = item.categoryName ?? item.CategoryName ?? ''
       const bodyPart = item.bodyPart ?? item.BodyPart ?? null
       const bodyPartName = item.bodyPartName ?? item.BodyPartName ?? ''
