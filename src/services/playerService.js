@@ -23,5 +23,11 @@ export const playerService = {
   // GET /api/player-injuries/by-category/{categoryId} -> { data: [...] }.
   getInjuriesByCategory(categoryId) {
     return api.get(`/player-injuries/by-category/${categoryId}`);
+  },
+
+  // Mark an injury as recovered (deactivates the record).
+  // PATCH /api/player-injuries/{injuryId}/recover
+  recoverInjury(injuryId) {
+    return api.patch(`/player-injuries/${injuryId}/recover`);
   }
 };

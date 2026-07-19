@@ -112,6 +112,28 @@ watch(selectedInjuryCategory, (categoryId) => {
   fetchInjuriesByCategory(categoryId)
 })
 
+// Mark an injury as recovered (PATCH /api/player-injuries/{injuryId}/recover).
+// The backend deactivates the record, so we drop it from the local ledger.
+async function recoverInjury(injuryId) {
+  try {
+    await playerService.recoverInjury(injuryId)
+    categoryInjuries.value = categoryInjuries.value.filter((i) => i.id !== injuryId)
+    showToast({
+      title: $t('medical.incidentRecoveredTitle'),
+      message: $t('medical.incidentRecoveredMessage'),
+      mode: 'success',
+    })
+  } catch (error) {
+    const message =
+      error?.response?.data?.message || error?.message || $t('medical.incidentRecoverFailed')
+    showToast({
+      title: $t('medical.incidentRecoveredTitle'),
+      message,
+      mode: 'error',
+    })
+  }
+}
+
 // ── Categories (loaded from /lookups/categories, same as the rest of app) ────
 // Stored as `{ id, name }` objects so we can resolve the category id needed by
 // the `/players/by-category/{categoryId}` endpoint when recording an incident.
@@ -164,196 +186,15 @@ async function loadCategories() {
   }
 }
 
-// ── Players available for the terminals (demo data) ──────────────────────────
-const players = ref([
-  'A. Onana (#24)',
-  'B. Fernandes (#8)',
-  'Diogo Dalot (#20)',
-  'Harry Maguire',
-  'Casemiro',
-  'Antony',
-])
-
-// ── Status Management Terminal ───────────────────────────────────────────────
-const terminalCategory = ref('')
-const terminalPlayer = ref('')
-const terminalFitness = ref('fit') // 'fit' | 'partial' | 'sidelined'
-
-function executeCommand() {
-  if (!terminalPlayer.value) {
-    showToast({
-      title: $t('common.missingFields'),
-      message: $t('medical.selectPlayerFirst'),
-      mode: 'error',
-    })
-    return
-  }
-  showToast({
-    title: $t('medical.commandExecutedTitle'),
-    message: $t('medical.commandExecutedMessage', {
-      player: terminalPlayer.value,
-      state: $t(terminalFitness === 'fit' ? 'medical.fit' : terminalFitness === 'partial' ? 'medical.partial' : 'medical.sidelined'),
-    }),
-    mode: 'success',
-  })
-}
-
-// ── Record Incident form ─────────────────────────────────────────────────────
-const incidentDate = ref('')
-// Stores the selected category *id* so we can hit /players/by-category/{id}.
-const incidentCategory = ref('')
-const incidentPlayer = ref('')
-// Players belonging to the selected category, loaded from the API.
-const incidentPlayers = ref([])
-const isLoadingIncidentPlayers = ref(false)
-
-// Body-part catalogue. The numeric `id` is what gets stored on a record and is
-// the canonical value the medical API is expected to use.
-const bodyParts = [
-  { id: 1, labelKey: 'medical.bodyPartHead' },
-  { id: 2, labelKey: 'medical.bodyPartNeck' },
-  { id: 3, labelKey: 'medical.bodyPartShoulder' },
-  { id: 4, labelKey: 'medical.bodyPartArm' },
-  { id: 5, labelKey: 'medical.bodyPartElbow' },
-  { id: 6, labelKey: 'medical.bodyPartWrist' },
-  { id: 7, labelKey: 'medical.bodyPartHand' },
-  { id: 8, labelKey: 'medical.bodyPartChest' },
-  { id: 9, labelKey: 'medical.bodyPartBack' },
-  { id: 10, labelKey: 'medical.bodyPartAbdomen' },
-  { id: 11, labelKey: 'medical.bodyPartHip' },
-  { id: 12, labelKey: 'medical.bodyPartGroin' },
-  { id: 13, labelKey: 'medical.bodyPartThigh' },
-  { id: 14, labelKey: 'medical.bodyPartHamstring' },
-  { id: 15, labelKey: 'medical.bodyPartKnee' },
-  { id: 16, labelKey: 'medical.bodyPartCalf' },
-  { id: 17, labelKey: 'medical.bodyPartShin' },
-  { id: 18, labelKey: 'medical.bodyPartAnkle' },
-  { id: 19, labelKey: 'medical.bodyPartFoot' },
-]
-function bodyPartLabelKey(id) {
-  const found = bodyParts.find((p) => p.id === id)
-  return found ? found.labelKey : null
-}
-
-// Flexibly normalize the player list returned by /players/by-category/{id}.
-// We do NOT trust the backend shape: it may be a bare array, wrapped in an
-// envelope under any key, nested arbitrarily deep, or even returned as a JSON
-// string. We tolerate many id/name/jersey field names, including default .NET
-// PascalCase serialization.
-function deepFindPlayerArray(node, depth = 0) {
-  if (Array.isArray(node)) {
-    if (node.length === 0 || typeof node[0] !== 'object' || node[0] === null) return null
-    return node
-  }
-  if (node && typeof node === 'object' && depth < 6) {
-    let best = null
-    for (const key of Object.keys(node)) {
-      const found = deepFindPlayerArray(node[key], depth + 1)
-      if (found) {
-        const item = found[0] || {}
-        const score = ['id', 'playerId', 'Id', 'name', 'fullName', 'Name'].reduce(
-          (s, k) => s + (k in item ? 1 : 0),
-          0
-        )
-        if (!best || score > best.score) best = { arr: found, score }
-      }
-    }
-    return best ? best.arr : null
-  }
-  return null
-}
-
-function normalizePlayers(data) {
-  // The API sometimes returns the body as a JSON string rather than parsed JSON.
-  if (typeof data === 'string') {
-    try {
-      data = JSON.parse(data)
-    } catch {
-      return []
-    }
-  }
-  let array = data
-  if (data && typeof data === 'object' && !Array.isArray(data)) {
-    array =
-      data.data ||
-      data.items ||
-      data.result ||
-      data.value ||
-      data.$values ||
-      data.players ||
-      data.records ||
-      data.content ||
-      data.list ||
-      null
-    // Fallback: scan the envelope for the first array-shaped collection.
-    if (!array) array = deepFindPlayerArray(data)
-  }
-  if (!Array.isArray(array)) return []
-  return array
-    .map((item) => {
-      if (!item || typeof item !== 'object') return null
-      const id = item.id ?? item.playerID ?? item.PlayerID ?? item.playerId ?? item.Id ?? item.ID ?? item.value
-      const name =
-        item.fullName ||
-        item.FullName ||
-        item.full_name ||
-        item.name ||
-        item.Name ||
-        item.playerName ||
-        item.PlayerName ||
-        [item.firstName, item.lastName].filter(Boolean).join(' ') ||
-        [item.first_name, item.last_name].filter(Boolean).join(' ') ||
-        String(id ?? '')
-      const jersey =
-        item.jerseyNumber ?? item.JerseyNumber ?? item.jersey ?? item.shirtNumber ?? item.ShirtNumber ?? null
-      // The injury endpoint needs the player's MEDICAL DOSSIER id, not the
-      // player id — the player list carries it as `medicalDossierID`.
-      const dossierId = item.medicalDossierID ?? item.MedicalDossierID ?? null
-      if (id == null) return null
-      return { id, name: name || 'Unknown Player', jersey, dossierId }
-    })
-    .filter(Boolean)
-}
-
-// Resolve a stored player id back to a display label (name + jersey if present).
-function playerName(id) {
-  const found = incidentPlayers.value.find((p) => p.id === id)
-  if (!found) return id
-  return found.jersey ? `${found.name} (#${found.jersey})` : found.name
-}
-
-// When the user picks a category on the incident form, load that category's
-// players via /players/by-category/{categoryId}.
-watch(incidentCategory, async (categoryId) => {
-  // Reset the player selection whenever the category changes.
-  incidentPlayer.value = ''
-  incidentPlayers.value = []
-  if (!categoryId) return
-
-  isLoadingIncidentPlayers.value = true
-  try {
-    const response = await playerService.getPlayersByCategory(categoryId)
-    incidentPlayers.value = normalizePlayers(response?.data)
-  } catch (error) {
-    console.warn('Medical: could not load players for category', categoryId, error)
-    incidentPlayers.value = []
-  } finally {
-    isLoadingIncidentPlayers.value = false
-  }
-})
-const selectedBodyPart = ref('')
-// Injury severity scale. The numeric `level` is what gets stored on a record
-// (Minor = 1, Moderate = 2, Severe = 3, Critical = 4) and is the canonical
-// value the medical API is expected to use.
+// ── Severity display helpers (shared with the ledger table) ──────────────────
+// The numeric `level` is the canonical value the medical API uses
+// (Minor = 1, Moderate = 2, Severe = 3, Critical = 4).
 const severityLevels = [
   { level: 1, dot: 'bg-green-400', badge: 'bg-secondary-container text-on-secondary-container', labelKey: 'medical.severityMinor' },
   { level: 2, dot: 'bg-yellow-400', badge: 'bg-tertiary-container text-on-tertiary-container', labelKey: 'medical.severityModerate' },
   { level: 3, dot: 'bg-orange-400', badge: 'bg-tertiary-container text-on-tertiary-container', labelKey: 'medical.severitySevere' },
   { level: 4, dot: 'bg-error', badge: 'bg-error-container text-on-error-container', labelKey: 'medical.severityCritical' },
 ]
-const selectedSeverity = ref('')
-// Expected return date, stored as a YYYY-MM-DD string from a native date input.
-const erdDateInput = ref('')
 
 // Format a YYYY-MM-DD date string for display, localized to the active locale.
 function formatErdDate(dateStr) {
@@ -383,8 +224,6 @@ function toDateInput(value) {
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
 }
-// Recorded status of the player for this incident: 'fit' or 'injured'.
-const incidentStatus = ref('injured')
 
 const imgErrors = reactive({})
 
@@ -407,96 +246,6 @@ function severityBadgeClass(severity) {
 }
 function severityLabelKey(severity) {
   return severityMeta(severity).labelKey
-}
-
-async function submitIncident() {
-  if (!incidentPlayer.value || !selectedBodyPart.value || !selectedSeverity.value || !incidentDate.value) {
-    showToast({
-      title: $t('common.missingFields'),
-      message: $t('medical.incidentMissingFields'),
-      mode: 'error',
-    })
-    return
-  }
-
-  const isMinor = selectedSeverity.value === 1
-  const selectedPlayer = incidentPlayers.value.find((p) => p.id === incidentPlayer.value)
-  // The injury endpoint keys off the player's MEDICAL DOSSIER id, not the player id.
-  if (!selectedPlayer?.dossierId) {
-    showToast({
-      title: $t('common.missingFields'),
-      message: $t('medical.incidentMissingDossier'),
-      mode: 'error',
-    })
-    return
-  }
-
-  // The backend rejects an estimated return date earlier than the injury date.
-  if (erdDateInput.value && erdDateInput.value < incidentDate.value) {
-    showToast({
-      title: $t('common.missingFields'),
-      message: $t('medical.incidentErdBeforeInjury'),
-      mode: 'error',
-    })
-    return
-  }
-
-  const playerLabel = playerName(incidentPlayer.value)
-  const jersey = selectedPlayer.jersey ? String(selectedPlayer.jersey) : '—'
-  const erdValue = erdDateInput.value
-  const erdLabel = erdValue
-    ? isMinor
-      ? 'READY'
-      : (() => {
-          const days = daysUntilErd(erdValue)
-          return days <= 0 ? 'READY' : `${days} DAYS`
-        })()
-    : isMinor
-      ? 'READY'
-      : 'TBD'
-  const erdDisplayDate = erdValue ? formatErdDate(erdValue) : '—'
-
-  // Matches the backend PlayerInjuryRegistrationRequestDTO (PascalCase, numeric codes).
-  const payload = {
-    PlayerMedicalDossierID: Number(selectedPlayer.dossierId),
-    BodyPart: Number(selectedBodyPart.value),
-    Severity: Number(selectedSeverity.value),
-    Status: incidentStatus.value === 'fit' ? 1 : 2,
-    InjuryDate: incidentDate.value,
-    EstimatedReturnDate: erdValue ? erdValue : null,
-  }
-
-  try {
-    const response = await playerService.recordPlayerInjury(payload)
-
-    // Reset form
-    incidentDate.value = ''
-    incidentCategory.value = ''
-    incidentPlayer.value = ''
-    selectedBodyPart.value = ''
-    selectedSeverity.value = ''
-    incidentStatus.value = 'injured'
-    erdDateInput.value = ''
-
-    // Refresh the open category ledger so the new injury appears immediately.
-    if (selectedInjuryCategory.value) {
-      await fetchInjuriesByCategory(selectedInjuryCategory.value)
-    }
-
-    showToast({
-      title: $t('medical.incidentRecordedTitle'),
-      message: $t('medical.incidentRecordedMessage', { player: playerLabel }),
-      mode: 'success',
-    })
-  } catch (error) {
-    const message =
-      error?.response?.data?.message || error?.message || $t('medical.incidentRecordFailed')
-    showToast({
-      title: $t('medical.incidentRecordedTitle'),
-      message,
-      mode: 'error',
-    })
-  }
 }
 
 onMounted(loadCategories)
@@ -536,8 +285,8 @@ onMounted(loadCategories)
           </div>
         </div>
 
-        <!-- ── Active Injury Tracking ── -->
-        <div class="col-span-12 lg:col-span-8 space-y-4">
+        <!-- ── Active Injury Tracking (full width) ── -->
+        <div class="col-span-12 space-y-4">
           <div class="flex items-center justify-between">
             <h2 class="text-lg font-headline font-bold text-white uppercase tracking-wider">{{ $t('medical.activeInjury') }}</h2>
             <div class="flex gap-2">
@@ -576,6 +325,7 @@ onMounted(loadCategories)
                   <th class="px-6 py-4">{{ $t('medical.colInjury') }}</th>
                   <th class="px-6 py-4 text-center">{{ $t('medical.colSeverity') }}</th>
                   <th class="px-6 py-4 text-right">{{ $t('medical.colErd') }}</th>
+                  <th class="px-6 py-4 text-center">{{ $t('medical.colAction') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-outline-variant/10">
@@ -614,174 +364,32 @@ onMounted(loadCategories)
                     <div class="text-xs font-headline font-bold text-green-400">{{ injury.erdLabel }}</div>
                     <div v-if="injury.erdDate && injury.erdDate !== '—'" class="text-[10px] text-on-surface-variant">{{ injury.erdDate }}</div>
                   </td>
+                  <td class="px-6 py-4 text-center">
+                    <button
+                      type="button"
+                      @click="recoverInjury(injury.id)"
+                      class="bg-green-400/10 text-green-400 border border-green-400/40 py-1.5 px-3 rounded text-[10px] font-black uppercase tracking-widest hover:bg-green-400 hover:text-slate-950 transition-colors"
+                    >{{ $t('medical.markAsRecovered') }}</button>
+                  </td>
                 </tr>
 
                 <tr v-if="!selectedInjuryCategory">
-                  <td colspan="5" class="px-6 py-16 text-center text-on-surface-variant text-sm">
+                  <td colspan="6" class="px-6 py-16 text-center text-on-surface-variant text-sm">
                     {{ $t('medical.selectCategoryToView') }}
                   </td>
                 </tr>
                 <tr v-else-if="isLoadingCategoryInjuries">
-                  <td colspan="5" class="px-6 py-16 text-center text-on-surface-variant text-sm">
+                  <td colspan="6" class="px-6 py-16 text-center text-on-surface-variant text-sm">
                     {{ $t('medical.loadingInjuries') }}
                   </td>
                 </tr>
                 <tr v-else-if="categoryInjuries.length === 0">
-                  <td colspan="5" class="px-6 py-16 text-center text-on-surface-variant text-sm">
+                  <td colspan="6" class="px-6 py-16 text-center text-on-surface-variant text-sm">
                     {{ $t('medical.noInjuriesInCategory') }}
                   </td>
                 </tr>
               </tbody>
             </table>
-          </div>
-
-          <!-- ── Status Management Terminal ── -->
-          <div class="mt-8 bg-surface-container-low p-6 rounded-lg border-l-4 border-green-400">
-            <h2 class="text-sm font-headline font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span class="material-symbols-outlined text-green-400 text-lg">terminal</span>
-              {{ $t('medical.statusTerminal') }}
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div class="flex flex-col gap-1">
-                <label class="text-[10px] font-bold text-on-surface-variant uppercase">{{ $t('medical.squadCategory') }}</label>
-                <select v-model="terminalCategory" class="bg-surface-container-lowest border-none text-on-surface text-xs p-2 rounded focus:ring-1 focus:ring-green-400">
-                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                </select>
-              </div>
-              <div class="flex flex-col gap-1">
-                <label class="text-[10px] font-bold text-on-surface-variant uppercase">{{ $t('medical.selectPlayer') }}</label>
-                <select v-model="terminalPlayer" class="bg-surface-container-lowest border-none text-on-surface text-xs p-2 rounded focus:ring-1 focus:ring-green-400">
-                  <option value="" disabled>{{ $t('medical.selectPlayerPlaceholder') }}</option>
-                  <option v-for="p in players" :key="p" :value="p">{{ p }}</option>
-                </select>
-              </div>
-              <div class="flex flex-col gap-1">
-                <label class="text-[10px] font-bold text-on-surface-variant uppercase">{{ $t('medical.updateFitness') }}</label>
-                <div class="flex bg-surface-container-lowest p-1 rounded gap-1">
-                  <button
-                    type="button"
-                    @click="terminalFitness = 'fit'"
-                    :class="['flex-1 py-1.5 text-[10px] font-black uppercase tracking-tighter rounded transition-colors', terminalFitness === 'fit' ? 'bg-green-400 text-slate-950' : 'hover:bg-surface-container-high text-on-surface-variant']"
-                  >{{ $t('medical.fit') }}</button>
-                  <button
-                    type="button"
-                    @click="terminalFitness = 'partial'"
-                    :class="['flex-1 py-1.5 text-[10px] font-black uppercase tracking-tighter rounded transition-colors', terminalFitness === 'partial' ? 'bg-tertiary-fixed-dim text-slate-950' : 'hover:bg-surface-container-high text-on-surface-variant']"
-                  >{{ $t('medical.partial') }}</button>
-                  <button
-                    type="button"
-                    @click="terminalFitness = 'sidelined'"
-                    :class="['flex-1 py-1.5 text-[10px] font-black uppercase tracking-tighter rounded transition-colors', terminalFitness === 'sidelined' ? 'bg-error text-slate-950' : 'hover:bg-surface-container-high text-error']"
-                  >{{ $t('medical.sidelined') }}</button>
-                </div>
-              </div>
-              <div class="flex items-end">
-                <button
-                  type="button"
-                  @click="executeCommand"
-                  class="w-full bg-surface-container-highest text-white border border-outline-variant/30 py-2 rounded text-[10px] font-black uppercase tracking-widest hover:border-green-400 transition-colors"
-                >{{ $t('medical.executeCommand') }}</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── Record Incident Form ── -->
-        <div class="col-span-12 lg:col-span-4">
-          <div class="bg-surface-container-high p-6 rounded-lg lg:sticky lg:top-6">
-            <h2 class="text-lg font-headline font-bold text-white uppercase tracking-wider mb-6 flex items-center gap-2">
-              <span class="material-symbols-outlined text-green-400">add_notes</span>
-              {{ $t('medical.recordIncident') }}
-            </h2>
-            <form class="space-y-5" @submit.prevent="submitIncident">
-              <div class="space-y-1">
-                <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('medical.dateOccurred') }}</label>
-                <input v-model="incidentDate" type="date" class="w-full bg-surface-container-lowest border-none text-on-surface text-sm p-3 rounded focus:ring-1 focus:ring-green-400 scheme-dark" />
-              </div>
-              <div class="space-y-1">
-                <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('medical.selectCategory') }}</label>
-                <select v-model="incidentCategory" class="w-full bg-surface-container-lowest border-none text-on-surface text-sm p-3 rounded focus:ring-1 focus:ring-green-400">
-                  <option value="" disabled>{{ $t('medical.selectCategoryPlaceholder') }}</option>
-                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                </select>
-              </div>
-              <div class="space-y-1">
-                <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('medical.playerInvolved') }}</label>
-                <select
-                  v-model="incidentPlayer"
-                  :disabled="!incidentCategory || isLoadingIncidentPlayers"
-                  class="w-full bg-surface-container-lowest border-none text-on-surface text-sm p-3 rounded focus:ring-1 focus:ring-green-400 disabled:opacity-60"
-                >
-                  <option value="" disabled>{{ $t('medical.selectPlayerPlaceholder') }}</option>
-                  <option v-if="isLoadingIncidentPlayers" disabled>{{ $t('medical.loadingPlayers') }}</option>
-                  <option v-for="p in incidentPlayers" :key="p.id" :value="p.id">
-                    {{ p.jersey ? `${p.name} (#${p.jersey})` : p.name }}
-                  </option>
-                </select>
-              </div>
-              <div class="space-y-1">
-                <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('medical.primaryBodyPart') }}</label>
-                <div class="grid grid-cols-2 gap-2">
-                  <button
-                    v-for="part in bodyParts"
-                    :key="part.id"
-                    type="button"
-                    @click="selectedBodyPart = part.id"
-                    :class="['bg-surface-container-lowest py-2 text-[10px] border rounded uppercase font-bold transition-colors', selectedBodyPart === part.id ? 'border-green-400 text-green-400' : 'border-outline-variant/20 text-on-surface-variant hover:border-green-400']"
-                  >{{ $t(part.labelKey) }}</button>
-                </div>
-              </div>
-              <div class="space-y-1">
-                <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('medical.severityTier') }}</label>
-                <div class="flex gap-2">
-                  <button
-                    v-for="tier in severityLevels"
-                    :key="tier.level"
-                    type="button"
-                    @click="selectedSeverity = tier.level"
-                    :class="['flex-1 bg-surface-container-lowest p-3 rounded flex flex-col items-center gap-1 cursor-pointer border transition-colors', selectedSeverity === tier.level ? 'border-green-400' : 'border-transparent hover:border-green-400']"
-                  >
-                    <span :class="['w-2 h-2 rounded-full', tier.dot]"></span>
-                    <span class="text-[9px] font-bold uppercase">{{ $t(tier.labelKey) }}</span>
-                    <span class="text-[8px] text-on-surface-variant">{{ tier.level }}</span>
-                  </button>
-                </div>
-              </div>
-              <div class="space-y-1">
-                <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('medical.status') }}</label>
-                <select v-model="incidentStatus" class="w-full bg-surface-container-lowest border-none text-on-surface text-sm p-3 rounded focus:ring-1 focus:ring-green-400">
-                  <option value="fit">{{ $t('medical.statusFit') }}</option>
-                  <option value="injured">{{ $t('medical.statusInjured') }}</option>
-                </select>
-              </div>
-              <div class="space-y-1">
-                <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('medical.expectedReturn') }}</label>
-                <input v-model="erdDateInput" :placeholder="$t('medical.expectedReturnPlaceholder')" type="date" class="w-full bg-surface-container-lowest border-none text-on-surface text-sm p-3 rounded focus:ring-1 focus:ring-green-400 scheme-dark" />
-              </div>
-              <button type="submit" class="w-full bg-gradient-to-r from-green-400 to-green-300 text-slate-950 py-4 rounded-md text-sm font-black uppercase tracking-widest mt-4 shadow-lg shadow-green-900/20 hover:brightness-110 transition-all">
-                {{ $t('medical.commit') }}
-              </button>
-            </form>
-          </div>
-        </div>
-
-        <!-- ── Metrics Row ── -->
-        <div class="col-span-12 mt-4 grid grid-cols-1 md:grid-cols-4 gap-6 opacity-80">
-          <div class="p-4 border-l-2 border-outline-variant/30">
-            <div class="text-[10px] text-on-surface-variant uppercase tracking-widest">{{ $t('medical.avgRecovery') }}</div>
-            <div class="text-xl font-headline font-bold text-white">18.4 Days</div>
-          </div>
-          <div class="p-4 border-l-2 border-outline-variant/30">
-            <div class="text-[10px] text-on-surface-variant uppercase tracking-widest">{{ $t('medical.rehabEfficiency') }}</div>
-            <div class="text-xl font-headline font-bold text-green-400">94.2%</div>
-          </div>
-          <div class="p-4 border-l-2 border-outline-variant/30">
-            <div class="text-[10px] text-on-surface-variant uppercase tracking-widest">{{ $t('medical.medicalBudget') }}</div>
-            <div class="text-xl font-headline font-bold text-white">42%</div>
-          </div>
-          <div class="p-4 border-l-2 border-outline-variant/30">
-            <div class="text-[10px] text-on-surface-variant uppercase tracking-widest">{{ $t('medical.squadAvailability') }}</div>
-            <div class="text-xl font-headline font-bold text-white">{{ squadAvailability }}</div>
           </div>
         </div>
       </div>
