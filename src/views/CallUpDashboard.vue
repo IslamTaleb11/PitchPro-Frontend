@@ -76,24 +76,38 @@ function pick(obj, keys) {
 }
 
 // Normalize the GET /api/matches/upcoming/{id} response into the shape the
-// fixture card expects. The body may be a bare object or wrapped in an envelope
-// under any key; team/date/venue/competition field names are tolerated loosely.
+// fixture card expects. The body may be a bare object, an array (take the first
+// match), or wrapped in an envelope under any key. Team/date/venue/competition
+// fields are tolerated loosely — including nested team objects ({ home: { name } }).
 function normalizeUpcomingMatch(data) {
   if (!data) return null
   let m = data
+  // Unwrap a possible envelope.
   if (m && typeof m === 'object' && !Array.isArray(m)) {
-    m = m.data ?? m.Data ?? m.result ?? m.Result ?? m.value ?? m.Value ?? m.$values ?? m.match ?? m.Match ?? m
+    m = m.data ?? m.Data ?? m.result ?? m.Result ?? m.value ?? m.Value ?? m.$values ?? m.items ?? m.Item ?? m.match ?? m.Match ?? m
   }
-  if (!m || typeof m !== 'object' || Array.isArray(m)) return null
+  // Support an array of upcoming matches.
+  if (Array.isArray(m)) m = m[0]
+  if (!m || typeof m !== 'object') return null
 
-  const home = pick(m, ['homeTeam', 'HomeTeam', 'homeTeamName', 'HomeTeamName', 'teamA', 'TeamA'])
-  const away = pick(m, ['awayTeam', 'AwayTeam', 'awayTeamName', 'AwayTeamName', 'teamB', 'TeamB'])
-  const opponent = pick(m, ['opponent', 'Opponent', 'opponentTeam', 'OpponentTeam'])
-  const dateRaw = pick(m, ['matchDate', 'MatchDate', 'date', 'Date', 'kickoff', 'Kickoff', 'dateTime', 'DateTime', 'startTime', 'StartTime'])
-  const venue = pick(m, ['venue', 'Venue', 'stadium', 'Stadium', 'location', 'Location'])
-  const competition = pick(m, ['competition', 'Competition', 'league', 'League'])
-  const round = pick(m, ['round', 'Round', 'gameweek', 'Gameweek', 'matchweek', 'Matchweek', 'stage', 'Stage'])
-  const referee = pick(m, ['referee', 'Referee'])
+  // Resolve a value that may be a plain string or a team/venue object with a name.
+  const asText = (v) => {
+    if (v == null) return null
+    if (typeof v === 'string') return v
+    if (typeof v === 'object') {
+      return v.name ?? v.Name ?? v.teamName ?? v.TeamName ?? v.title ?? v.Title ?? v.shortName ?? v.ShortName ?? null
+    }
+    return null
+  }
+
+  const home = asText(pick(m, ['homeTeam', 'HomeTeam', 'home', 'Home', 'homeTeamName', 'HomeTeamName', 'teamA', 'TeamA', 'firstTeam', 'FirstTeam', 'homeClub', 'HomeClub']))
+  const away = asText(pick(m, ['awayTeam', 'AwayTeam', 'away', 'Away', 'awayTeamName', 'AwayTeamName', 'teamB', 'TeamB', 'secondTeam', 'SecondTeam', 'awayClub', 'AwayClub']))
+  const opponent = asText(pick(m, ['opponent', 'Opponent', 'opponentTeam', 'OpponentTeam', 'vsTeam', 'VsTeam']))
+  const dateRaw = pick(m, ['matchDate', 'MatchDate', 'date', 'Date', 'kickoff', 'Kickoff', 'dateTime', 'DateTime', 'startTime', 'StartTime', 'time', 'Time'])
+  const venue = asText(pick(m, ['venue', 'Venue', 'stadium', 'Stadium', 'location', 'Location', 'ground', 'Ground']))
+  const competition = asText(pick(m, ['competition', 'Competition', 'league', 'League', 'tournament', 'Tournament']))
+  const round = asText(pick(m, ['round', 'Round', 'gameweek', 'Gameweek', 'matchweek', 'Matchweek', 'stage', 'Stage', 'roundNumber', 'RoundNumber']))
+  const referee = asText(pick(m, ['referee', 'Referee']))
 
   const homeLabel = home || null
   const awayLabel = away || opponent || null
@@ -118,6 +132,7 @@ async function loadUpcomingMatch(categoryId) {
   isLoadingMatch.value = true
   try {
     const response = await matchService.getUpcomingMatch(categoryId)
+    console.log('[Call-Up] raw upcoming match response:', response?.data)
     upcomingMatch.value = normalizeUpcomingMatch(response?.data)
   } catch (error) {
     // No upcoming match (or endpoint unavailable) — leave the card in its empty state.
