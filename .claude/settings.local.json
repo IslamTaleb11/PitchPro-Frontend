@@ -29,7 +29,9 @@
       "Bash(node *)",
       "Bash(pkill -f \"vite\")",
       "Bash(dotnet --version)",
-      "Bash(pkill -f vite)"
+      "Bash(pkill -f vite)",
+      "Bash(npx vite *)",
+      "Bash(echo \"EXIT=$?\")"
     ]
   }
 }
