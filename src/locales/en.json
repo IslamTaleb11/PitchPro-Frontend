@@ -355,7 +355,10 @@
     "finalisedTitle": "Squad Finalised",
     "finalisedMessage": "Match squad confirmed with {count} players.",
     "emptyRoster": "No players available in this category.",
-    "selectCategoryFirst": "Select a category first"
+    "selectCategoryFirst": "Select a category first",
+    "vs": "VS",
+    "loadingMatch": "Loading upcoming match...",
+    "noUpcomingMatch": "No upcoming match scheduled for this squad."
   },
   "medical": {
     "sectionTitle": "Department Telemetry",

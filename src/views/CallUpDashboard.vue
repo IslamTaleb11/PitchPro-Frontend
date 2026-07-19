@@ -5,6 +5,7 @@ import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.
 import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
 import { useUiToast } from '../composables/useUiToast'
 import { lookupService } from '../services/lookupService'
+import { matchService } from '../services/matchService'
 
 const { t: $t } = useI18n()
 const { showLoadingToast } = useUiToast()
@@ -58,6 +59,72 @@ const DEMO_ROSTER = {
 const players = ref([])
 const searchQuery = ref('')
 const isLoadingCategories = ref(false)
+
+// ── Upcoming match (driven by /matches/upcoming/{categoryId}) ──────────────────
+const upcomingMatch = ref(null)
+const isLoadingMatch = ref(false)
+
+// Flexibly pull the first defined, non-empty value for a set of candidate keys.
+// Lets us tolerate whatever field-naming convention the match API uses
+// (camelCase, .NET PascalCase, etc.).
+function pick(obj, keys) {
+  for (const k of keys) {
+    const v = obj[k]
+    if (v !== undefined && v !== null && v !== '') return v
+  }
+  return null
+}
+
+// Normalize the GET /api/matches/upcoming/{id} response into the shape the
+// fixture card expects. The body may be a bare object or wrapped in an envelope
+// under any key; team/date/venue/competition field names are tolerated loosely.
+function normalizeUpcomingMatch(data) {
+  if (!data) return null
+  let m = data
+  if (m && typeof m === 'object' && !Array.isArray(m)) {
+    m = m.data ?? m.Data ?? m.result ?? m.Result ?? m.value ?? m.Value ?? m.$values ?? m.match ?? m.Match ?? m
+  }
+  if (!m || typeof m !== 'object' || Array.isArray(m)) return null
+
+  const home = pick(m, ['homeTeam', 'HomeTeam', 'homeTeamName', 'HomeTeamName', 'teamA', 'TeamA'])
+  const away = pick(m, ['awayTeam', 'AwayTeam', 'awayTeamName', 'AwayTeamName', 'teamB', 'TeamB'])
+  const opponent = pick(m, ['opponent', 'Opponent', 'opponentTeam', 'OpponentTeam'])
+  const dateRaw = pick(m, ['matchDate', 'MatchDate', 'date', 'Date', 'kickoff', 'Kickoff', 'dateTime', 'DateTime', 'startTime', 'StartTime'])
+  const venue = pick(m, ['venue', 'Venue', 'stadium', 'Stadium', 'location', 'Location'])
+  const competition = pick(m, ['competition', 'Competition', 'league', 'League'])
+
+  const homeLabel = home || null
+  const awayLabel = away || opponent || null
+  const dateLabel = dateRaw ? formatMatchDate(dateRaw) : ''
+
+  if (!homeLabel && !awayLabel && !dateLabel && !venue && !competition) return null
+  return { homeLabel, awayLabel, dateLabel, venue, competition }
+}
+
+// Format an ISO/.NET date string as "Oct 24, 2023 • 20:00" (locale time, no TZ label).
+function formatMatchDate(value) {
+  const d = new Date(value)
+  if (isNaN(d.getTime())) return ''
+  const date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+  return `${date} • ${time}`
+}
+
+async function loadUpcomingMatch(categoryId) {
+  upcomingMatch.value = null
+  if (!categoryId) return
+  isLoadingMatch.value = true
+  try {
+    const response = await matchService.getUpcomingMatch(categoryId)
+    upcomingMatch.value = normalizeUpcomingMatch(response?.data)
+  } catch (error) {
+    // No upcoming match (or endpoint unavailable) — leave the card in its empty state.
+    console.warn('Call-Up: could not load upcoming match for', categoryId, error)
+    upcomingMatch.value = null
+  } finally {
+    isLoadingMatch.value = false
+  }
+}
 
 // Track image load failures so we can fall back to initials.
 const imgErrors = reactive({})
@@ -186,7 +253,10 @@ function finaliseSquad() {
 }
 
 onMounted(loadCategories)
-watch(selectedCategory, (id) => loadRoster(id))
+watch(selectedCategory, (id) => {
+  loadRoster(id)
+  loadUpcomingMatch(id)
+})
 </script>
 
 <template>
@@ -215,22 +285,34 @@ watch(selectedCategory, (id) => loadRoster(id))
           <div class="lg:col-span-8 bg-surface-container-high rounded-xl p-6 relative overflow-hidden flex flex-col justify-between border-l-4 border-green-400">
             <div v-if="selectedCategory" class="relative z-10">
               <span class="font-label text-[10px] uppercase tracking-[0.2em] text-green-400 mb-2 block">{{ $t('callUp.nextFixture') }}</span>
-              <div class="flex flex-wrap items-end gap-x-8 gap-y-4">
-                <div>
-                  <h2 class="font-headline text-4xl font-bold text-on-surface uppercase tracking-tight">Arsenal FC <span class="text-outline-variant font-light mx-2">VS</span> MCFC</h2>
-                  <p class="font-body text-on-surface-variant mt-2 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-sm">calendar_today</span> Oct 24, 2023 • 20:00 BST
-                  </p>
-                </div>
-                <div class="flex flex-col gap-1">
-                  <span class="font-body text-xs text-on-surface-variant flex items-center gap-2">
-                    <span class="material-symbols-outlined text-sm">location_on</span> Emirates Stadium, London
-                  </span>
-                  <span class="font-body text-xs text-on-surface-variant flex items-center gap-2">
-                    <span class="material-symbols-outlined text-sm">stadium</span> Premier League • Gameweek 9
-                  </span>
-                </div>
+
+              <div v-if="isLoadingMatch" class="flex items-center gap-2 text-on-surface-variant">
+                <span class="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                <span class="text-sm">{{ $t('callUp.loadingMatch') }}</span>
               </div>
+
+              <template v-else-if="upcomingMatch">
+                <div class="flex flex-wrap items-end gap-x-8 gap-y-4">
+                  <div>
+                    <h2 class="font-headline text-4xl font-bold text-on-surface uppercase tracking-tight">
+                      <template v-if="upcomingMatch.homeLabel">{{ upcomingMatch.homeLabel }} <span class="text-outline-variant font-light mx-2">{{ $t('callUp.vs') }}</span></template>{{ upcomingMatch.awayLabel }}
+                    </h2>
+                    <p v-if="upcomingMatch.dateLabel" class="font-body text-on-surface-variant mt-2 flex items-center gap-2">
+                      <span class="material-symbols-outlined text-sm">calendar_today</span> {{ upcomingMatch.dateLabel }}
+                    </p>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <span v-if="upcomingMatch.venue" class="font-body text-xs text-on-surface-variant flex items-center gap-2">
+                      <span class="material-symbols-outlined text-sm">location_on</span> {{ upcomingMatch.venue }}
+                    </span>
+                    <span v-if="upcomingMatch.competition" class="font-body text-xs text-on-surface-variant flex items-center gap-2">
+                      <span class="material-symbols-outlined text-sm">stadium</span> {{ upcomingMatch.competition }}
+                    </span>
+                  </div>
+                </div>
+              </template>
+
+              <p v-else class="font-headline font-bold text-on-surface">{{ $t('callUp.noUpcomingMatch') }}</p>
             </div>
             <div v-else class="relative z-10 flex flex-col items-center justify-center text-center py-10">
               <span class="material-symbols-outlined text-4xl text-on-surface-variant mb-3">tune</span>

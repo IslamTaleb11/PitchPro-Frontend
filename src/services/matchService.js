@@ -6,5 +6,10 @@ export const matchService = {
   },
   updateMatch(data) {
     return api.put('/matches', data);
+  },
+  // Get the next upcoming match for a squad category.
+  // GET /api/matches/upcoming/{categoryId}
+  getUpcomingMatch(categoryId) {
+    return api.get(`/matches/upcoming/${categoryId}`);
   }
 };

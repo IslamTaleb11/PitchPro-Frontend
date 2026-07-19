@@ -355,7 +355,10 @@
     "finalisedTitle": "تم تثبيت التشكيلة",
     "finalisedMessage": "تم تأكيد تشكيلة المباراة بـ {count} لاعبين.",
     "emptyRoster": "لا يوجد لاعبون متاحون في هذه الفئة.",
-    "selectCategoryFirst": "اختر فئة أولاً"
+    "selectCategoryFirst": "اختر فئة أولاً",
+    "vs": "ضد",
+    "loadingMatch": "جارٍ تحميل المباراة القادمة...",
+    "noUpcomingMatch": "لا توجد مباراة قادمة مجدولة لهذه التشكيلة."
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",
