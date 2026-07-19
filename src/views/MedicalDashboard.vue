@@ -176,8 +176,6 @@ const incidentPlayer = ref('')
 // Players belonging to the selected category, loaded from the API.
 const incidentPlayers = ref([])
 const isLoadingIncidentPlayers = ref(false)
-// TEMP DEBUG — remove once the player dropdown is confirmed working.
-const debugInfo = ref('')
 
 // Body-part catalogue. The numeric `id` is what gets stored on a record and is
 // the canonical value the medical API is expected to use.
@@ -264,7 +262,7 @@ function normalizePlayers(data) {
   return array
     .map((item) => {
       if (!item || typeof item !== 'object') return null
-      const id = item.id ?? item.playerId ?? item.Id ?? item.ID ?? item.value
+      const id = item.id ?? item.playerID ?? item.PlayerID ?? item.playerId ?? item.Id ?? item.ID ?? item.value
       const name =
         item.fullName ||
         item.FullName ||
@@ -302,18 +300,8 @@ watch(incidentCategory, async (categoryId) => {
   isLoadingIncidentPlayers.value = true
   try {
     const response = await playerService.getPlayersByCategory(categoryId)
-    const normalized = normalizePlayers(response?.data)
-    incidentPlayers.value = normalized
-    // TEMP DEBUG — remove once the player dropdown is confirmed working.
-    debugInfo.value = [
-      `categoryId sent: ${categoryId}`,
-      `status: ${response?.status}`,
-      `raw type: ${typeof response?.data}`,
-      `normalized players: ${normalized.length}`,
-      `raw preview: ${JSON.stringify(response?.data).slice(0, 400)}`,
-    ].join('\n')
+    incidentPlayers.value = normalizePlayers(response?.data)
   } catch (error) {
-    debugInfo.value = `ERROR loading players for "${categoryId}": ${error?.message || error}`
     console.warn('Medical: could not load players for category', categoryId, error)
     incidentPlayers.value = []
   } finally {
@@ -608,8 +596,6 @@ onMounted(loadCategories)
               {{ $t('medical.recordIncident') }}
             </h2>
             <form class="space-y-5" @submit.prevent="submitIncident">
-              <!-- TEMP DEBUG — remove once the player dropdown works -->
-              <pre v-if="debugInfo" class="bg-error-container text-on-error-container text-[10px] p-3 rounded whitespace-pre-wrap break-words">{{ debugInfo }}</pre>
               <div class="space-y-1">
                 <label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('medical.dateOccurred') }}</label>
                 <input v-model="incidentDate" type="date" class="w-full bg-surface-container-lowest border-none text-on-surface text-sm p-3 rounded focus:ring-1 focus:ring-green-400 scheme-dark" />
