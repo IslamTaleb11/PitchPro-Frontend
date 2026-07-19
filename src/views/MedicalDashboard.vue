@@ -15,65 +15,105 @@ const isSidebarOpen = ref(true)
 // Total squad size used to derive the readiness matrix.
 const SQUAD_TOTAL = 28
 
-// ── Active injury ledger (demo data; no medical API exists yet) ──────────────
-// `ready: true` means the player is available (e.g. load management), so they
-// are NOT counted as unavailable in the readiness matrix.
-const injuries = ref([
-  {
-    id: 'inj-1',
-    name: 'M. Rashford',
-    jersey: '10',
-    category: 'Senior A',
-    injury: 'Hamstring Strain',
-    detail: 'Lvl 2 Tear - Lateral Head',
-    severity: 4,
-    erdLabel: '12 DAYS',
-    erdDate: 'Oct 24, 2024',
-    ready: false,
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDcJgXPTVaeyuj8lC_VBXWWtr1K1mnj1snUXxkL-NgciAugdJRY74v9GADQa4W9bm0BpybryjZS6IiEy1TO8z2pH6Ds3p1nvTXNwX2ZmOd0KdDMgd5xxWJGwLNmpXBr0KzgJSzwSX19e0AqGZYbcgQ16p02L_go74A43kZ1JlIPzkz5WyZOO1YcMhrHftIWId0jeI7ekTle3Jf4swDDxndQ4w26siRHdHRgu0kpKd2_OGNu_iTzZ4HAifSmgTuhK34PyxFwXn8PX_M',
-  },
-  {
-    id: 'inj-2',
-    name: 'L. Shaw',
-    jersey: '23',
-    category: 'Senior A',
-    injury: 'Ankle Sprain',
-    detail: 'Inversion Injury',
-    severity: 2,
-    erdLabel: '4 DAYS',
-    erdDate: 'Oct 16, 2024',
-    ready: false,
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC4nb31mD8LMaynP6ESJWKRyayP-_f35Gw9yT-IOq9RIdmJ5VRckAgHvTso8UEFVN8ETUDBMntlgt1pRZdEr3Y-TmM__g1-Y8tb9A0Mux6DygNl2F-O0F3V9BOL2c6Upzpc8wZOODhW_04VuIstT2217ANIaylaRI1j6zAwaRLbv0A0XhTxLwigEfsXov0woiyRJeH9m8e_gftUIoePprtB8cqGz9tIO2RRSmS64RYirbB1ClLG1H3U1dgJNVgZS6UeRAi2BF3XNPE',
-  },
-  {
-    id: 'inj-3',
-    name: 'K. Mainoo',
-    jersey: '37',
-    category: 'Development',
-    injury: 'Fatigue Mgmt',
-    detail: 'Load Reduction Plan',
-    severity: 1,
-    erdLabel: 'READY',
-    erdDate: 'Oct 12, 2024',
-    ready: true,
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC3IXwrw3AJppl5AZl8r24xH6GvEbO9zTdqnmFlX_NPkb7kJXInZ7PVvSau_-M6zinhW2V55v-CKKqz5_EbaeRL-QhTlv0cYFtpc0TgyOZkws2zmWIb4-Ui6IIw6EPS3VcNXbFSyzj4BmodqH5SBnrUUlElswREzTvlUqvwQCFCWj0e1qD1eXBWOANqLYrSjoK_gHhGOL25TNwSMg04QQobJ1pkMd4OCTGHc9ueRwVmbq-RxwGgMdyiHo_oJX7zd-PWdE3R01H1Vzo',
-  },
-])
+// ── Active injury ledger ──────────────────────────────────────────────────────
+// Loaded from GET /api/player-injuries/by-category/{categoryId} when a category
+// filter is selected (see the watch on selectedInjuryCategory). The API does not
+// return a fit/injured status, so every listed injury counts as unavailable.
+const categoryInjuries = ref([])
+const isLoadingCategoryInjuries = ref(false)
 
-// ── Readiness matrix (derived from the ledger) ───────────────────────────────
-const unavailableCount = computed(() => injuries.value.filter((i) => !i.ready).length)
+// Total squad size used to derive the readiness matrix.
+const SQUAD_TOTAL = 28
+
+// ── Readiness matrix (derived from the injuries shown for the selected category) ─
+const unavailableCount = computed(() => categoryInjuries.value.length)
 const matchFit = computed(() => SQUAD_TOTAL - unavailableCount.value)
 const squadAvailability = computed(() => `${Math.round((matchFit.value / SQUAD_TOTAL) * 100)}%`)
 
 // ── Category filter for the injury ledger ────────────────────────────────────
-// Options are derived from the categories actually present in the ledger so the
-// filter always reflects what is shown, regardless of the demo/API category mix.
+// `selectedInjuryCategory` holds the API category *id*, passed straight to the
+// /player-injuries/by-category/{categoryId} request.
 const selectedInjuryCategory = ref('')
-const filteredInjuries = computed(() =>
-  selectedInjuryCategory.value
-    ? injuries.value.filter((i) => i.category === selectedInjuryCategory.value)
-    : injuries.value
-)
+
+// Normalize the GET /api/player-injuries/by-category/{id} response into the shape
+// the ledger table expects. The body is wrapped as { data: [...] } using PascalCase
+// field names; bodyPart/severity are numeric codes with *Name display labels, and
+// estimatedReturnDate is null when not yet known.
+function normalizeCategoryInjuries(data) {
+  let array = data
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    array = data.data ?? data.items ?? data.result ?? data.value ?? data.$values ?? data.players ?? null
+    if (!array) {
+      for (const key of Object.keys(data)) {
+        if (Array.isArray(data[key])) {
+          array = data[key]
+          break
+        }
+      }
+    }
+  }
+  if (!Array.isArray(array)) return []
+  return array
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null
+      const id = item.id ?? item.ID ?? item.injuryId ?? item.InjuryId ?? null
+      const name = item.playerName ?? item.PlayerName ?? ''
+      const avatar = item.playerImage ?? item.PlayerImage || null
+      const category = item.categoryName ?? item.CategoryName ?? ''
+      const bodyPart = item.bodyPart ?? item.BodyPart ?? null
+      const bodyPartName = item.bodyPartName ?? item.BodyPartName ?? ''
+      const severity = item.severity ?? item.Severity ?? null
+      const severityName = item.severityName ?? item.SeverityName ?? ''
+      const estimatedReturnDate = item.estimatedReturnDate ?? item.EstimatedReturnDate ?? null
+
+      const erdLabel = estimatedReturnDate
+        ? (() => {
+            const days = daysUntilErd(toDateInput(estimatedReturnDate))
+            return days <= 0 ? 'READY' : `${days} DAYS`
+          })()
+        : 'TBD'
+      const erdDate = estimatedReturnDate ? formatErdDate(toDateInput(estimatedReturnDate)) : '—'
+
+      return {
+        id,
+        name,
+        jersey: null,
+        avatar: avatar || null,
+        category,
+        injury: bodyPartName ? `${bodyPartName} Injury` : severityName || 'Injury',
+        detail: severityName || '',
+        bodyPart,
+        severity,
+        severityName,
+        status: 'injured',
+        erdLabel,
+        erdDate,
+        ready: false,
+      }
+    })
+    .filter(Boolean)
+}
+
+// Fetch the injury ledger for a squad category from the API.
+async function fetchInjuriesByCategory(categoryId) {
+  categoryInjuries.value = []
+  if (!categoryId) return
+  isLoadingCategoryInjuries.value = true
+  try {
+    const response = await playerService.getInjuriesByCategory(categoryId)
+    categoryInjuries.value = normalizeCategoryInjuries(response?.data)
+  } catch (error) {
+    console.warn('Medical: could not load injuries for category', categoryId, error)
+    categoryInjuries.value = []
+  } finally {
+    isLoadingCategoryInjuries.value = false
+  }
+}
+
+// Reload the ledger whenever the category filter changes.
+watch(selectedInjuryCategory, (categoryId) => {
+  fetchInjuriesByCategory(categoryId)
+})
 
 // ── Categories (loaded from /lookups/categories, same as the rest of app) ────
 // Stored as `{ id, name }` objects so we can resolve the category id needed by
@@ -125,12 +165,6 @@ async function loadCategories() {
   } finally {
     isLoadingCategories.value = false
   }
-}
-
-// Resolve a stored category id back to its display name.
-function categoryName(id) {
-  const found = categories.value.find((c) => c.id === id)
-  return found ? found.name : id
 }
 
 // ── Players available for the terminals (demo data) ──────────────────────────
@@ -339,6 +373,19 @@ function daysUntilErd(dateStr) {
   today.setHours(0, 0, 0, 0)
   return Math.round((target.getTime() - today.getTime()) / 86400000)
 }
+
+// Coerce a .NET DateTime (ISO string, e.g. "2024-10-24T00:00:00") or any date
+// value into the YYYY-MM-DD string the date helpers expect.
+function toDateInput(value) {
+  if (!value) return ''
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value
+  const d = new Date(value)
+  if (isNaN(d.getTime())) return ''
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 // Recorded status of the player for this incident: 'fit' or 'injured'.
 const incidentStatus = ref('injured')
 
@@ -424,26 +471,6 @@ async function submitIncident() {
 
   try {
     const response = await playerService.recordPlayerInjury(payload)
-    const newId = response?.data?.id ?? `inj-${Date.now()}`
-
-    injuries.value = [
-      {
-        id: newId,
-        name: playerLabel,
-        jersey,
-        category: categoryName(incidentCategory.value) || categories.value[0]?.name || 'Senior A',
-        injury: `${$t(bodyPartLabelKey(selectedBodyPart.value))} ${$t('medical.injurySuffix')}`,
-        detail: 'Newly recorded incident',
-        bodyPart: selectedBodyPart.value,
-        severity: selectedSeverity.value,
-        status: incidentStatus.value,
-        erdLabel,
-        erdDate: erdDisplayDate,
-        ready: incidentStatus.value === 'fit',
-        avatar: null,
-      },
-      ...injuries.value,
-    ]
 
     // Reset form
     incidentDate.value = ''
@@ -453,6 +480,11 @@ async function submitIncident() {
     selectedSeverity.value = ''
     incidentStatus.value = 'injured'
     erdDateInput.value = ''
+
+    // Refresh the open category ledger so the new injury appears immediately.
+    if (selectedInjuryCategory.value) {
+      await fetchInjuriesByCategory(selectedInjuryCategory.value)
+    }
 
     showToast({
       title: $t('medical.incidentRecordedTitle'),
@@ -528,10 +560,10 @@ onMounted(loadCategories)
               v-for="cat in categories"
               :key="cat.id"
               type="button"
-              @click="selectedInjuryCategory = cat.name"
+              @click="selectedInjuryCategory = cat.id"
               :class="[
                 'px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all',
-                selectedInjuryCategory === cat.name
+                selectedInjuryCategory === cat.id
                   ? 'bg-gradient-to-br from-green-400 to-green-300 text-slate-950'
                   : 'text-on-surface-variant hover:text-white'
               ]"
@@ -550,7 +582,7 @@ onMounted(loadCategories)
                 </tr>
               </thead>
               <tbody class="divide-y divide-outline-variant/10">
-                <tr v-for="injury in filteredInjuries" :key="injury.id" class="hover:bg-surface-container-high/30 transition-colors">
+                <tr v-for="injury in categoryInjuries" :key="injury.id" class="hover:bg-surface-container-high/30 transition-colors">
                   <td class="px-6 py-4 flex items-center gap-3">
                     <div class="w-10 h-10 rounded bg-surface-container-lowest border border-outline-variant/20 overflow-hidden flex-shrink-0">
                       <img
@@ -566,7 +598,7 @@ onMounted(loadCategories)
                     </div>
                     <div>
                       <div class="text-sm font-bold text-white">{{ injury.name }}</div>
-                      <div class="text-[10px] text-on-surface-variant uppercase">{{ $t('medical.jersey') }} #{{ injury.jersey }}</div>
+                      <div v-if="injury.jersey" class="text-[10px] text-on-surface-variant uppercase">{{ $t('medical.jersey') }} #{{ injury.jersey }}</div>
                     </div>
                   </td>
                   <td class="px-6 py-4">
@@ -592,7 +624,12 @@ onMounted(loadCategories)
                     {{ $t('medical.selectCategoryToView') }}
                   </td>
                 </tr>
-                <tr v-else-if="filteredInjuries.length === 0">
+                <tr v-else-if="isLoadingCategoryInjuries">
+                  <td colspan="5" class="px-6 py-16 text-center text-on-surface-variant text-sm">
+                    {{ $t('medical.loadingInjuries') }}
+                  </td>
+                </tr>
+                <tr v-else-if="categoryInjuries.length === 0">
                   <td colspan="5" class="px-6 py-16 text-center text-on-surface-variant text-sm">
                     {{ $t('medical.noInjuriesInCategory') }}
                   </td>

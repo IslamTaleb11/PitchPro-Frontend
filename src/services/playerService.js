@@ -17,5 +17,11 @@ export const playerService = {
   // Severity, Status, InjuryDate, EstimatedReturnDate).
   recordPlayerInjury(payload) {
     return api.post('/player-injuries', payload);
+  },
+
+  // Get every injury for players in a squad category.
+  // GET /api/player-injuries/by-category/{categoryId} -> { data: [...] }.
+  getInjuriesByCategory(categoryId) {
+    return api.get(`/player-injuries/by-category/${categoryId}`);
   }
 };

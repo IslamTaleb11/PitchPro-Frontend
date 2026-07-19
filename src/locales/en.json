@@ -392,6 +392,7 @@
     "selectPlayer": "Select Player",
     "selectPlayerPlaceholder": "Select player...",
     "loadingPlayers": "Loading players...",
+    "loadingInjuries": "Loading injuries...",
     "selectPlayerFirst": "Select a player first.",
     "updateFitness": "Update Fitness State",
     "fit": "Fit",
