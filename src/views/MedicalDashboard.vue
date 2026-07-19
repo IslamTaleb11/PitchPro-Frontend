@@ -134,6 +134,24 @@ async function recoverInjury(injuryId) {
   }
 }
 
+// ── Mark-as-recovered confirmation ────────────────────────────────────────────
+// Clicking "Mark as Recovered" opens a confirmation modal first; the actual
+// PATCH request only fires once the user confirms.
+const showRecoverConfirm = ref(false)
+const pendingRecoverInjury = ref(null)
+
+function askRecover(injury) {
+  pendingRecoverInjury.value = injury
+  showRecoverConfirm.value = true
+}
+
+async function confirmRecover() {
+  const injury = pendingRecoverInjury.value
+  showRecoverConfirm.value = false
+  pendingRecoverInjury.value = null
+  if (injury) await recoverInjury(injury.id)
+}
+
 // ── Categories (loaded from /lookups/categories, same as the rest of app) ────
 // Stored as `{ id, name }` objects so we can resolve the category id needed by
 // the `/players/by-category/{categoryId}` endpoint when recording an incident.
@@ -610,7 +628,7 @@ onMounted(loadCategories)
                   <td class="px-6 py-4 text-center">
                     <button
                       type="button"
-                      @click="recoverInjury(injury.id)"
+                      @click="askRecover(injury)"
                       class="bg-green-400/10 text-green-400 border border-green-400/40 py-1.5 px-3 rounded text-[10px] font-black uppercase tracking-widest hover:bg-green-400 hover:text-slate-950 transition-colors"
                     >{{ $t('medical.markAsRecovered') }}</button>
                   </td>
@@ -721,5 +739,39 @@ onMounted(loadCategories)
       <!-- Spacer for bottom nav on mobile -->
       <div class="h-20 md:hidden"></div>
     </main>
+
+    <!-- MARK AS RECOVERED — CONFIRMATION MODAL -->
+    <Teleport to="body">
+      <div v-if="showRecoverConfirm" class="fixed inset-0 z-[130] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-background/80 backdrop-blur-md" @click="showRecoverConfirm = false"></div>
+        <div class="relative w-full max-w-md overflow-hidden rounded-xl border border-green-500/20 bg-surface-container-low shadow-2xl">
+          <div class="flex flex-col items-center p-6 text-center">
+            <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-500/15">
+              <span class="material-symbols-outlined text-3xl text-green-400">health_and_safety</span>
+            </div>
+            <h2 class="font-headline text-lg font-black uppercase tracking-tight text-white">{{ $t('medical.recoverConfirmTitle') }}</h2>
+            <p class="mt-3 text-sm text-on-surface-variant">
+              {{ $t('medical.recoverConfirmMessage', { player: pendingRecoverInjury?.name || '' }) }}
+            </p>
+          </div>
+          <div class="flex gap-3 border-t border-white/5 p-4">
+            <button
+              type="button"
+              @click="showRecoverConfirm = false"
+              class="flex-1 rounded-md py-3 text-[10px] font-black uppercase tracking-widest text-on-surface-variant transition-colors hover:bg-surface-container-high"
+            >
+              {{ $t('common.cancel') }}
+            </button>
+            <button
+              type="button"
+              @click="confirmRecover"
+              class="flex-1 rounded-md bg-gradient-to-r from-green-400 to-green-300 py-3 text-[10px] font-black uppercase tracking-widest text-slate-950 transition-colors hover:brightness-110"
+            >
+              {{ $t('medical.confirmRecover') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
