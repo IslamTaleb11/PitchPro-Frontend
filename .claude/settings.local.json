@@ -32,7 +32,9 @@
       "Bash(pkill -f vite)",
       "Bash(npx vite *)",
       "Bash(echo \"EXIT=$?\")",
-      "Bash(python *)"
+      "Bash(python *)",
+      "Bash(dir)",
+      "Bash(dir /b /ad)"
     ]
   }
 }

@@ -276,8 +276,11 @@ function normalizePlayers(data) {
         String(id ?? '')
       const jersey =
         item.jerseyNumber ?? item.JerseyNumber ?? item.jersey ?? item.shirtNumber ?? item.ShirtNumber ?? null
+      // The injury endpoint needs the player's MEDICAL DOSSIER id, not the
+      // player id — the player list carries it as `medicalDossierID`.
+      const dossierId = item.medicalDossierID ?? item.MedicalDossierID ?? null
       if (id == null) return null
-      return { id, name: name || 'Unknown Player', jersey }
+      return { id, name: name || 'Unknown Player', jersey, dossierId }
     })
     .filter(Boolean)
 }
@@ -363,8 +366,8 @@ function severityLabelKey(severity) {
   return severityMeta(severity).labelKey
 }
 
-function submitIncident() {
-  if (!incidentPlayer.value || !selectedBodyPart.value || !selectedSeverity.value) {
+async function submitIncident() {
+  if (!incidentPlayer.value || !selectedBodyPart.value || !selectedSeverity.value || !incidentDate.value) {
     showToast({
       title: $t('common.missingFields'),
       message: $t('medical.incidentMissingFields'),
@@ -375,8 +378,28 @@ function submitIncident() {
 
   const isMinor = selectedSeverity.value === 1
   const selectedPlayer = incidentPlayers.value.find((p) => p.id === incidentPlayer.value)
+  // The injury endpoint keys off the player's MEDICAL DOSSIER id, not the player id.
+  if (!selectedPlayer?.dossierId) {
+    showToast({
+      title: $t('common.missingFields'),
+      message: $t('medical.incidentMissingDossier'),
+      mode: 'error',
+    })
+    return
+  }
+
+  // The backend rejects an estimated return date earlier than the injury date.
+  if (erdDateInput.value && erdDateInput.value < incidentDate.value) {
+    showToast({
+      title: $t('common.missingFields'),
+      message: $t('medical.incidentErdBeforeInjury'),
+      mode: 'error',
+    })
+    return
+  }
+
   const playerLabel = playerName(incidentPlayer.value)
-  const jersey = selectedPlayer?.jersey ? String(selectedPlayer.jersey) : '—'
+  const jersey = selectedPlayer.jersey ? String(selectedPlayer.jersey) : '—'
   const erdValue = erdDateInput.value
   const erdLabel = erdValue
     ? isMinor
@@ -390,39 +413,62 @@ function submitIncident() {
       : 'TBD'
   const erdDisplayDate = erdValue ? formatErdDate(erdValue) : '—'
 
-  injuries.value = [
-    {
-      id: `inj-${Date.now()}`,
-      name: playerLabel,
-      jersey,
-      category: categoryName(incidentCategory.value) || categories.value[0]?.name || 'Senior A',
-      injury: `${$t(bodyPartLabelKey(selectedBodyPart.value))} ${$t('medical.injurySuffix')}`,
-      detail: 'Newly recorded incident',
-      bodyPart: selectedBodyPart.value,
-      severity: selectedSeverity.value,
-      status: incidentStatus.value,
-      erdLabel,
-      erdDate: erdDisplayDate,
-      ready: isMinor,
-      avatar: null,
-    },
-    ...injuries.value,
-  ]
+  // Matches the backend PlayerInjuryRegistrationRequestDTO (PascalCase, numeric codes).
+  const payload = {
+    PlayerMedicalDossierID: Number(selectedPlayer.dossierId),
+    BodyPart: Number(selectedBodyPart.value),
+    Severity: Number(selectedSeverity.value),
+    Status: incidentStatus.value === 'fit' ? 1 : 2,
+    InjuryDate: incidentDate.value,
+    EstimatedReturnDate: erdValue ? erdValue : null,
+  }
 
-  // Reset form
-  incidentDate.value = ''
-  incidentCategory.value = ''
-  incidentPlayer.value = ''
-  selectedBodyPart.value = ''
-  selectedSeverity.value = ''
-  incidentStatus.value = 'injured'
-  erdDateInput.value = ''
+  try {
+    const response = await playerService.recordPlayerInjury(payload)
+    const newId = response?.data?.id ?? `inj-${Date.now()}`
 
-  showToast({
-    title: $t('medical.incidentRecordedTitle'),
-    message: $t('medical.incidentRecordedMessage', { player: incidentPlayer.value || $t('medical.newIncident') }),
-    mode: 'success',
-  })
+    injuries.value = [
+      {
+        id: newId,
+        name: playerLabel,
+        jersey,
+        category: categoryName(incidentCategory.value) || categories.value[0]?.name || 'Senior A',
+        injury: `${$t(bodyPartLabelKey(selectedBodyPart.value))} ${$t('medical.injurySuffix')}`,
+        detail: 'Newly recorded incident',
+        bodyPart: selectedBodyPart.value,
+        severity: selectedSeverity.value,
+        status: incidentStatus.value,
+        erdLabel,
+        erdDate: erdDisplayDate,
+        ready: incidentStatus.value === 'fit',
+        avatar: null,
+      },
+      ...injuries.value,
+    ]
+
+    // Reset form
+    incidentDate.value = ''
+    incidentCategory.value = ''
+    incidentPlayer.value = ''
+    selectedBodyPart.value = ''
+    selectedSeverity.value = ''
+    incidentStatus.value = 'injured'
+    erdDateInput.value = ''
+
+    showToast({
+      title: $t('medical.incidentRecordedTitle'),
+      message: $t('medical.incidentRecordedMessage', { player: playerLabel }),
+      mode: 'success',
+    })
+  } catch (error) {
+    const message =
+      error?.response?.data?.message || error?.message || $t('medical.incidentRecordFailed')
+    showToast({
+      title: $t('medical.incidentRecordedTitle'),
+      message,
+      mode: 'error',
+    })
+  }
 }
 
 onMounted(loadCategories)
