@@ -666,7 +666,7 @@ watch(selectedCategory, (id) => {
                   <td class="px-6 py-4 text-center font-headline font-black text-green-400">{{ player.jersey }}</td>
 
                   <!-- Selection -->
-                  <td class="px-6 py-4 text-right">
+                  <td class="px-6 py-4 flex justify-end items-center">
                     <button
                       v-if="!player.isCalled"
                       type="button"
