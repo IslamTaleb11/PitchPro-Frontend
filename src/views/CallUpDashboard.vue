@@ -246,6 +246,56 @@ function resetSelection() {
   selectedIds.value = []
 }
 
+// ── Reset the whole match call-up ───────────────────────────────────────────
+// A destructive action (DELETE /api/match-callup-players/{matchId}) that drops
+// every player from the loaded match's call-up. We gate it behind a styled
+// confirmation modal (openResetConfirm) so it can never fire by accident.
+const showResetConfirm = ref(false)
+const isResetting = ref(false)
+
+function openResetConfirm() {
+  if (!upcomingMatch.value?.matchId) return
+  showResetConfirm.value = true
+}
+
+async function confirmResetCallUp() {
+  const matchId = Number(upcomingMatch.value?.matchId)
+  if (!matchId || isResetting.value) return
+
+  showResetConfirm.value = false
+  isResetting.value = true
+  // Loading toast (duration 0 keeps it visible until the request resolves).
+  showToast({
+    title: $t('callUp.resettingTitle'),
+    message: $t('callUp.resettingMessage'),
+    mode: 'loading',
+    duration: 0,
+  })
+
+  try {
+    const response = await matchService.resetCallUp(matchId)
+    const removed = Number(response?.data?.removed ?? 0)
+    // Re-sync the squad counter and clear any locally-drafted selection.
+    if (matchId) loadCallUpCount(matchId)
+    if (selectedCategory.value) loadRoster(selectedCategory.value)
+    resetSelection()
+    showToast({
+      title: $t('callUp.resetSuccessTitle'),
+      message: $t('callUp.resetSuccessMessage', { count: removed }),
+      mode: 'success',
+    })
+  } catch (error) {
+    const message = error?.response?.data?.message || $t('callUp.resetFailedMessage')
+    showToast({
+      title: $t('callUp.resetFailedTitle'),
+      message,
+      mode: 'error',
+    })
+  } finally {
+    isResetting.value = false
+  }
+}
+
 // ── Roster loading: real API ─────────────────────────────────────────────────
 // Load the players available for call-up in the chosen category from
 // GET /api/players/available/{categoryId} -> { data: [...] }.
@@ -486,27 +536,35 @@ watch(selectedCategory, (id) => {
           <!-- Squad Limit Counter -->
           <div class="lg:col-span-4 bg-surface-container-lowest rounded-xl p-6 flex flex-col items-center justify-center text-center border border-outline-variant/10 shadow-xl">
             <span class="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface-variant mb-1">{{ $t('callUp.squadCapacity') }}</span>
-            <div class="relative">
-              <svg class="w-24 h-24 transform -rotate-90">
-                <circle class="text-surface-container-highest" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" stroke-width="4"></circle>
-                <circle
-                  class="text-green-400 transition-all duration-1000"
-                  cx="48" cy="48" fill="transparent" r="40"
-                  stroke="currentColor"
-                  :stroke-dasharray="RING_CIRCUMFERENCE.toFixed(1)"
-                  :stroke-dashoffset="ringOffset.toFixed(1)"
-                  stroke-width="6"
-                ></circle>
-              </svg>
-              <div class="absolute inset-0 flex items-center justify-center flex-col">
-                <span class="font-headline text-3xl font-black text-on-surface">{{ squadCount }}</span>
-                <span class="text-[10px] text-outline-variant font-bold">/ {{ SQUAD_LIMIT }}</span>
+            <template v-if="selectedCategory">
+              <div class="relative">
+                <svg class="w-24 h-24 transform -rotate-90">
+                  <circle class="text-surface-container-highest" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" stroke-width="4"></circle>
+                  <circle
+                    class="text-green-400 transition-all duration-1000"
+                    cx="48" cy="48" fill="transparent" r="40"
+                    stroke="currentColor"
+                    :stroke-dasharray="RING_CIRCUMFERENCE.toFixed(1)"
+                    :stroke-dashoffset="ringOffset.toFixed(1)"
+                    stroke-width="6"
+                  ></circle>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center flex-col">
+                  <span class="font-headline text-3xl font-black text-on-surface">{{ squadCount }}</span>
+                  <span class="text-[10px] text-outline-variant font-bold">/ {{ SQUAD_LIMIT }}</span>
+                </div>
               </div>
-            </div>
-            <p class="font-body text-xs text-on-surface-variant mt-3">
-              <template v-if="remainingSlots > 0">{{ $t('callUp.slotsRemaining', { count: remainingSlots }) }}</template>
-              <template v-else>{{ $t('callUp.squadFull') }}</template>
-            </p>
+              <p class="font-body text-xs text-on-surface-variant mt-3">
+                <template v-if="remainingSlots > 0">{{ $t('callUp.slotsRemaining', { count: remainingSlots }) }}</template>
+                <template v-else>{{ $t('callUp.squadFull') }}</template>
+              </p>
+            </template>
+            <template v-else>
+              <div class="flex flex-col items-center justify-center py-6 text-on-surface-variant">
+                <span class="material-symbols-outlined text-3xl mb-2 text-green-400">category</span>
+                <p class="font-headline font-bold text-sm">{{ $t('callUp.selectCategoryFirst') }}</p>
+              </div>
+            </template>
           </div>
         </div>
 
@@ -671,6 +729,20 @@ watch(selectedCategory, (id) => {
           </div>
           <button
             type="button"
+            :disabled="!upcomingMatch?.matchId || isResetting"
+            @click="openResetConfirm"
+            :class="[
+              'font-headline font-bold text-sm uppercase tracking-tighter rounded-lg px-6 py-4 border transition-all flex items-center gap-2',
+              upcomingMatch?.matchId
+                ? 'border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500'
+                : 'border-outline-variant/20 text-slate-600 cursor-not-allowed'
+            ]"
+          >
+            <span class="material-symbols-outlined text-sm">restart_alt</span>
+            {{ $t('callUp.resetCallUps') }}
+          </button>
+          <button
+            type="button"
             :disabled="selectedCount === 0 || isFinalising || !upcomingMatch"
             @click="finaliseSquad"
             :class="[
@@ -685,5 +757,43 @@ watch(selectedCategory, (id) => {
         </div>
       </div>
     </div>
+
+    <!-- ── Reset Call-Up confirmation ── -->
+    <Teleport to="body">
+      <div v-if="showResetConfirm" class="fixed inset-0 z-[130] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-background/80 backdrop-blur-md" @click="showResetConfirm = false"></div>
+        <div class="relative w-full max-w-md overflow-hidden rounded-xl border border-red-500/20 bg-surface-container-low shadow-2xl">
+          <div class="flex flex-col items-center p-6 text-center">
+            <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-500/15">
+              <span class="material-symbols-outlined text-3xl text-red-400">warning</span>
+            </div>
+            <h2 class="font-headline text-lg font-black uppercase tracking-tight text-on-surface">{{ $t('callUp.resetConfirmTitle') }}</h2>
+            <p class="mt-3 text-sm text-on-surface-variant">
+              {{ $t('callUp.resetConfirmMessage', { count: squadCount }) }}
+            </p>
+          </div>
+          <div class="flex gap-3 border-t border-outline-variant/10 p-4">
+            <button
+              type="button"
+              :disabled="isResetting"
+              @click="showResetConfirm = false"
+              class="flex-1 rounded-md py-3 text-[10px] font-black uppercase tracking-widest text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-50"
+            >
+              {{ $t('common.cancel') }}
+            </button>
+            <button
+              type="button"
+              :disabled="isResetting"
+              @click="confirmResetCallUp"
+              class="flex-1 rounded-md bg-red-500 py-3 text-[10px] font-black uppercase tracking-widest text-white transition-colors hover:bg-red-600 disabled:opacity-50 flex items-center justify-center gap-1"
+            >
+              <span v-if="isResetting" class="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+              <span v-else class="material-symbols-outlined text-sm">restart_alt</span>
+              {{ $t('callUp.confirmReset') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>

@@ -23,5 +23,11 @@ export const matchService = {
   // GET /api/match-callup-players/count/{matchId} -> { matchId, count }
   getCallUpCount(matchId) {
     return api.get(`/match-callup-players/count/${matchId}`);
+  },
+
+  // Remove every player from a match's call-up.
+  // DELETE /api/match-callup-players/{matchId} -> { matchId, removed, message }
+  resetCallUp(matchId) {
+    return api.delete(`/match-callup-players/${matchId}`);
   }
 };

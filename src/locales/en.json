@@ -377,7 +377,17 @@
     "noMatchTitle": "No match selected",
     "noMatchMessage": "Load the upcoming fixture for this category before finalising the squad.",
     "finaliseErrorTitle": "Call-up failed",
-    "finaliseError": "Could not save the match squad. Please try again."
+    "finaliseError": "Could not save the match squad. Please try again.",
+    "resetCallUps": "Reset Call-Ups",
+    "resetConfirmTitle": "Reset Match Call-Up?",
+    "resetConfirmMessage": "This will remove all {count} called-up players from this match. This action cannot be undone.",
+    "confirmReset": "Reset Call-Up",
+    "resettingTitle": "Resetting Call-Up",
+    "resettingMessage": "Removing all players from the match call-up...",
+    "resetSuccessTitle": "Call-Up Reset",
+    "resetSuccessMessage": "Removed {count} players from the match call-up.",
+    "resetFailedTitle": "Reset Failed",
+    "resetFailedMessage": "Could not reset the match call-up. Please try again."
   },
   "medical": {
     "sectionTitle": "Department Telemetry",
