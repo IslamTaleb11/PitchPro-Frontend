@@ -35,18 +35,20 @@ const selectedCategory = ref('')
 // with no active injury in the chosen category, so every one is fit and eligible
 // for selection (no blocked state, no market-value/role tags). We also accept
 // common alternative field names so the mapping is resilient to API conventions.
-const POSITION_CODES = {
-  goalkeeper: 'GK',
-  defender: 'DEF',
-  midfielder: 'MID',
-  forward: 'FWD',
-  striker: 'FWD',
-  winger: 'FWD',
+const POSITION_KEYS = {
+  goalkeeper: 'callUp.posGoalkeeper',
+  defender: 'callUp.posDefender',
+  midfielder: 'callUp.posMidfielder',
+  forward: 'callUp.posForward',
+  striker: 'callUp.posForward',
+  winger: 'callUp.posForward',
 }
+// Resolves a backend position name to its localized key, keeping the raw full
+// name as a fallback display value when no key matches.
 function normalizePosition(raw) {
   const name = String(raw ?? '').trim()
-  if (!name) return ''
-  return POSITION_CODES[name.toLowerCase()] ?? name.toUpperCase().slice(0, 3)
+  if (!name) return { label: '', key: null }
+  return { label: name, key: POSITION_KEYS[name.toLowerCase()] ?? null }
 }
 function normalizeAvailablePlayers(payload) {
   let data = payload
@@ -54,13 +56,17 @@ function normalizeAvailablePlayers(payload) {
     data = data.data ?? data.Data ?? data.$values ?? data.result ?? data.Result ?? []
   }
   if (!Array.isArray(data)) return []
-  return data.map((p) => ({
-    id: p.PlayerID ?? p.playerID ?? p.id ?? p.Id,
-    name: p.PlayerName ?? p.playerName ?? p.name ?? p.FullName ?? '',
-    position: normalizePosition(p.PositionName ?? p.positionName ?? p.position),
-    jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
-    blocked: false,
-  }))
+  return data.map((p) => {
+    const pos = normalizePosition(p.PositionName ?? p.positionName ?? p.position)
+    return {
+      id: p.PlayerID ?? p.playerID ?? p.id ?? p.Id,
+      name: p.PlayerName ?? p.playerName ?? p.name ?? p.FullName ?? '',
+      position: pos.label,
+      positionKey: pos.key,
+      jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
+      isCalled: !!(p.isCalled ?? p.IsCalled ?? false),
+    }
+  })
 }
 const players = ref([])
 const searchQuery = ref('')
@@ -203,7 +209,7 @@ const ringOffset = computed(() =>
 )
 
 function toggleSelect(player) {
-  if (player.blocked) return
+  if (player.isCalled) return
   const idx = selectedIds.value.indexOf(player.id)
   if (idx === -1) {
     selectedIds.value = [...selectedIds.value, player.id]
@@ -341,6 +347,7 @@ async function finaliseSquad() {
     })
     resetSelection()
     loadCallUpCount(matchId)
+    loadRoster(categoryId)
   } catch (error) {
     const message = error?.response?.data?.message || $t('callUp.finaliseError')
     showToast({
@@ -557,7 +564,7 @@ watch(selectedCategory, (id) => {
                   :class="[
                     'group hover:bg-surface-container-high/40 transition-colors',
                     isSelected(player.id) ? 'bg-green-400/[0.04]' : '',
-                    player.blocked ? 'opacity-60 grayscale' : ''
+                    player.isCalled ? 'bg-error-container/10' : ''
                   ]"
                 >
                   <!-- Player -->
@@ -576,7 +583,7 @@ watch(selectedCategory, (id) => {
                         </div>
                       </div>
                       <div>
-                        <p class="font-headline font-bold text-on-surface">{{ player.name }}</p>
+                        <p class="font-headline font-bold" :class="player.isCalled ? 'text-error' : 'text-on-surface'">{{ player.name }}</p>
                         <p v-if="player.tag?.market" class="text-[10px] text-outline-variant uppercase font-bold tracking-tighter">
                           {{ $t('callUp.marketValue') }}: £{{ player.tag.market }}M
                         </p>
@@ -589,7 +596,7 @@ watch(selectedCategory, (id) => {
 
                   <!-- Position -->
                   <td class="px-6 py-4">
-                    <span class="px-2 py-1 bg-surface-container-highest text-on-surface-variant text-[10px] font-bold rounded uppercase">{{ player.position }}</span>
+                    <span class="px-2 py-1 bg-surface-container-highest text-on-surface-variant text-[10px] font-bold rounded uppercase">{{ player.positionKey ? $t(player.positionKey) : player.position }}</span>
                   </td>
 
                   <!-- Jersey -->
@@ -598,7 +605,7 @@ watch(selectedCategory, (id) => {
                   <!-- Selection -->
                   <td class="px-6 py-4 text-right">
                     <button
-                      v-if="!player.blocked"
+                      v-if="!player.isCalled"
                       type="button"
                       @click="toggleSelect(player)"
                       :class="[
@@ -610,7 +617,7 @@ watch(selectedCategory, (id) => {
                     >
                       <span :class="['material-symbols-outlined text-sm font-bold', isSelected(player.id) ? '' : 'opacity-0']">check</span>
                     </button>
-                    <span v-else class="material-symbols-outlined text-outline-variant" :title="$t('callUp.blocked')">block</span>
+                    <span v-else class="text-[10px] font-bold uppercase tracking-widest text-error">{{ $t('callUp.calledUp') }}</span>
                   </td>
                 </tr>
 

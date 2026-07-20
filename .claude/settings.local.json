@@ -36,7 +36,9 @@
       "Bash(dir)",
       "Bash(dir /b /ad)",
       "Read(//tmp/**)",
-      "Bash(rm -f /tmp/build.log)"
+      "Bash(rm -f /tmp/build.log)",
+      "Bash(curl -s \"https://pitchprobackend.onrender.com/api/players/available/1017\" -H \"Accept: application/json\")",
+      "Bash(curl -s -i \"https://pitchprobackend.onrender.com/api/players/available/1017\" -H \"Accept: application/json\")"
     ]
   }
 }
