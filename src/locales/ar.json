@@ -443,7 +443,11 @@
     "selectPlayerTitle": "لم يتم اختيار لاعب",
     "selectPlayerMessage": "اختر لاعبًا قبل إضافة حدث.",
     "finalizedTitle": "تم إنهاء التقرير",
-    "finalizedMessage": "{home} {hs} – {as} {away}. تم تسجيل تقرير المباراة."
+    "finalizedMessage": "{home} {hs} – {as} {away}. تم تسجيل تقرير المباراة.",
+    "matchLoadedTitle": "تم تحميل المباراة",
+    "matchLoadedSubtitle": "أصبحت المباراة القادمة جاهزة. تابع لفتح المراقبة التكتيكية.",
+    "continue": "متابعة المراقبة",
+    "backToLoad": "رجوع"
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",

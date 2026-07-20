@@ -21,7 +21,8 @@ const isLoadingCategories = ref(false)
 const match = ref(null)
 const callUpPlayers = ref([])
 const isLoadingIntel = ref(false)
-const isLoaded = ref(false)
+const matchLoaded = ref(false)
+const monitoring = ref(false)
 
 // Final result (editable, local)
 const homeScore = ref(0)
@@ -183,13 +184,22 @@ async function loadMatchIntelligence() {
     ])
     match.value = normalizeUpcomingMatch(matchRes?.data)
     callUpPlayers.value = normalizeAvailablePlayers(playersRes?.data)
-    isLoaded.value = true
+    matchLoaded.value = true
   } catch (e) {
     const message = e?.response?.data?.message || $t('matchMonitor.loadErrorMessage')
     showToast({ title: $t('matchMonitor.loadErrorTitle'), message, mode: 'error' })
   } finally {
     isLoadingIntel.value = false
   }
+}
+
+// Enter the monitor once the upcoming match has been loaded.
+function startMonitoring() {
+  if (match.value?.opponentName) monitoring.value = true
+}
+function resetMatchLoad() {
+  matchLoaded.value = false
+  match.value = null
 }
 
 // ── Match events ──────────────────────────────────────────────────────────────
@@ -244,9 +254,9 @@ onMounted(loadCategories)
     <DashboardSidebar active-item="match-monitor" :is-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
     <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
 
-    <main class="pt-24 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-6 lg:p-10 transition-all duration-300 lg:flex-1">
+    <main class="pt-24 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-6 lg:p-10 transition-all duration-300 lg:flex-1 flex flex-col">
       <!-- Page Header -->
-      <section class="flex flex-col gap-4 mb-8">
+      <section class="flex flex-col gap-4 mb-8 shrink-0">
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div class="space-y-2">
             <span class="text-[10px] font-bold tracking-[0.2em] text-primary-fixed-dim font-headline uppercase">{{ $t('matchMonitor.sectionTitle') }}</span>
@@ -284,30 +294,84 @@ onMounted(loadCategories)
         </div>
 
         <!-- Initial / Load screen -->
-        <div v-if="!isLoaded" class="flex-1 flex flex-col items-center justify-center text-center py-20">
-          <div class="relative mb-8 inline-block">
-            <div class="absolute -inset-4 bg-primary-container/10 blur-3xl rounded-full"></div>
-            <div class="relative w-32 h-32 mx-auto rounded-xl border-2 border-primary-fixed-dim/20 flex items-center justify-center glass-panel">
-              <span class="material-symbols-outlined text-6xl text-primary-fixed-dim" :class="isLoadingIntel ? 'animate-spin' : ''">sync</span>
+        </section>
+
+        <!-- PRE-MONITOR: load → match-loaded → continue -->
+        <div v-if="!monitoring" class="flex-1 flex flex-col items-center justify-center text-center px-4 pb-10">
+
+          <!-- Load screen -->
+          <template v-if="!matchLoaded">
+            <div class="relative mb-8 inline-block">
+              <div class="absolute -inset-4 bg-primary-container/10 blur-3xl rounded-full"></div>
+              <div class="relative w-32 h-32 mx-auto rounded-xl border-2 border-primary-fixed-dim/20 flex items-center justify-center glass-panel">
+                <span class="material-symbols-outlined text-6xl text-primary-fixed-dim" :class="isLoadingIntel ? 'animate-spin' : ''">sync</span>
+              </div>
             </div>
-          </div>
-          <h2 class="font-headline text-5xl font-black mb-4 tracking-tight leading-none text-on-surface">MATCH DAY <span class="text-primary-fixed-dim">MONITOR</span></h2>
-          <p class="text-on-surface-variant font-body mb-10 max-w-md mx-auto">{{ $t('matchMonitor.loadSubtitle') }}</p>
-          <button
-            type="button"
-            :disabled="!selectedCategory || isLoadingIntel"
-            @click="loadMatchIntelligence"
-            class="group relative px-10 py-5 bg-primary-container text-on-primary-container font-headline font-black text-lg uppercase tracking-[0.2em] rounded-md overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(0,230,57,0.3)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-          >
-            <span class="relative z-10 flex items-center gap-3">
-              {{ isLoadingIntel ? $t('matchMonitor.loading') : $t('matchMonitor.loadButton') }}
-              <span class="material-symbols-outlined font-bold group-hover:translate-x-2 transition-transform">bolt</span>
-            </span>
-            <div class="absolute inset-0 bg-gradient-to-r from-primary-container to-primary-fixed transition-transform -translate-x-full group-hover:translate-x-0 duration-500"></div>
-          </button>
+            <h2 class="font-headline text-5xl font-black mb-4 tracking-tight leading-none text-on-surface">MATCH DAY <span class="text-primary-fixed-dim">MONITOR</span></h2>
+            <p class="text-on-surface-variant font-body mb-10 max-w-md mx-auto">{{ $t('matchMonitor.loadSubtitle') }}</p>
+            <button
+              type="button"
+              :disabled="!selectedCategory || isLoadingIntel"
+              @click="loadMatchIntelligence"
+              class="group relative px-10 py-5 bg-primary-container text-on-primary-container font-headline font-black text-lg uppercase tracking-[0.2em] rounded-md overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(0,230,57,0.3)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              <span class="relative z-10 flex items-center gap-3">
+                {{ isLoadingIntel ? $t('matchMonitor.loading') : $t('matchMonitor.loadButton') }}
+                <span class="material-symbols-outlined font-bold group-hover:translate-x-2 transition-transform">bolt</span>
+              </span>
+              <div class="absolute inset-0 bg-gradient-to-r from-primary-container to-primary-fixed transition-transform -translate-x-full group-hover:translate-x-0 duration-500"></div>
+            </button>
+          </template>
+
+          <!-- Match loaded → continue -->
+          <template v-else-if="match?.opponentName">
+            <div class="relative mb-8 inline-block">
+              <div class="absolute -inset-4 bg-primary-container/10 blur-3xl rounded-full"></div>
+              <div class="relative w-28 h-28 mx-auto rounded-full border-2 border-primary-fixed-dim/30 flex items-center justify-center glass-panel">
+                <span class="material-symbols-outlined text-5xl text-primary-fixed-dim">check_circle</span>
+              </div>
+            </div>
+            <h2 class="font-headline text-4xl font-black mb-2 tracking-tight leading-none text-on-surface">{{ $t('matchMonitor.matchLoadedTitle') }}</h2>
+            <p class="text-on-surface-variant font-body mb-3 max-w-md mx-auto">{{ $t('matchMonitor.matchLoadedSubtitle') }}</p>
+            <div class="flex flex-wrap items-center justify-center gap-3 text-on-surface-variant mb-10">
+              <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">shield</span> {{ match.opponentName }}</span>
+              <span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+              <span v-if="match.stadiumName" class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">stadium</span> {{ match.stadiumName }}</span>
+              <span v-if="match.dateLabel" class="w-1 h-1 bg-outline-variant rounded-full"></span>
+              <span v-if="match.dateLabel" class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span> {{ match.dateLabel }}</span>
+            </div>
+            <button
+              type="button"
+              @click="startMonitoring"
+              class="group relative px-10 py-5 bg-primary-container text-on-primary-container font-headline font-black text-lg uppercase tracking-[0.2em] rounded-md overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(0,230,57,0.3)]"
+            >
+              <span class="relative z-10 flex items-center gap-3">
+                {{ $t('matchMonitor.continue') }}
+                <span class="material-symbols-outlined font-bold group-hover:translate-x-2 transition-transform">arrow_forward</span>
+              </span>
+              <div class="absolute inset-0 bg-gradient-to-r from-primary-container to-primary-fixed transition-transform -translate-x-full group-hover:translate-x-0 duration-500"></div>
+            </button>
+          </template>
+
+          <!-- No upcoming match -->
+          <template v-else>
+            <div class="relative mb-8 inline-block">
+              <div class="relative w-28 h-28 mx-auto rounded-full border-2 border-outline-variant/30 flex items-center justify-center glass-panel">
+                <span class="material-symbols-outlined text-5xl text-on-surface-variant">event_busy</span>
+              </div>
+            </div>
+            <h2 class="font-headline text-3xl font-black mb-3 tracking-tight leading-none text-on-surface">{{ $t('callUp.noUpcomingMatch') }}</h2>
+            <button
+              type="button"
+              @click="resetMatchLoad"
+              class="mt-6 px-8 py-3 border border-outline-variant/30 text-on-surface-variant rounded-md text-xs font-bold uppercase tracking-widest hover:border-primary-fixed-dim hover:text-primary-fixed-dim transition-all"
+            >
+              {{ $t('matchMonitor.backToLoad') }}
+            </button>
+          </template>
         </div>
 
-        <!-- Loaded dashboard -->
+        <!-- MONITORING dashboard -->
         <div v-else class="space-y-8 relative scanline">
           <!-- Fixture bento -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -527,7 +591,6 @@ onMounted(loadCategories)
             </div>
           </div>
         </div>
-      </section>
     </main>
   </div>
 </template>

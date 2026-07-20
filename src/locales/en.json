@@ -443,7 +443,11 @@
     "selectPlayerTitle": "No player selected",
     "selectPlayerMessage": "Choose a player before adding an event.",
     "finalizedTitle": "Report Finalised",
-    "finalizedMessage": "{home} {hs} – {as} {away}. Match report has been recorded."
+    "finalizedMessage": "{home} {hs} – {as} {away}. Match report has been recorded.",
+    "matchLoadedTitle": "MATCH LOADED",
+    "matchLoadedSubtitle": "Upcoming fixture is ready. Continue to open the tactical monitor.",
+    "continue": "Continue to Monitor",
+    "backToLoad": "Back"
   },
   "medical": {
     "sectionTitle": "Department Telemetry",
