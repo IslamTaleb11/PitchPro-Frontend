@@ -368,7 +368,11 @@
     "completed": "Completed",
     "tbd": "TBD",
     "loadingMatch": "Loading upcoming match...",
-    "noUpcomingMatch": "No upcoming match scheduled for this squad."
+    "noUpcomingMatch": "No upcoming match scheduled for this squad.",
+    "noMatchTitle": "No match selected",
+    "noMatchMessage": "Load the upcoming fixture for this category before finalising the squad.",
+    "finaliseErrorTitle": "Call-up failed",
+    "finaliseError": "Could not save the match squad. Please try again."
   },
   "medical": {
     "sectionTitle": "Department Telemetry",

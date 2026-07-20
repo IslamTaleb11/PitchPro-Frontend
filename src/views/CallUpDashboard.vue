@@ -9,7 +9,7 @@ import { matchService } from '../services/matchService'
 import { playerService } from '../services/playerService'
 
 const { t: $t } = useI18n()
-const { showLoadingToast } = useUiToast()
+const { showToast } = useUiToast()
 
 const isSidebarOpen = ref(true)
 
@@ -115,6 +115,7 @@ function normalizeUpcomingMatch(data) {
   const isCompleted = m.isCompleted ?? m.IsCompleted ?? null
   const endTime = asText(pick(m, ['endTime', 'EndTime']))
   const club = asText(pick(m, ['clubName', 'ClubName', 'club', 'Club', 'teamName', 'TeamName', 'team', 'Team']))
+  const matchId = pick(m, ['id', 'Id', 'ID', 'matchId', 'MatchID'])
 
   // Build the kickoff label by combining the date with the kickoff time.
   let dateLabel = ''
@@ -124,8 +125,8 @@ function normalizeUpcomingMatch(data) {
     dateLabel = formatMatchDate(combined)
   }
 
-  if (!opponent && !dateLabel && !stadium && isHome == null && isCompleted == null && !club) return null
-  return { opponentName: opponent, isHome, isCompleted, stadiumName: stadium, endTime, clubName: club, dateLabel }
+  if (!opponent && !dateLabel && !stadium && isHome == null && isCompleted == null && !club && matchId == null) return null
+  return { opponentName: opponent, isHome, isCompleted, stadiumName: stadium, endTime, clubName: club, matchId, dateLabel }
 }
 
 // Format an ISO/.NET date string as "Oct 24, 2023 • 20:00" (locale time, no TZ label).
@@ -171,6 +172,7 @@ const imgErrors = reactive({})
 
 // ── Selection state (persists across category switches) ───────────────────────
 const selectedIds = ref([])
+const isFinalising = ref(false)
 
 const isSelected = (id) => selectedIds.value.includes(id)
 const selectedCount = computed(() => selectedIds.value.length)
@@ -287,14 +289,57 @@ function fitnessTextClass(status) {
 }
 
 // ── Finalise the match squad ──────────────────────────────────────────────────
-function finaliseSquad() {
-  if (selectedCount.value === 0) return
-  showLoadingToast({
+// POST the selected players to the match call-up endpoint
+// (POST /api/match-callup-players) for the currently loaded upcoming match +
+// category. The server validates that the match and every player belong to the
+// category within the club, so MatchID/CategoryID must come from the loaded data.
+async function finaliseSquad() {
+  if (selectedCount.value === 0 || isFinalising.value) return
+
+  const matchId = Number(upcomingMatch.value?.matchId)
+  const categoryId = Number(selectedCategory.value)
+
+  if (!matchId || !categoryId) {
+    showToast({
+      title: $t('callUp.noMatchTitle'),
+      message: $t('callUp.noMatchMessage'),
+      mode: 'error',
+    })
+    return
+  }
+
+  isFinalising.value = true
+  showToast({
     title: $t('callUp.finalisingTitle'),
     message: $t('callUp.finalisingMessage'),
-    successTitle: $t('callUp.finalisedTitle'),
-    successMessage: $t('callUp.finalisedMessage', { count: selectedCount.value }),
+    mode: 'loading',
+    duration: 0,
   })
+
+  try {
+    const response = await matchService.addCallUpPlayers({
+      MatchID: matchId,
+      CategoryID: categoryId,
+      PlayerIDs: selectedIds.value.map((id) => Number(id)),
+    })
+    showToast({
+      title: $t('callUp.finalisedTitle'),
+      message: $t('callUp.finalisedMessage', {
+        count: response?.data?.added ?? selectedCount.value,
+      }),
+      mode: 'success',
+    })
+    resetSelection()
+  } catch (error) {
+    const message = error?.response?.data?.message || $t('callUp.finaliseError')
+    showToast({
+      title: $t('callUp.finaliseErrorTitle'),
+      message,
+      mode: 'error',
+    })
+  } finally {
+    isFinalising.value = false
+  }
 }
 
 onMounted(loadCategories)
@@ -595,7 +640,7 @@ watch(selectedCategory, (id) => {
           </div>
           <button
             type="button"
-            :disabled="selectedCount === 0"
+            :disabled="selectedCount === 0 || isFinalising || !upcomingMatch"
             @click="finaliseSquad"
             :class="[
               'font-headline font-bold text-sm uppercase tracking-tighter rounded-lg px-8 py-4 shadow-lg transition-all flex items-center gap-2',

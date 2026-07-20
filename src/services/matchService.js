@@ -11,5 +11,11 @@ export const matchService = {
   // GET /api/matches/upcoming/{categoryId}
   getUpcomingMatch(categoryId) {
     return api.get(`/matches/upcoming/${categoryId}`);
+  },
+
+  // Enrol one or more players into a match call-up.
+  // POST /api/match-callup-players  body: { MatchID, CategoryID, PlayerIDs }
+  addCallUpPlayers(payload) {
+    return api.post('/match-callup-players', payload);
   }
 };
