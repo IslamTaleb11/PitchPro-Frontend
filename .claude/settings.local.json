@@ -38,7 +38,8 @@
       "Read(//tmp/**)",
       "Bash(rm -f /tmp/build.log)",
       "Bash(curl -s \"https://pitchprobackend.onrender.com/api/players/available/1017\" -H \"Accept: application/json\")",
-      "Bash(curl -s -i \"https://pitchprobackend.onrender.com/api/players/available/1017\" -H \"Accept: application/json\")"
+      "Bash(curl -s -i \"https://pitchprobackend.onrender.com/api/players/available/1017\" -H \"Accept: application/json\")",
+      "Bash(grep -rin \"BlobUri\\\\|blob\\\\.\\\\|https\\\\|://\\\\|GetBlockBlobReference\\\\|Uri\\\\|Endpoint\\\\|base.*url\\\\|photo\" --include=*.cs BusinessLayer/Services/BlobService.cs)"
     ]
   }
 }

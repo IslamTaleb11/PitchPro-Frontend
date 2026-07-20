@@ -88,6 +88,7 @@ function normalizeAvailablePlayers(payload) {
     return {
       id: p.PlayerID ?? p.playerID ?? p.id ?? p.Id,
       name: p.PlayerName ?? p.playerName ?? p.name ?? p.FullName ?? '',
+      avatar: p.PlayerImage ?? p.playerImage ?? p.photo ?? p.Photo ?? p.imageUrl ?? p.ImageUrl ?? '',
       position: pos.label,
       positionKey: pos.key,
       jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
