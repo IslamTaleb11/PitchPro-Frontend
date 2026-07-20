@@ -12,6 +12,12 @@ export const playerService = {
     return api.get(`/players/by-category/${categoryId}`);
   },
 
+  // Fetch every player in a squad category that currently has no active injury
+  // (available for selection). GET /api/players/available/{categoryId}.
+  getAvailablePlayersByCategory(categoryId) {
+    return api.get(`/players/available/${categoryId}`);
+  },
+
   // Record a new player injury. `payload` must match the backend
   // PlayerInjuryRegistrationRequestDTO (PlayerMedicalDossierID, BodyPart,
   // Severity, Status, InjuryDate, EstimatedReturnDate).

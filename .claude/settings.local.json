@@ -34,7 +34,9 @@
       "Bash(echo \"EXIT=$?\")",
       "Bash(python *)",
       "Bash(dir)",
-      "Bash(dir /b /ad)"
+      "Bash(dir /b /ad)",
+      "Read(//tmp/**)",
+      "Bash(rm -f /tmp/build.log)"
     ]
   }
 }

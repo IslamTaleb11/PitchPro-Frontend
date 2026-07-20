@@ -6,6 +6,7 @@ import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue
 import { useUiToast } from '../composables/useUiToast'
 import { lookupService } from '../services/lookupService'
 import { matchService } from '../services/matchService'
+import { playerService } from '../services/playerService'
 
 const { t: $t } = useI18n()
 const { showLoadingToast } = useUiToast()
@@ -28,34 +29,40 @@ const categories = ref([
 ])
 const selectedCategory = ref('')
 
-// ── Demo roster, keyed by category id ─────────────────────────────────────────
-// Fitness status drives availability: only injured players are blocked from
-// selection. `tag` is either a market value (number, rendered with the
-// "Market Value" label) or a translation key for a role badge.
-const DEMO_ROSTER = {
-  senior: [
-    { id: 'p-haaland', name: 'Erling Haaland', position: 'FWD', jersey: '09', fitness: 'fit',    tag: { market: 180 }, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC1_l3X8ftBQAu6csjuAb8DTlnrRR6pMKOUhDiAyxlhM3PXnQru3dsGJjrstu5PHhjiE3Ze2gIeDVbjWKf-805RdHIwk8RFffFE4HhTYud3NKxVYaDJqDPZClQ_pA_nfU6LJ4edqRl1NO0O9MLs57E6cUHOFRGP_UVfquAhu-0BAj25WpHs7wRGhKopgMtjISydoQXlYbmTHL3V-pVD3u4-1zDBWHq3tUh4XETq-IN7kobwaRHJTqLF' },
-    { id: 'p-kdb',     name: 'Kevin De Bruyne', position: 'MID', jersey: '17', fitness: 'light',  tag: { key: 'callUp.captainEligible' }, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCKvkoq1zZ6bx8YrtJMRjowX4HfkW_7zB2lofQgJodNyXQpS1gqsPjlFHzQJF4cbPHy3jMyf6jCbpmhvXX4Jmg-WA-qhHsH0W63mAZOQrrwJJWwS9Of57jTAni3LL7Wul_4ITKqQw2vO6kKa6d-4TPKxY89KeDAo77JUfrJuSzbvwnHfZmiSQ_ToDPPRybXKURhqyXEpaEs_PQT76i9f9T6PA4z5Mg3XpIyCjpCbihC0ZUVPENsyDoq' },
-    { id: 'p-ederson', name: 'Ederson Santana', position: 'GK',  jersey: '31', fitness: 'injured', tag: { key: 'callUp.medicalDischarge' }, blocked: true, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC9LLV9Ts4rbYjyOa0tw2CPxItrGW-yxYRy8moI8xCbRo9zSO75FhIaozhh7bP28GeaWbpFiuAz1DXrzZkJyz5YKht-guIrSFsiBewYJj6gwE-Asg0jsAImtFNAn4o0sQlQd11Ebblnl2Urjg1fC4C8qaSK9fCMGatCS5jODrpFfQcY4QEe1B7DHOM2TmIu8c9tfzfaZCLtVBtIHBsh57Z4j645V2slbI_pV88iNu3DAYvlOKgL1W9U' },
-    { id: 'p-dias',    name: 'Ruben Dias', position: 'DEF', jersey: '03', fitness: 'fit',    tag: { key: 'callUp.keyDefender' }, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC-XM6vbt8wFrOABht7BhQ8ltypqzwkhAcUStkGUPfg9-jLUSJWo_YqkFJXyEtW4sDXJ8lWUkwR10itGtQCOrVMO4Qa5tqENEIW75gae7fi5xvyvnYz9mZZxcxB4SFCynusEXIOZUpPJiN01NrJYGgNrJEiZNyfpn5k2d9O2JIUBzkAENxqqG5hiVD7A0bU8qjvABu0KMXR-psdAIZoBY1JalPi2-4jc26FnRIo0foiGYs8eSHPdZsD' },
-    { id: 'p-grealish', name: 'Jack Grealish', position: 'FWD', jersey: '10', fitness: 'fit',    tag: { key: 'callUp.squadRotation' }, avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDslDJGnUsAEtBzKkZLf1LxVhKdi7uT6PiXZctLNKJnJ5fBfzylDBxGYFmSMKFgbbh3BDMKvus56KDhDvgW9jLk_pxzi3Kwb3Zl67094aanlB4spzxOwWupKbedtqMmVbbtdqqeb_bI1FdPB36a7S_ItGU-wmshqHVcg6c3Isn5t5v94mPeFXmwTXGJ0NinGNYY8E0cnRlv23zTNpBdLV-kM36ivx3n_rU6vUDsPoL1nQvcPzoCIOLl' },
-  ],
-  u19: [
-    { id: 'p-foden',   name: 'Phil Foden', position: 'MID', jersey: '47', fitness: 'fit',    tag: { key: 'callUp.keyDefender' } },
-    { id: 'p-palmer',  name: 'Cole Palmer', position: 'MID', jersey: '80', fitness: 'light' },
-    { id: 'p-lewis',   name: 'Rico Lewis', position: 'DEF', jersey: '82', fitness: 'fit' },
-    { id: 'p-mcatee',  name: 'James McAtee', position: 'FWD', jersey: '87', fitness: 'fit' },
-    { id: 'p-ortega',  name: 'Stefan Ortega', position: 'GK', jersey: '18', fitness: 'injured', tag: { key: 'callUp.kneeInjury' }, blocked: true },
-  ],
-  u16: [
-    { id: 'p-delap',   name: 'Liam Delap', position: 'FWD', jersey: '09', fitness: 'fit' },
-    { id: 'p-bobb',    name: 'Oscar Bobb', position: 'MID', jersey: '24', fitness: 'fit' },
-    { id: 'p-oreilly', name: "Nico O'Reilly", position: 'DEF', jersey: '31', fitness: 'light' },
-    { id: 'p-hamilton', name: 'Micah Hamilton', position: 'FWD', jersey: '56', fitness: 'fit' },
-    { id: 'p-fletcher', name: 'Luca Fletcher', position: 'GK', jersey: '01', fitness: 'injured', tag: { key: 'callUp.medicalDischarge' }, blocked: true },
-  ],
+// ── Available-player normalization ────────────────────────────────────────────
+// GET /api/players/available/{categoryId} -> { data: [ {
+//   PlayerID, PlayerName, JerseyNumber, PositionName } ] }. These are players
+// with no active injury in the chosen category, so every one is fit and eligible
+// for selection (no blocked state, no market-value/role tags). We also accept
+// common alternative field names so the mapping is resilient to API conventions.
+const POSITION_CODES = {
+  goalkeeper: 'GK',
+  defender: 'DEF',
+  midfielder: 'MID',
+  forward: 'FWD',
+  striker: 'FWD',
+  winger: 'FWD',
 }
-
+function normalizePosition(raw) {
+  const name = String(raw ?? '').trim()
+  if (!name) return ''
+  return POSITION_CODES[name.toLowerCase()] ?? name.toUpperCase().slice(0, 3)
+}
+function normalizeAvailablePlayers(payload) {
+  let data = payload
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    data = data.data ?? data.Data ?? data.$values ?? data.result ?? data.Result ?? []
+  }
+  if (!Array.isArray(data)) return []
+  return data.map((p) => ({
+    id: p.PlayerID ?? p.playerID ?? p.id ?? p.Id,
+    name: p.PlayerName ?? p.playerName ?? p.name ?? p.FullName ?? '',
+    position: normalizePosition(p.PositionName ?? p.positionName ?? p.position),
+    jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
+    fitness: 'fit',
+    blocked: false,
+  }))
+}
 const players = ref([])
 const searchQuery = ref('')
 const isLoadingCategories = ref(false)
@@ -186,14 +193,19 @@ function resetSelection() {
   selectedIds.value = []
 }
 
-// ── Roster loading (with a clear API integration seam) ───────────────────────
-function loadRoster(categoryId) {
-  // INTEGRATION SEAM: in production this would call the API, e.g.
-  //   const res = await playerService.getPlayersByCategory(categoryId)
-  //   players.value = res.data
-  // For this tactical call-up demo we use the static roster above so the page
-  // is fully functional without a backing players endpoint.
-  players.value = DEMO_ROSTER[categoryId] ?? []
+// ── Roster loading: real API ─────────────────────────────────────────────────
+// Load the players available for call-up in the chosen category from
+// GET /api/players/available/{categoryId} -> { data: [...] }.
+async function loadRoster(categoryId) {
+  players.value = []
+  if (!categoryId) return
+  try {
+    const response = await playerService.getAvailablePlayersByCategory(categoryId)
+    players.value = normalizeAvailablePlayers(response?.data)
+  } catch (error) {
+    console.warn('Call-Up: could not load available players for', categoryId, error)
+    players.value = []
+  }
 }
 
 // ── Load the squad categories from the same /lookups/categories endpoint the
