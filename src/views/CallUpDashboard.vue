@@ -107,6 +107,7 @@ function normalizeUpcomingMatch(data) {
   const isHome = m.isHome ?? m.IsHome ?? null
   const isCompleted = m.isCompleted ?? m.IsCompleted ?? null
   const endTime = asText(pick(m, ['endTime', 'EndTime']))
+  const club = asText(pick(m, ['clubName', 'ClubName', 'club', 'Club', 'teamName', 'TeamName', 'team', 'Team']))
 
   // Build the kickoff label by combining the date with the kickoff time.
   let dateLabel = ''
@@ -116,8 +117,8 @@ function normalizeUpcomingMatch(data) {
     dateLabel = formatMatchDate(combined)
   }
 
-  if (!opponent && !dateLabel && !stadium && isHome == null && isCompleted == null) return null
-  return { opponentName: opponent, isHome, isCompleted, stadiumName: stadium, endTime, dateLabel }
+  if (!opponent && !dateLabel && !stadium && isHome == null && isCompleted == null && !club) return null
+  return { opponentName: opponent, isHome, isCompleted, stadiumName: stadium, endTime, clubName: club, dateLabel }
 }
 
 // Format an ISO/.NET date string as "Oct 24, 2023 • 20:00" (locale time, no TZ label).
@@ -145,12 +146,10 @@ async function loadUpcomingMatch(categoryId) {
   }
 }
 
-// The API only returns the opponent and an isHome flag — our own squad is the
-// currently selected category. Place the opponent on the correct side (home/away)
-// so the fixture reads correctly.
-const ourSquadName = computed(() =>
-  categories.value.find((c) => c.id === selectedCategory.value)?.name || ''
-)
+// The API returns our own club (clubName) plus the opponent and an isHome flag.
+// Place the opponent on the correct side (home/away) so the fixture reads
+// correctly. We show the club name here rather than the squad category.
+const ourSquadName = computed(() => upcomingMatch.value?.clubName || '')
 const homeTeamName = computed(() => {
   if (!upcomingMatch.value) return ''
   return upcomingMatch.value.isHome ? ourSquadName.value : upcomingMatch.value.opponentName || ''
