@@ -52,6 +52,7 @@ const items = [
   { key: 'players',          icon: 'sports_soccer',  labelKey: 'sidebar.players',         path: '/dashboard/players'          },
   { key: 'schedule',  icon: 'calendar_month', labelKey: 'sidebar.schedule',  path: '/dashboard/schedule'  },
   { key: 'call-up',   icon: 'playlist_add_check', labelKey: 'sidebar.callUp', path: '/dashboard/call-up'  },
+  { key: 'match-monitor', icon: 'analytics', labelKey: 'sidebar.matchMonitor', path: '/dashboard/match-monitor' },
   { key: 'medical',   icon: 'medical_services', labelKey: 'sidebar.medical', path: '/dashboard/medical'  },
   { key: 'finances',         icon: 'payments',       labelKey: 'sidebar.finances',         path: '/dashboard/finances'         },
   { key: 'subscription',     icon: 'upgrade',        labelKey: 'sidebar.subscription',     path: '/dashboard/subscription'     },
