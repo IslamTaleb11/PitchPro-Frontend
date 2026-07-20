@@ -34,33 +34,36 @@ const selectedCategory = ref('')
 //   PlayerID, PlayerName, JerseyNumber, PositionName } ] }. These are players
 // with no active injury in the chosen category, so every one is fit and eligible
 // for selection (no blocked state, no market-value/role tags). We also accept
-// common alternative field names so the mapping is resilient to API conventions.
-// Maps a backend position value to its localized i18n key. The API returns
-// pp.name (e.g. "Goalkeeper", "Left Back", "Centre Forward"), but we also
-// tolerate the standard short codes (GK/DF/MF/FW/LB/CB/…) in case the API
-// convention differs. Everything resolves to one of the four broad position
-// keys already defined in both locale files, so no extra translations are
-// needed and there is no i18n drift. Unknown values fall back to the raw label.
+// Maps a backend position value to its SPECIFIC localized i18n key. The API
+// returns pp.name (e.g. "Centre Back", "Defensive Midfielder"), but we also
+// tolerate the standard short codes (GK/CB/LB/DM/ST/…) in case the API
+// convention differs. Each distinct position resolves to its own granular key
+// (posCentreBack, posDefensiveMidfielder, …) defined in both locale files, so
+// the table shows the exact role, translated per language. Broad terms
+// (defender/midfielder/forward) and unrecognised values fall back gracefully.
 const POSITION_GROUPS = {
   'callUp.posGoalkeeper': ['goalkeeper', 'keeper', 'gk'],
-  'callUp.posDefender': [
-    'defender', 'defence', 'defense', 'back', 'df',
-    'lb', 'rb', 'cb', 'lcb', 'rcb', 'fb',
-    'left back', 'right back', 'center back', 'centre back',
-    'sweeper', 'full back', 'wing back',
-  ],
-  'callUp.posMidfielder': [
-    'midfielder', 'midfield', 'mf',
-    'cm', 'dm', 'am', 'lm', 'rm', 'cdm', 'cam', 'lcm', 'rcm',
-    'defensive midfielder', 'attacking midfielder', 'central midfielder',
-    'left midfielder', 'right midfielder',
-  ],
-  'callUp.posForward': [
-    'forward', 'fw', 'striker', 'attacker',
-    'st', 'cf', 'lf', 'rf', 'lw', 'rw',
-    'left wing', 'right wing', 'left winger', 'right winger',
-    'center forward', 'centre forward',
-  ],
+  'callUp.posCentreBack': ['centre back', 'center back', 'cb', 'lcb', 'rcb'],
+  'callUp.posLeftBack': ['left back', 'lb'],
+  'callUp.posRightBack': ['right back', 'rb'],
+  'callUp.posSweeper': ['sweeper', 'sw', 'libero'],
+  'callUp.posLeftWingBack': ['left wing back', 'left wing-back', 'lwb'],
+  'callUp.posRightWingBack': ['right wing back', 'right wing-back', 'rwb'],
+  'callUp.posFullBack': ['full back', 'fb'],
+  'callUp.posDefender': ['defender', 'defence', 'defense', 'back', 'df'],
+  'callUp.posDefensiveMidfielder': ['defensive midfielder', 'defensive midfield', 'dm', 'cdm'],
+  'callUp.posCentralMidfielder': ['central midfielder', 'centre midfielder', 'cm'],
+  'callUp.posAttackingMidfielder': ['attacking midfielder', 'attacking midfield', 'am', 'cam'],
+  'callUp.posLeftMidfielder': ['left midfielder', 'lm'],
+  'callUp.posRightMidfielder': ['right midfielder', 'rm'],
+  'callUp.posWideMidfielder': ['wide midfielder', 'wm'],
+  'callUp.posMidfielder': ['midfielder', 'midfield', 'mf'],
+  'callUp.posStriker': ['striker', 'st', 'cf'],
+  'callUp.posCentreForward': ['centre forward', 'center forward'],
+  'callUp.posSecondStriker': ['second striker', 'ss'],
+  'callUp.posLeftWinger': ['left winger', 'left wing', 'lw'],
+  'callUp.posRightWinger': ['right winger', 'right wing', 'rw'],
+  'callUp.posForward': ['forward', 'fw', 'attacker'],
 }
 const POSITION_KEYS = Object.fromEntries(
   Object.entries(POSITION_GROUPS).flatMap(([key, names]) =>
