@@ -35,14 +35,38 @@ const selectedCategory = ref('')
 // with no active injury in the chosen category, so every one is fit and eligible
 // for selection (no blocked state, no market-value/role tags). We also accept
 // common alternative field names so the mapping is resilient to API conventions.
-const POSITION_KEYS = {
-  goalkeeper: 'callUp.posGoalkeeper',
-  defender: 'callUp.posDefender',
-  midfielder: 'callUp.posMidfielder',
-  forward: 'callUp.posForward',
-  striker: 'callUp.posForward',
-  winger: 'callUp.posForward',
+// Maps a backend position value to its localized i18n key. The API returns
+// pp.name (e.g. "Goalkeeper", "Left Back", "Centre Forward"), but we also
+// tolerate the standard short codes (GK/DF/MF/FW/LB/CB/…) in case the API
+// convention differs. Everything resolves to one of the four broad position
+// keys already defined in both locale files, so no extra translations are
+// needed and there is no i18n drift. Unknown values fall back to the raw label.
+const POSITION_GROUPS = {
+  'callUp.posGoalkeeper': ['goalkeeper', 'keeper', 'gk'],
+  'callUp.posDefender': [
+    'defender', 'defence', 'defense', 'back', 'df',
+    'lb', 'rb', 'cb', 'lcb', 'rcb', 'fb',
+    'left back', 'right back', 'center back', 'centre back',
+    'sweeper', 'full back', 'wing back',
+  ],
+  'callUp.posMidfielder': [
+    'midfielder', 'midfield', 'mf',
+    'cm', 'dm', 'am', 'lm', 'rm', 'cdm', 'cam', 'lcm', 'rcm',
+    'defensive midfielder', 'attacking midfielder', 'central midfielder',
+    'left midfielder', 'right midfielder',
+  ],
+  'callUp.posForward': [
+    'forward', 'fw', 'striker', 'attacker',
+    'st', 'cf', 'lf', 'rf', 'lw', 'rw',
+    'left wing', 'right wing', 'left winger', 'right winger',
+    'center forward', 'centre forward',
+  ],
 }
+const POSITION_KEYS = Object.fromEntries(
+  Object.entries(POSITION_GROUPS).flatMap(([key, names]) =>
+    names.map((n) => [n, key])
+  )
+)
 // Resolves a backend position name to its localized key, keeping the raw full
 // name as a fallback display value when no key matches.
 function normalizePosition(raw) {
