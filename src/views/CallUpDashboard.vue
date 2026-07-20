@@ -93,7 +93,6 @@ function normalizeAvailablePlayers(payload) {
   })
 }
 const players = ref([])
-const searchQuery = ref('')
 const isLoadingCategories = ref(false)
 
 // ── Upcoming match (driven by /matches/upcoming/{categoryId}) ──────────────────
@@ -359,15 +358,7 @@ async function loadCategories() {
   }
 }
 
-const filteredPlayers = computed(() => {
-  const q = searchQuery.value.trim().toLowerCase()
-  if (!q) return players.value
-  return players.value.filter(
-    (p) =>
-      p.name.toLowerCase().includes(q) ||
-      p.position.toLowerCase().includes(q)
-  )
-})
+const filteredPlayers = computed(() => players.value)
 
 function initials(name) {
   return name
@@ -602,30 +593,20 @@ watch(selectedCategory, (id) => {
               </div>
             </div>
 
-            <!-- Search -->
-            <div class="relative w-full md:w-96">
-              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-              <input
-                v-model="searchQuery"
-                class="w-full bg-surface-container-lowest border-none rounded-lg pl-10 pr-4 py-3 text-sm focus:ring-1 focus:ring-green-400 text-on-surface placeholder:text-outline-variant"
-                :placeholder="$t('callUp.searchPlaceholder')"
-                type="text"
-              />
-            </div>
-
-            <!-- Filter + Reset -->
-            <div class="flex gap-3 w-full md:w-auto">
-              <button type="button" class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-surface-container-highest rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-surface-bright transition-colors">
-                <span class="material-symbols-outlined text-sm">filter_list</span> {{ $t('callUp.filter') }}
-              </button>
-              <button
-                type="button"
-                @click="resetSelection"
-                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-surface-container-highest/50 border border-outline-variant/20 rounded-lg text-xs font-bold uppercase tracking-widest text-error hover:bg-error-container/20 transition-colors"
-              >
-                <span class="material-symbols-outlined text-sm">restart_alt</span> {{ $t('callUp.reset') }}
-              </button>
-            </div>
+            <!-- Reset Call-Up -->
+            <button
+              type="button"
+              :disabled="!upcomingMatch?.matchId || isResetting"
+              @click="openResetConfirm"
+              :class="[
+                'w-full md:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors border',
+                upcomingMatch?.matchId
+                  ? 'border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500'
+                  : 'border-outline-variant/20 text-slate-600 cursor-not-allowed'
+              ]"
+            >
+              <span class="material-symbols-outlined text-sm">restart_alt</span> {{ $t('callUp.resetCallUps') }}
+            </button>
           </div>
 
           <!-- Table Content -->
@@ -727,20 +708,6 @@ watch(selectedCategory, (id) => {
             <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest leading-none">{{ $t('callUp.draftSelection') }}</p>
             <p class="text-sm font-headline font-bold text-on-surface mt-1">{{ $t('callUp.matchReady') }}: <span class="text-green-400">{{ selectedCount }}</span> {{ $t('callUp.playersLabel') }}</p>
           </div>
-          <button
-            type="button"
-            :disabled="!upcomingMatch?.matchId || isResetting"
-            @click="openResetConfirm"
-            :class="[
-              'font-headline font-bold text-sm uppercase tracking-tighter rounded-lg px-6 py-4 border transition-all flex items-center gap-2',
-              upcomingMatch?.matchId
-                ? 'border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500'
-                : 'border-outline-variant/20 text-slate-600 cursor-not-allowed'
-            ]"
-          >
-            <span class="material-symbols-outlined text-sm">restart_alt</span>
-            {{ $t('callUp.resetCallUps') }}
-          </button>
           <button
             type="button"
             :disabled="selectedCount === 0 || isFinalising || !upcomingMatch"
