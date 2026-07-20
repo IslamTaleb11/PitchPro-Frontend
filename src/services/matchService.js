@@ -17,5 +17,11 @@ export const matchService = {
   // POST /api/match-callup-players  body: { MatchID, CategoryID, PlayerIDs }
   addCallUpPlayers(payload) {
     return api.post('/match-callup-players', payload);
+  },
+
+  // How many players are already called up for a match.
+  // GET /api/match-callup-players/count/{matchId} -> { matchId, count }
+  getCallUpCount(matchId) {
+    return api.get(`/match-callup-players/count/${matchId}`);
   }
 };

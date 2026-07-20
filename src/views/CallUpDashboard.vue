@@ -59,7 +59,6 @@ function normalizeAvailablePlayers(payload) {
     name: p.PlayerName ?? p.playerName ?? p.name ?? p.FullName ?? '',
     position: normalizePosition(p.PositionName ?? p.positionName ?? p.position),
     jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
-    fitness: 'fit',
     blocked: false,
   }))
 }
@@ -140,17 +139,32 @@ function formatMatchDate(value) {
 
 async function loadUpcomingMatch(categoryId) {
   upcomingMatch.value = null
+  calledUpCount.value = 0
   if (!categoryId) return
   isLoadingMatch.value = true
   try {
     const response = await matchService.getUpcomingMatch(categoryId)
-    upcomingMatch.value = normalizeUpcomingMatch(response?.data)
+    const match = normalizeUpcomingMatch(response?.data)
+    upcomingMatch.value = match
+    if (match?.matchId != null) loadCallUpCount(match.matchId)
   } catch (error) {
     // No upcoming match (or endpoint unavailable) — leave the card in its empty state.
     console.warn('Call-Up: could not load upcoming match for', categoryId, error)
     upcomingMatch.value = null
   } finally {
     isLoadingMatch.value = false
+  }
+}
+
+// Loads how many players are already in the call-up for a match so the
+// squad-capacity counter reflects the real squad size.
+async function loadCallUpCount(matchId) {
+  try {
+    const response = await matchService.getCallUpCount(matchId)
+    calledUpCount.value = Number(response?.data?.count ?? 0)
+  } catch (error) {
+    console.warn('Call-Up: could not load call-up count for', matchId, error)
+    calledUpCount.value = 0
   }
 }
 
@@ -174,11 +188,18 @@ const imgErrors = reactive({})
 const selectedIds = ref([])
 const isFinalising = ref(false)
 
+// Players already called up for the loaded match, from
+// GET /api/match-callup-players/count/{matchId}. This is the source of truth for
+// the squad-capacity counter — the ring reflects the real squad size, not the
+// local draft selection (which drives only the Finalise action).
+const calledUpCount = ref(0)
+
 const isSelected = (id) => selectedIds.value.includes(id)
 const selectedCount = computed(() => selectedIds.value.length)
-const remainingSlots = computed(() => Math.max(0, SQUAD_LIMIT - selectedCount.value))
+const squadCount = computed(() => calledUpCount.value)
+const remainingSlots = computed(() => Math.max(0, SQUAD_LIMIT - squadCount.value))
 const ringOffset = computed(() =>
-  RING_CIRCUMFERENCE * (1 - selectedCount.value / SQUAD_LIMIT)
+  RING_CIRCUMFERENCE * (1 - Math.min(squadCount.value, SQUAD_LIMIT) / SQUAD_LIMIT)
 )
 
 function toggleSelect(player) {
@@ -277,17 +298,6 @@ function initials(name) {
     .toUpperCase()
 }
 
-// ── Fitness status presentation ───────────────────────────────────────────────
-function fitnessDotClass(status) {
-  if (status === 'fit') return 'bg-green-400'
-  if (status === 'light') return 'bg-amber-400'
-  return 'bg-red-500'
-}
-function fitnessTextClass(status) {
-  if (status === 'injured') return 'text-red-400'
-  return 'text-on-surface'
-}
-
 // ── Finalise the match squad ──────────────────────────────────────────────────
 // POST the selected players to the match call-up endpoint
 // (POST /api/match-callup-players) for the currently loaded upcoming match +
@@ -330,6 +340,7 @@ async function finaliseSquad() {
       mode: 'success',
     })
     resetSelection()
+    loadCallUpCount(matchId)
   } catch (error) {
     const message = error?.response?.data?.message || $t('callUp.finaliseError')
     showToast({
@@ -457,7 +468,7 @@ watch(selectedCategory, (id) => {
                 ></circle>
               </svg>
               <div class="absolute inset-0 flex items-center justify-center flex-col">
-                <span class="font-headline text-3xl font-black text-on-surface">{{ selectedCount }}</span>
+                <span class="font-headline text-3xl font-black text-on-surface">{{ squadCount }}</span>
                 <span class="text-[10px] text-outline-variant font-bold">/ {{ SQUAD_LIMIT }}</span>
               </div>
             </div>
@@ -536,7 +547,6 @@ watch(selectedCategory, (id) => {
                   <th class="px-6 py-4 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.colPlayer') }}</th>
                   <th class="px-6 py-4 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.colPosition') }}</th>
                   <th class="px-6 py-4 font-label text-[10px] uppercase tracking-widest text-on-surface-variant text-center">{{ $t('callUp.colJersey') }}</th>
-                  <th class="px-6 py-4 font-label text-[10px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.colFitness') }}</th>
                   <th class="px-6 py-4 font-label text-[10px] uppercase tracking-widest text-on-surface-variant text-right">{{ $t('callUp.colSelection') }}</th>
                 </tr>
               </thead>
@@ -585,16 +595,6 @@ watch(selectedCategory, (id) => {
                   <!-- Jersey -->
                   <td class="px-6 py-4 text-center font-headline font-black text-green-400">{{ player.jersey }}</td>
 
-                  <!-- Fitness -->
-                  <td class="px-6 py-4">
-                    <div class="flex items-center gap-2">
-                      <span :class="['w-2 h-2 rounded-full', fitnessDotClass(player.fitness), player.fitness === 'fit' ? 'animate-pulse' : '']"></span>
-                      <span :class="['text-xs font-medium', fitnessTextClass(player.fitness)]">
-                        {{ $t(player.fitness === 'fit' ? 'callUp.fit' : player.fitness === 'light' ? 'callUp.lightTraining' : 'callUp.thighStrain') }}
-                      </span>
-                    </div>
-                  </td>
-
                   <!-- Selection -->
                   <td class="px-6 py-4 text-right">
                     <button
@@ -616,7 +616,7 @@ watch(selectedCategory, (id) => {
 
                 <!-- Empty state -->
                 <tr v-if="filteredPlayers.length === 0">
-                  <td colspan="5" class="px-6 py-16 text-center text-on-surface-variant text-sm">
+                  <td colspan="4" class="px-6 py-16 text-center text-on-surface-variant text-sm">
                     {{ selectedCategory ? $t('callUp.emptyRoster') : $t('callUp.selectCategoryFirst') }}
                   </td>
                 </tr>
