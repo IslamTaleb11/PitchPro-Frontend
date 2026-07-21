@@ -255,6 +255,47 @@ onMounted(loadCategories)
     <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
 
     <main class="pt-24 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-6 lg:p-10 lg:flex-1 flex flex-col">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div class="lg:col-span-2 bg-surface-container-high rounded-xl p-6 border border-outline-variant/10">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 class="font-headline text-xl font-black uppercase tracking-tight text-on-surface">{{ $t('matchMonitor.pageTitle') }}</h2>
+              <p class="text-sm text-on-surface-variant mt-2">{{ $t('matchMonitor.loadSubtitle') }}</p>
+            </div>
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+              <select
+                v-model="selectedCategory"
+                class="flex-1 min-w-[180px] bg-surface-container-lowest border border-outline-variant/20 rounded-lg px-4 py-3 text-sm text-on-surface focus:outline-none"
+              >
+                <option value="" disabled>{{ $t('matchMonitor.selectCategory') }}</option>
+                <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+              </select>
+              <button
+                type="button"
+                @click="loadMatchIntelligence"
+                :disabled="!selectedCategory || isLoadingIntel"
+                class="px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-headline font-bold text-xs uppercase tracking-[0.2em] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{ isLoadingIntel ? $t('common.loading') : $t('matchMonitor.loadButton') }}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="lg:col-span-1 bg-surface-container-low rounded-xl p-6 border border-outline-variant/10">
+          <p class="text-xs uppercase tracking-[0.3em] font-bold text-primary-fixed-dim">{{ $t('matchMonitor.sectionTitle') }}</p>
+          <p class="text-sm text-on-surface-variant mt-4">{{ $t('matchMonitor.pageSubtitle') }}</p>
+          <div class="mt-6 space-y-4">
+            <div>
+              <p class="text-[10px] uppercase tracking-[0.3em] text-on-surface-variant">{{ $t('matchMonitor.selectedCategoryLabel') }}</p>
+              <p class="text-sm text-on-surface mt-1">{{ selectedCategoryName || $t('matchMonitor.noCategorySelected') }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] uppercase tracking-[0.3em] text-on-surface-variant">{{ $t('matchMonitor.playersLoadedLabel') }}</p>
+              <p class="text-sm text-on-surface mt-1">{{ callUpPlayers.length }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
         <!-- MONITORING dashboard -->
         <div class="space-y-8 relative">

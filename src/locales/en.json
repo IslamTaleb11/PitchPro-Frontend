@@ -430,6 +430,7 @@
     "finalResult": "Final Result",
     "finalizeReport": "Finalize Report",
     "matchEvents": "Match Events Log",
+    "selectCategory": "Select Category...",
     "selectPlayer": "Select Player...",
     "addEvent": "Add Event",
     "logGoal": "GOAL",
@@ -447,7 +448,10 @@
     "matchLoadedTitle": "MATCH LOADED",
     "matchLoadedSubtitle": "Upcoming fixture is ready. Continue to open the tactical monitor.",
     "continue": "Continue to Monitor",
-    "backToLoad": "Back"
+    "backToLoad": "Back",
+    "noCategorySelected": "No category selected",
+    "selectedCategoryLabel": "Selected Category",
+    "playersLoadedLabel": "Players Loaded"
   },
   "medical": {
     "sectionTitle": "Department Telemetry",
