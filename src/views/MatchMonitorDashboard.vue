@@ -20,6 +20,15 @@ const isLoadingCategories = ref(false)
 // ── Match intelligence state ─────────────────────────────────────────────────
 const match = ref(null)
 const callUpPlayers = ref([])
+const samplePlayers = [
+  { id: '31', name: 'Ederson', position: 'GK', positionKey: null, jersey: '31', isCalled: true },
+  { id: '3', name: 'R. Dias', position: 'CB', positionKey: null, jersey: '3', isCalled: true },
+  { id: '25', name: 'M. Akanji', position: 'CB', positionKey: null, jersey: '25', isCalled: true },
+  { id: '24', name: 'J. Gvardiol', position: 'LB', positionKey: null, jersey: '24', isCalled: true },
+  { id: '16', name: 'Rodri', position: 'CDM', positionKey: null, jersey: '16', isCalled: true },
+  { id: '17', name: 'K. De Bruyne', position: 'CAM', positionKey: null, jersey: '17', isCalled: true },
+]
+const displayPlayers = computed(() => callUpPlayers.value.length ? callUpPlayers.value : samplePlayers)
 const isLoadingIntel = ref(false)
 const matchLoaded = ref(false)
 const monitoring = ref(false)
@@ -346,9 +355,9 @@ onMounted(loadCategories)
                 <span class="material-symbols-outlined text-sm">edit</span> {{ $t('matchMonitor.adjustRoster') }}
               </router-link>
             </div>
-            <div v-if="callUpPlayers.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               <div
-                v-for="p in callUpPlayers"
+                v-for="p in displayPlayers"
                 :key="p.id"
                 class="bg-surface-container-low group hover:bg-surface-container-high transition-all duration-300 rounded-lg p-4 border border-outline-variant/5 relative overflow-hidden"
               >
@@ -371,7 +380,6 @@ onMounted(loadCategories)
                 </div>
               </div>
             </div>
-            <p v-else class="text-on-surface-variant text-sm">{{ $t('matchMonitor.noPlayers') }}</p>
           </div>
 
           <!-- Tactical directive + Pitch simulation -->
