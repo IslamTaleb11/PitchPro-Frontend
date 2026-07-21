@@ -1,8 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.vue'
-import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
 import { useUiToast } from '../composables/useUiToast'
 import { lookupService } from '../services/lookupService'
 import { matchService } from '../services/matchService'
@@ -10,28 +8,51 @@ import { playerService } from '../services/playerService'
 
 const { t: $t } = useI18n()
 const { showToast } = useUiToast()
-const isSidebarOpen = ref(true)
 
 // ── Squad categories (mirrors CallUpDashboard) ────────────────────────────────
 const categories = ref([])
 const selectedCategory = ref('')
+const selectedMatch = ref('')
+const selectedSessionType = ref('Training Session')
+const startupModalOpen = ref(true)
 const isLoadingCategories = ref(false)
+const isLoadingIntel = ref(false)
 
 // ── Match intelligence state ─────────────────────────────────────────────────
 const match = ref(null)
 const callUpPlayers = ref([])
 const samplePlayers = [
-  { id: '31', name: 'Ederson', position: 'GK', positionKey: null, jersey: '31', isCalled: true },
-  { id: '3', name: 'R. Dias', position: 'CB', positionKey: null, jersey: '3', isCalled: true },
-  { id: '25', name: 'M. Akanji', position: 'CB', positionKey: null, jersey: '25', isCalled: true },
-  { id: '24', name: 'J. Gvardiol', position: 'LB', positionKey: null, jersey: '24', isCalled: true },
-  { id: '16', name: 'Rodri', position: 'CDM', positionKey: null, jersey: '16', isCalled: true },
-  { id: '17', name: 'K. De Bruyne', position: 'CAM', positionKey: null, jersey: '17', isCalled: true },
+  { id: '31', name: 'Ederson', position: 'GK', jersey: '31', status: 'present' },
+  { id: '3', name: 'R. Dias', position: 'CB', jersey: '3', status: 'present' },
+  { id: '25', name: 'M. Akanji', position: 'CB', jersey: '25', status: 'present' },
+  { id: '24', name: 'J. Gvardiol', position: 'LB', jersey: '24', status: 'present' },
+  { id: '16', name: 'Rodri', position: 'CDM', jersey: '16', status: 'present' },
+  { id: '17', name: 'K. De Bruyne', position: 'CAM', jersey: '17', status: 'present' },
 ]
-const displayPlayers = computed(() => callUpPlayers.value.length ? callUpPlayers.value : samplePlayers)
-const isLoadingIntel = ref(false)
-const matchLoaded = ref(false)
-const monitoring = ref(false)
+const playerStatuses = ref({})
+const selectedCategoryName = computed(() => {
+  const category = categories.value.find((cat) => String(cat.id) === String(selectedCategory.value))
+  return category?.name || ''
+})
+const matchOptions = computed(() => {
+  const label = selectedCategoryName.value || 'Squad'
+  return [
+    { id: 'matchday-prep', label: `Matchday Prep vs ${label}` },
+    { id: 'training-session', label: 'Training Session' },
+    { id: 'recovery-gym', label: 'Recovery / Gym' },
+    { id: 'technical-video', label: 'Technical Video' },
+  ]
+})
+const playersForTable = computed(() => {
+  const source = callUpPlayers.value.length ? callUpPlayers.value : samplePlayers
+  return source.map((player) => ({
+    ...player,
+    status: playerStatuses.value[player.id] || player.status || 'present',
+  }))
+})
+const presentCount = computed(() => playersForTable.value.filter((p) => p.status === 'present').length)
+const absentCount = computed(() => playersForTable.value.filter((p) => p.status === 'absent').length)
+const excusedCount = computed(() => playersForTable.value.filter((p) => p.status === 'excused').length)
 
 // Final result (editable, local)
 const homeScore = ref(0)
@@ -255,15 +276,332 @@ const awayTeamName = computed(() =>
   match.value?.isHome ? match.value?.opponentName || '' : ourSquadName.value
 )
 
+function statusButtonClass(player, type) {
+  const current = player.status
+  const base = 'status-btn flex-1 min-w-[100px] py-2.5 rounded border border-outline-variant/20 text-[11px] font-black uppercase tracking-widest'
+  if (type === 'present') {
+    return `${base} ${current === 'present' ? 'active-pill-present' : 'hover:border-primary/40'}`
+  }
+  if (type === 'absent') {
+    return `${base} ${current === 'absent' ? 'active-pill-absent' : 'hover:border-error/40'}`
+  }
+  return `${base} ${current === 'excused' ? 'active-pill-excused' : 'hover:border-tertiary-container/40'}`
+}
+
+function setPlayerStatus(playerId, type) {
+  playerStatuses.value = {
+    ...playerStatuses.value,
+    [playerId]: type,
+  }
+}
+
+function startSession() {
+  if (!selectedCategory.value || !selectedMatch.value) {
+    showToast({
+      title: $t('matchMonitor.selectCategoryTitle'),
+      message: $t('matchMonitor.selectCategoryMessage'),
+      mode: 'error',
+    })
+    return
+  }
+
+  startupModalOpen.value = false
+  loadMatchIntelligence()
+}
+
 onMounted(loadCategories)
 </script>
 
 <template>
-  <div class="min-h-screen bg-background text-on-surface lg:flex lg:items-stretch">
-    <DashboardSidebar active-item="match-monitor" :is-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
-    <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
+  <div class="terminal-layout bg-background text-on-surface overflow-hidden">
+    <div v-if="startupModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <div class="w-full max-w-2xl rounded-3xl bg-surface-container-lowest border border-outline-variant/10 p-8 shadow-2xl">
+        <h2 class="font-headline text-2xl font-black uppercase tracking-tighter text-on-surface">Select Squad & Match</h2>
+        <p class="mt-2 text-sm text-on-surface-variant">Choose your category and the next session before entering the operations terminal.</p>
+        <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">Squad Category</label>
+            <select v-model="selectedCategory" class="w-full bg-surface-container-high border border-outline-variant/20 text-on-surface text-sm rounded px-4 py-3 focus:ring-1 focus:ring-primary-fixed">
+              <option value="" disabled>Select category</option>
+              <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+            </select>
+          </div>
+          <div class="space-y-2">
+            <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">Match Mode</label>
+            <select v-model="selectedMatch" class="w-full bg-surface-container-high border border-outline-variant/20 text-on-surface text-sm rounded px-4 py-3 focus:ring-1 focus:ring-primary-fixed">
+              <option v-for="option in matchOptions" :key="option.id" :value="option.id">{{ option.label }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <button @click="startSession" class="w-full sm:w-auto bg-primary-container text-on-primary-container text-[11px] font-black uppercase tracking-widest px-6 py-3 rounded shadow-lg hover:brightness-110 transition-all">Start Session</button>
+          <p class="text-[11px] text-on-surface-variant">Session type: {{ selectedSessionType }}</p>
+        </div>
+      </div>
+    </div>
 
-    <main class="pt-24 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-6 lg:p-10 lg:flex-1 flex flex-col">
+    <aside class="bg-surface-container-lowest flex flex-col py-8 px-4 border-r border-outline-variant/10">
+      <div class="mb-10 px-2">
+        <span class="text-2xl font-display font-black tracking-tighter text-primary">PitchPro</span>
+        <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant mt-1 font-bold">Tactical Command</p>
+      </div>
+      <nav class="flex-1 space-y-1">
+        <a class="flex items-center gap-3 py-3 rounded text-on-surface-variant font-medium pl-4 hover:bg-surface-container-high hover:text-primary transition-colors duration-200" href="#">
+          <span class="material-symbols-outlined">dashboard</span>
+          <span class="font-headline uppercase text-[11px] tracking-widest font-bold">Dashboard</span>
+        </a>
+        <a class="flex items-center gap-3 py-3 rounded text-on-surface-variant font-medium pl-4 hover:bg-surface-container-high hover:text-primary transition-colors duration-200" href="#">
+          <span class="material-symbols-outlined">groups</span>
+          <span class="font-headline uppercase text-[11px] tracking-widest font-bold">Roster</span>
+        </a>
+        <a class="flex items-center gap-3 py-3 rounded text-on-surface-variant font-medium pl-4 hover:bg-surface-container-high hover:text-primary transition-colors duration-200" href="#">
+          <span class="material-symbols-outlined">fitness_center</span>
+          <span class="font-headline uppercase text-[11px] tracking-widest font-bold">Training</span>
+        </a>
+        <a class="flex items-center gap-3 py-3 rounded bg-primary-container/10 text-primary-fixed font-bold pl-4 border-r-4 border-primary-fixed transition-all" href="#">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">how_to_reg</span>
+          <span class="font-headline uppercase text-[11px] tracking-widest font-bold">Attendance</span>
+        </a>
+        <a class="flex items-center gap-3 py-3 rounded text-on-surface-variant font-medium pl-4 hover:bg-surface-container-high hover:text-primary transition-colors duration-200" href="#">
+          <span class="material-symbols-outlined">analytics</span>
+          <span class="font-headline uppercase text-[11px] tracking-widest font-bold">Analytics</span>
+        </a>
+      </nav>
+      <div class="mt-auto pt-6 border-t border-outline-variant/10">
+        <button class="w-full bg-surface-container-high text-on-surface font-headline font-bold py-3 rounded flex items-center justify-center gap-2 hover:bg-surface-container-highest transition-colors uppercase text-[10px] tracking-widest border border-outline-variant/20">
+          <span class="material-symbols-outlined text-sm">settings</span>
+          System config
+        </button>
+      </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col overflow-hidden bg-surface">
+      <header class="h-16 bg-surface-container-lowest border-b border-outline-variant/10 flex justify-between items-center px-8 shrink-0">
+        <div class="flex items-center gap-8">
+          <div class="flex gap-8">
+            <a class="text-primary text-[11px] font-bold uppercase tracking-[0.2em] relative after:absolute after:-bottom-[22px] after:left-0 after:w-full after:h-1 after:bg-primary" href="#">Operations</a>
+            <a class="text-on-surface-variant text-[11px] font-bold uppercase tracking-[0.2em] hover:text-primary transition-colors" href="#">Medical</a>
+            <a class="text-on-surface-variant text-[11px] font-bold uppercase tracking-[0.2em] hover:text-primary transition-colors" href="#">Scouting</a>
+          </div>
+        </div>
+        <div class="flex items-center gap-6">
+          <div class="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-full border border-outline-variant/10">
+            <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+            <span class="text-[10px] font-mono font-bold text-primary uppercase tracking-tighter">Live Session: {{ selectedCategoryName || 'U-16 Elite' }}</span>
+          </div>
+          <div class="h-8 w-px bg-outline-variant/20"></div>
+          <div class="flex items-center gap-3">
+            <div class="text-right">
+              <p class="text-[10px] font-bold text-on-surface uppercase leading-none">M. Artero</p>
+              <p class="text-[9px] text-on-surface-variant uppercase tracking-tighter">Tech Director</p>
+            </div>
+            <div class="h-10 w-10 rounded-full bg-surface-container-highest overflow-hidden border border-primary/20">
+              <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBUHqiGTWMqGG2uestCwGZfeP0aIvkrSePoU7RiUealBYiK5b872ekNOIjUb1hDvKK0uLBLU_Ei6lQ-IaBSGipUfrLaV5EUPJGQiofNeToSQ2FRjM90rW6ql7FjgS29XjiCCfm3IIcFZ99ry6zEQqj_2XuhR8a3b_RDnKmcWoLyNUchkbcTxHE3c-tzfHQw1ZgVyWENvTcmmuTuaTv6wS5vHZqTIV2RKSNVSUZb1JBwg7shurTfkxr" alt="Tech Director Avatar" />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 flex flex-col overflow-hidden">
+        <div class="p-8 pb-4">
+          <div class="flex items-start justify-between mb-8">
+            <div>
+              <h1 class="font-headline text-4xl font-black text-on-surface tracking-tight uppercase leading-none">Daily Operations</h1>
+              <p class="text-on-surface-variant font-medium text-sm mt-2 opacity-80">Squad Availability & Attendance Terminal</p>
+            </div>
+            <div class="flex gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">Squad Category</label>
+                <select v-model="selectedCategory" class="bg-surface-container-high border-outline-variant/20 text-on-surface text-xs font-bold rounded px-4 py-2.5 focus:ring-1 focus:ring-primary-fixed min-w-[160px] uppercase tracking-wider">
+                  <option disabled value="">Select Squad</option>
+                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                </select>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">Session Type</label>
+                <select v-model="selectedSessionType" class="bg-surface-container-high border-outline-variant/20 text-on-surface text-xs font-bold rounded px-4 py-2.5 focus:ring-1 focus:ring-primary-fixed min-w-[160px] uppercase tracking-wider">
+                  <option>Training Session</option>
+                  <option>Matchday Prep</option>
+                  <option>Recovery / Gym</option>
+                  <option>Technical Video</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between bg-surface-container-low border border-outline-variant/10 p-4 rounded mb-2 px-8">
+          <div class="flex items-center gap-4">
+            <button class="bg-primary-container text-on-primary-container text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="startSession">
+              <span class="material-symbols-outlined text-sm">done_all</span> Mark All Present
+            </button>
+            <button class="bg-primary-container text-on-primary-container text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button">
+              <span class="material-symbols-outlined text-sm">task_alt</span> Finalize Match &amp; Mark Completed
+            </button>
+            <button class="text-[11px] font-black text-on-surface-variant hover:text-on-surface px-4 py-2.5 rounded transition-all flex items-center gap-2 uppercase tracking-widest border border-outline-variant/20 bg-surface-container-high" type="button">
+              <span class="material-symbols-outlined text-sm">refresh</span> Reset All
+            </button>
+          </div>
+          <div class="flex items-center gap-6">
+            <div class="flex items-center gap-2 px-3 py-1 bg-surface-container-highest rounded border border-outline-variant/10">
+              <span class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Active Roster:</span>
+              <span class="text-[11px] font-mono font-bold text-primary">{{ playersForTable.length }} Players</span>
+            </div>
+            <div class="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer transition-colors">
+              <span class="material-symbols-outlined text-lg">filter_list</span>
+              <span class="text-[10px] font-black uppercase tracking-widest">Filter</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-8 pb-8 no-scrollbar">
+          <table class="w-full text-left border-separate border-spacing-y-2">
+            <thead>
+              <tr class="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">
+                <th class="px-4 pb-2">Player Profile</th>
+                <th class="px-4 pb-2">Pos</th>
+                <th class="px-4 pb-2 text-center">Operational Status</th>
+                <th class="px-4 pb-2 text-center">Match Events</th>
+                <th class="px-4 pb-2 text-right">Activity Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="player in playersForTable" :key="player.id" class="bg-surface-container-low/40 hover:bg-surface-container-low transition-colors group">
+                <td class="px-4 py-3 border-y border-l border-outline-variant/5">
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded border-2 border-primary/20 p-0.5 relative">
+                      <div class="w-full h-full bg-surface-container-highest rounded-sm"></div>
+                      <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-surface"></div>
+                    </div>
+                    <div>
+                      <p class="font-headline font-bold text-on-surface text-base uppercase leading-tight">{{ player.name }}</p>
+                      <p class="text-[10px] text-on-surface-variant font-mono tracking-tighter">REF: {{ player.id }}-A</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-4 py-3 border-y border-outline-variant/5">
+                  <span class="bg-surface-container-highest px-2 py-1 rounded text-[10px] font-mono font-bold text-on-surface-variant border border-outline-variant/20 uppercase tracking-tighter">{{ player.position }}</span>
+                </td>
+                <td class="px-4 py-3 border-y border-outline-variant/5">
+                  <div class="flex justify-center gap-2">
+                    <button type="button" :class="statusButtonClass(player, 'present')" @click="setPlayerStatus(player.id, 'present')">Present</button>
+                    <button type="button" :class="statusButtonClass(player, 'absent')" @click="setPlayerStatus(player.id, 'absent')">Absent</button>
+                    <button type="button" :class="statusButtonClass(player, 'excused')" @click="setPlayerStatus(player.id, 'excused')">Excused</button>
+                  </div>
+                </td>
+                <td class="px-4 py-3 border-y border-outline-variant/5">
+                  <div class="flex justify-center gap-2">
+                    <button class="w-8 h-8 rounded bg-surface-container-high border border-outline-variant/20 flex items-center justify-center hover:text-primary transition-colors" title="Log Goal">
+                      <span class="material-symbols-outlined text-sm">sports_soccer</span>
+                    </button>
+                    <button class="w-8 h-8 rounded bg-surface-container-high border border-outline-variant/20 flex items-center justify-center hover:text-primary transition-colors" title="Log Assist">
+                      <span class="material-symbols-outlined text-sm">handshake</span>
+                    </button>
+                    <button class="w-8 h-8 rounded bg-surface-container-high border border-outline-variant/20 flex items-center justify-center hover:text-error transition-colors" title="Log Card">
+                      <span class="material-symbols-outlined text-sm">style</span>
+                    </button>
+                  </div>
+                </td>
+                <td class="px-4 py-3 border-y border-r border-outline-variant/5 text-right">
+                  <input class="bg-transparent border-b border-outline-variant/20 text-on-surface-variant text-[11px] py-1 text-right focus:border-primary outline-none transition-all w-full max-w-[200px] placeholder:italic placeholder:opacity-30" placeholder="Add operational note..." type="text">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <aside class="right-sidebar bg-surface-container-lowest glass-panel p-8 border-l border-outline-variant/10 overflow-y-auto no-scrollbar">
+      <h2 class="font-headline text-xl font-black text-on-surface mb-8 uppercase tracking-tighter border-b border-outline-variant/10 pb-4">Session Summary</h2>
+      <div class="space-y-6">
+        <div class="bg-surface-container-low p-6 rounded border border-outline-variant/10 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-24 h-24 bg-primary/5 -mr-8 -mt-8 rounded-full blur-2xl"></div>
+          <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black mb-2">Total Present</p>
+          <div class="flex items-baseline gap-3">
+            <span class="text-6xl font-display font-black text-primary leading-none">{{ presentCount }}</span>
+            <span class="text-base font-mono font-bold text-on-surface-variant">/ {{ playersForTable.length }}</span>
+          </div>
+          <div class="mt-4 h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+            <div class="h-full bg-primary" :style="{ width: `${playersForTable.length ? Math.round((presentCount / playersForTable.length) * 100) : 0}%` }" style="box-shadow: 0 0 10px rgba(0,255,65,0.4)"></div>
+          </div>
+          <p class="text-[10px] font-bold text-primary mt-2 uppercase tracking-widest">{{ playersForTable.length ? `${Math.round((presentCount / playersForTable.length) * 100)}% Availability` : '0% Availability' }}</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-surface-container-low p-4 rounded border border-outline-variant/10 text-center">
+            <p class="text-[9px] uppercase tracking-widest text-on-surface-variant font-black mb-1">Absent</p>
+            <p class="text-2xl font-display font-black text-error">{{ absentCount }}</p>
+          </div>
+          <div class="bg-surface-container-low p-4 rounded border border-outline-variant/10 text-center">
+            <p class="text-[9px] uppercase tracking-widest text-on-surface-variant font-black mb-1">Excused</p>
+            <p class="text-2xl font-display font-black text-tertiary-fixed-dim">{{ excusedCount }}</p>
+          </div>
+        </div>
+        <div class="pt-6 border-t border-outline-variant/10">
+          <h3 class="font-headline text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-4">Quick Event Logger</h3>
+          <div class="bg-surface-container-low p-4 rounded border border-outline-variant/10 space-y-3">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[9px] uppercase tracking-widest text-on-surface-variant font-black">Select Player</label>
+              <select class="bg-surface-container-high border-outline-variant/20 text-on-surface text-[10px] font-bold rounded px-3 py-2 focus:ring-1 focus:ring-primary-fixed w-full uppercase">
+                <option v-for="player in playersForTable" :key="player.id">{{ player.name }}</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-4 gap-2">
+              <button class="aspect-square rounded bg-surface-container-highest border border-outline-variant/20 flex flex-col items-center justify-center hover:border-primary/40 transition-all group" type="button">
+                <span class="material-symbols-outlined text-sm text-primary">sports_soccer</span>
+                <span class="text-[8px] font-black mt-1">GOAL</span>
+              </button>
+              <button class="aspect-square rounded bg-surface-container-highest border border-outline-variant/20 flex flex-col items-center justify-center hover:border-primary/40 transition-all group" type="button">
+                <span class="material-symbols-outlined text-sm text-primary">handshake</span>
+                <span class="text-[8px] font-black mt-1">AST</span>
+              </button>
+              <button class="aspect-square rounded bg-surface-container-highest border border-outline-variant/20 flex flex-col items-center justify-center hover:border-error/40 transition-all group" type="button">
+                <span class="material-symbols-outlined text-sm text-tertiary-fixed-dim">style</span>
+                <span class="text-[8px] font-black mt-1">YEL</span>
+              </button>
+              <button class="aspect-square rounded bg-surface-container-highest border border-outline-variant/20 flex flex-col items-center justify-center hover:border-error/40 transition-all group" type="button">
+                <span class="material-symbols-outlined text-sm text-error">style</span>
+                <span class="text-[8px] font-black mt-1">RED</span>
+              </button>
+            </div>
+            <button class="w-full bg-primary/10 text-primary text-[9px] font-black py-2 rounded border border-primary/20 uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-all" type="button">Log Event</button>
+          </div>
+        </div>
+        <div class="pt-6 border-t border-outline-variant/10">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-headline text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">Active Sidelined</h3>
+            <span class="bg-error/10 text-error px-2 py-0.5 rounded text-[9px] font-black border border-error/20">3 CRITICAL</span>
+          </div>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3 p-3 bg-surface-container-high/40 rounded border-l-2 border-error">
+              <img alt="" class="w-8 h-8 rounded-full grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHKf9ujzJjESd8OCOCCnMR-2N3-1wGZe6fWBoLCML28gXAUWaxQtYkBsT1-PJ23qdKWpLX_6aHQass4qA6VMKBeo5TlO5IotQqIeOx-m0vtpY1i5VGcvTxHE3cptJtty5zq9pYFFXBzUkVSEsYkqNmKpgURE6amX-YE1yHZxbEheKUcI2GOmqV39KLjBfF7DHLtsOBO2bOOQRol1j0FSMIERsCQh9Qv3CBPS2UcrjVVDGp2jjC" />
+              <div>
+                <p class="text-[10px] font-black text-on-surface uppercase">R. Varane</p>
+                <p class="text-[9px] text-error font-bold uppercase tracking-tighter">Hamstring GII</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-surface-container-high/40 rounded border-l-2 border-error">
+              <img alt="" class="w-8 h-8 rounded-full grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAr2FAsbYJ6DTioIQgIrNNhvH8S3swlyRDRlnSdiagUHYUM7TFx5MC4AcyEpuCdpHfSvPDEsEZcpKhBA-zIN2VAVpZ_G9duVtK-aTmhEajO6OJ0D1TXW7WlyklhAp-OxgisO4GMUTib-H95vcTUA3EwZg3-p8GdQgmRv368pO3ZXpCKRMTp94mjsG65XydHbcWyPGuiG1qiHZ2ssaqEL7XgQFbgeP_DGSIwpTPDkLjNQLUCikUIntO2" />
+              <div>
+                <p class="text-[10px] font-black text-on-surface uppercase">T. Courtois</p>
+                <p class="text-[9px] text-error font-bold uppercase tracking-tighter">ACL Rehab</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="pt-8 space-y-4">
+          <button class="w-full bg-surface-container-high border border-outline-variant/30 text-on-surface-variant font-headline font-bold py-3 rounded uppercase text-[10px] tracking-widest hover:text-on-surface hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 group" type="button">
+            <span class="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">download</span>
+            Sync Cloud Roster
+          </button>
+          <button class="w-full bg-primary-container text-on-primary-container font-headline font-black py-5 rounded-sm shadow-[0_10px_30px_rgba(0,255,65,0.2)] uppercase text-xs tracking-[0.3em] hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] transition-all" type="button">
+            Finalize Session
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</template>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div class="lg:col-span-2 bg-surface-container-high rounded-xl p-6 border border-outline-variant/10">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
