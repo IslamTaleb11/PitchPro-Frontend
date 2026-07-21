@@ -254,10 +254,10 @@ onMounted(loadCategories)
     <DashboardSidebar active-item="match-monitor" :is-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
     <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
 
-    <main class="pt-24 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-6 lg:p-10 transition-all duration-300 lg:flex-1 flex flex-col">
+    <main class="pt-24 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-6 lg:p-10 lg:flex-1 flex flex-col">
 
         <!-- MONITORING dashboard -->
-        <div class="space-y-8 relative scanline">
+        <div class="space-y-8 relative">
           <!-- Fixture bento -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="md:col-span-2 bg-surface-container-high rounded-xl p-8 relative overflow-hidden flex items-center justify-between">
