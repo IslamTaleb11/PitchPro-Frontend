@@ -255,43 +255,6 @@ onMounted(loadCategories)
     <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
 
     <main class="pt-24 h-[calc(100vh-5rem)] overflow-y-auto bg-background p-6 lg:p-10 transition-all duration-300 lg:flex-1 flex flex-col">
-      <!-- Page Header -->
-      <section class="flex flex-col gap-4 mb-8 shrink-0">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div class="space-y-2">
-            <span class="text-[10px] font-bold tracking-[0.2em] text-primary-fixed-dim font-headline uppercase">{{ $t('matchMonitor.sectionTitle') }}</span>
-            <h2 class="text-4xl font-black font-headline tracking-tighter text-on-surface">
-              {{ $t('matchMonitor.pageTitle') }} <span class="text-primary-fixed-dim">{{ $t('matchMonitor.pageSubtitle') }}</span>
-            </h2>
-          </div>
-          <!-- Category selector -->
-          <div class="relative group w-full md:w-56">
-            <button
-              type="button"
-              class="w-full flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded-lg text-[10px] font-bold uppercase tracking-widest text-on-surface hover:border-primary-fixed-dim transition-all"
-            >
-              <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-sm text-primary-fixed-dim">groups</span>
-                {{ selectedCategory ? (categories.find((c) => c.id === selectedCategory)?.name) : $t('callUp.selectCategoryFirst') }}
-              </div>
-              <span class="material-symbols-outlined text-xs">expand_more</span>
-            </button>
-            <div class="absolute top-full left-0 w-full bg-surface-container-high border border-outline-variant/20 rounded-xl shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50 overflow-hidden">
-              <div class="p-1">
-                <button
-                  v-for="cat in categories"
-                  :key="cat.id"
-                  type="button"
-                  @click="selectedCategory = cat.id"
-                  :class="[
-                    'w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors',
-                    cat.id === selectedCategory ? 'text-primary-fixed-dim bg-primary-fixed-dim/10' : 'text-on-surface-variant hover:bg-surface-bright hover:text-on-surface'
-                  ]"
-                >{{ cat.name }}</button>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- MONITORING dashboard -->
         <div v-else class="space-y-8 relative scanline">
