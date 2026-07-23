@@ -13,6 +13,12 @@ export const matchService = {
     return api.get(`/matches/upcoming/${categoryId}`);
   },
 
+  // Get call-up match info for a category (no 404, returns hasUpcomingMatch).
+  // GET /api/matches/call-up/{categoryId} -> { hasUpcomingMatch, match: { id, opponentName, date, kickoffTime, ... } }
+  getCallUpByCategory(categoryId) {
+    return api.get(`/matches/call-up/${categoryId}`);
+  },
+
   // Enrol one or more players into a match call-up.
   // POST /api/match-callup-players  body: { MatchID, CategoryID, PlayerIDs }
   addCallUpPlayers(payload) {

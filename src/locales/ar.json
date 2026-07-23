@@ -456,6 +456,7 @@
     "startSession": "بدء الجلسة",
     "ready": "جاهز",
     "selectRequired": "اختر فئة",
+    "noMatch": "لا توجد مباراة متاحة",
     "selectionRequiredTitle": "مطلوب التحديد",
     "selectionRequiredMsg": "يرجى اختيار فئة الفريق",
     "loadErrorTitle": "خطأ",

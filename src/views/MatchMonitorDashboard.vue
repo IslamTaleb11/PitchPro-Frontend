@@ -52,6 +52,8 @@ const isLoadingPlayers = ref(false)
 
 const categories = ref([])
 const selectedCategory = ref('')
+const selectedMatch = ref(null)
+const isLoadingMatch = ref(false)
 const selectedSessionType = ref('Training Session')
 const players = ref([])
 
@@ -131,19 +133,29 @@ async function loadPlayersByCategory(categoryId) {
     const list = normalizePlayers(response?.data)
     players.value = list
     playerStatuses.value = Object.fromEntries(list.map(p => [p.id, null]))
-
-    const matchRes = await matchService.getUpcomingMatch(categoryId)
-    const match = matchRes?.data?.data ?? matchRes?.data
-    if (match?.matchID ?? match?.id) {
-      matchId.value = match.matchID ?? match.id
-    } else {
-      matchId.value = null
-    }
   } catch (e) {
-    matchId.value = null
     showToast({ title: t('matchMonitor.loadErrorTitle'), message: t('matchMonitor.loadErrorMsg'), mode: 'error' })
   } finally {
     isLoadingPlayers.value = false
+  }
+}
+
+async function onCategoryChange() {
+  selectedMatch.value = null
+  if (!selectedCategory.value) return
+  isLoadingMatch.value = true
+  try {
+    const res = await matchService.getCallUpByCategory(selectedCategory.value)
+    const data = res?.data
+    if (data?.hasUpcomingMatch && data?.match) {
+      selectedMatch.value = data.match
+    } else {
+      selectedMatch.value = null
+    }
+  } catch {
+    selectedMatch.value = null
+  } finally {
+    isLoadingMatch.value = false
   }
 }
 
@@ -152,6 +164,11 @@ function startSession() {
     showToast({ title: t('matchMonitor.selectionRequiredTitle'), message: t('matchMonitor.selectionRequiredMsg'), mode: 'error' })
     return
   }
+  if (!selectedMatch.value) {
+    showToast({ title: t('matchMonitor.selectionRequiredTitle'), message: t('matchMonitor.noMatchForAttendance'), mode: 'error' })
+    return
+  }
+  matchId.value = selectedMatch.value.id
   startupModalOpen.value = false
   loadPlayersByCategory(selectedCategory.value)
 }
@@ -228,16 +245,40 @@ onMounted(loadCategories)
       <p class="mt-2 text-sm text-on-surface-variant">{{ t('matchMonitor.selectSquadDesc') }}</p>
       <div class="mt-8 space-y-2">
         <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">{{ t('matchMonitor.squadCategory') }}</label>
-        <select v-model="selectedCategory" class="w-full bg-surface-container-high border border-outline-variant/20 text-on-surface text-sm rounded px-4 py-3 focus:ring-1 focus:ring-primary-fixed">
+        <select v-model="selectedCategory" @change="onCategoryChange" class="w-full bg-surface-container-high border border-outline-variant/20 text-on-surface text-sm rounded px-4 py-3 focus:ring-1 focus:ring-primary-fixed">
           <option value="" disabled>{{ t('matchMonitor.selectCategory') }}</option>
           <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
         </select>
       </div>
+
+      <div v-if="selectedCategory" class="mt-6">
+        <div v-if="isLoadingMatch" class="flex items-center justify-center py-6">
+          <span class="text-[11px] text-on-surface-variant font-bold uppercase tracking-widest">{{ t('matchMonitor.loading') }}</span>
+        </div>
+        <div v-else-if="selectedMatch" class="bg-surface-container-high rounded border border-outline-variant/10 p-5">
+          <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black mb-3">{{ t('matchMonitor.upcomingFixture') }}</p>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="font-headline font-black text-on-surface text-base uppercase leading-tight">{{ selectedMatch.opponentName }}</p>
+              <p class="text-[11px] text-on-surface-variant font-medium mt-1">
+                {{ selectedMatch.date ? new Date(selectedMatch.date).toLocaleDateString() : '' }}
+                {{ selectedMatch.kickoffTime ? `• ${selectedMatch.kickoffTime}` : '' }}
+              </p>
+              <p v-if="selectedMatch.stadiumName" class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tight mt-0.5">{{ selectedMatch.stadiumName }}</p>
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded" :class="selectedMatch.isHome ? 'bg-primary/10 text-primary' : 'bg-surface-container-highest text-on-surface-variant'">{{ selectedMatch.isHome ? 'HOME' : 'AWAY' }}</span>
+          </div>
+        </div>
+        <div v-else class="bg-surface-container-high rounded border border-outline-variant/10 p-5 text-center">
+          <p class="text-[11px] text-on-surface-variant font-bold">{{ t('matchMonitor.noMatchForAttendance') }}</p>
+        </div>
+      </div>
+
       <div class="mt-8 flex items-center justify-between">
-        <button @click="startSession" :disabled="isLoadingPlayers" class="w-full sm:w-auto bg-primary-container text-on-primary-container text-[11px] font-black uppercase tracking-widest px-6 py-3 rounded shadow-lg hover:brightness-110 transition-all disabled:opacity-50">
+        <button @click="startSession" :disabled="isLoadingPlayers || !selectedMatch" class="w-full sm:w-auto bg-primary-container text-on-primary-container text-[11px] font-black uppercase tracking-widest px-6 py-3 rounded shadow-lg hover:brightness-110 transition-all disabled:opacity-50">
           {{ isLoadingPlayers ? t('matchMonitor.loading') : t('matchMonitor.startSession') }}
         </button>
-        <p class="text-[11px] text-on-surface-variant">{{ selectedCategory ? t('matchMonitor.ready') : t('matchMonitor.selectRequired') }}</p>
+        <p class="text-[11px] text-on-surface-variant">{{ selectedMatch ? t('matchMonitor.ready') : (selectedCategory ? t('matchMonitor.noMatch') : t('matchMonitor.selectRequired')) }}</p>
       </div>
     </div>
   </div>
