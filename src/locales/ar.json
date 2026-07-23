@@ -455,7 +455,11 @@
     "sessionType": "نوع الجلسة",
     "startSession": "بدء الجلسة",
     "ready": "جاهز",
-    "selectRequired": "اختر فئة"
+    "selectRequired": "اختر فئة",
+    "selectionRequiredTitle": "مطلوب التحديد",
+    "selectionRequiredMsg": "يرجى اختيار فئة الفريق",
+    "loadErrorTitle": "خطأ",
+    "loadErrorMsg": "فشل تحميل اللاعبين"
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",

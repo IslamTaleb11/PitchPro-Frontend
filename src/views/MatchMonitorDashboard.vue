@@ -100,7 +100,7 @@ async function loadPlayersByCategory(categoryId) {
     players.value = list
     playerStatuses.value = Object.fromEntries(list.map(p => [p.id, 'present']))
   } catch (e) {
-    showToast({ title: 'Error', message: 'Failed to load players', mode: 'error' })
+    showToast({ title: t('matchMonitor.loadErrorTitle'), message: t('matchMonitor.loadErrorMsg'), mode: 'error' })
   } finally {
     isLoadingPlayers.value = false
   }
@@ -108,7 +108,7 @@ async function loadPlayersByCategory(categoryId) {
 
 function startSession() {
   if (!selectedCategory.value) {
-    showToast({ title: 'Selection Required', message: 'Please select a squad category', mode: 'error' })
+    showToast({ title: t('matchMonitor.selectionRequiredTitle'), message: t('matchMonitor.selectionRequiredMsg'), mode: 'error' })
     return
   }
   startupModalOpen.value = false

@@ -458,7 +458,11 @@
     "sessionType": "Session Type",
     "startSession": "Start Session",
     "ready": "Ready",
-    "selectRequired": "Select a category"
+    "selectRequired": "Select a category",
+    "selectionRequiredTitle": "Selection Required",
+    "selectionRequiredMsg": "Please select a squad category",
+    "loadErrorTitle": "Error",
+    "loadErrorMsg": "Failed to load players"
   },
   "medical": {
     "sectionTitle": "Department Telemetry",
