@@ -487,6 +487,7 @@
     "syncCloudRoster": "مزامنة القائمة السحابية",
     "finalizeSession": "إنهاء الجلسة",
     "saveAttendance": "حفظ سجلات الحضور",
+    "alreadyRecorded": "تم التسجيل مسبقاً",
     "colJersey": "القميص",
     "noMatchForAttendance": "لا توجد مباراة قادمة لهذه الفئة. يرجى التأكد من جدولة مباراة.",
     "attendanceSavedTitle": "تم حفظ الحضور",

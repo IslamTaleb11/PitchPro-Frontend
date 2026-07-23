@@ -490,6 +490,7 @@
     "syncCloudRoster": "Sync Cloud Roster",
     "finalizeSession": "Finalize Session",
     "saveAttendance": "Save Attendance Records",
+    "alreadyRecorded": "Already Recorded",
     "colJersey": "Jersey",
     "noMatchForAttendance": "No upcoming match found for this category. Please ensure a match is scheduled.",
     "attendanceSavedTitle": "Attendance Saved",

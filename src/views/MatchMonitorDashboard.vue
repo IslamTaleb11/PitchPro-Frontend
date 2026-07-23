@@ -63,15 +63,16 @@ const eligiblePlayers = computed(() =>
 )
 
 const playersForTable = computed(() =>
-  eligiblePlayers.value.map(p => ({
+  players.value.map(p => ({
     ...p,
-    status: playerStatuses.value[p.id] ?? null,
+    status: playerStatuses.value[p.id] ?? (p.isAlreadyAttended ? 'recorded' : null),
   }))
 )
 
-const presentCount = computed(() => playersForTable.value.filter(p => p.status === 'present').length)
-const absentCount = computed(() => playersForTable.value.filter(p => p.status === 'absent').length)
-const excusedCount = computed(() => playersForTable.value.filter(p => p.status === 'excused').length)
+const totalEligible = computed(() => eligiblePlayers.value.length)
+const presentCount = computed(() => eligiblePlayers.value.filter(p => playerStatuses.value[p.id] === 'present').length)
+const absentCount = computed(() => eligiblePlayers.value.filter(p => playerStatuses.value[p.id] === 'absent').length)
+const excusedCount = computed(() => eligiblePlayers.value.filter(p => playerStatuses.value[p.id] === 'excused').length)
 
 function normalizeLookupItem(item) {
   if (!item) return { id: 'Unknown', name: 'Unknown' }
@@ -156,6 +157,8 @@ function startSession() {
 }
 
 function updateStatus(playerId, type) {
+  const player = players.value.find(p => p.id === playerId)
+  if (player?.isAlreadyAttended) return
   playerStatuses.value = { ...playerStatuses.value, [playerId]: type }
 }
 
@@ -272,7 +275,7 @@ onMounted(loadCategories)
               </button>
             </div>
             <div class="flex items-center gap-2 px-3 py-1 bg-surface-container-highest rounded border border-outline-variant/10">
-                <span class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">{{ playersForTable.length }}</span>
+                <span class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">{{ totalEligible }}</span>
                 <span class="text-[11px] font-mono font-bold text-primary">Players</span>
               </div>
           </div>
@@ -290,14 +293,14 @@ onMounted(loadCategories)
               <tbody>
                 <tr v-for="player in playersForTable" :key="player.id" class="bg-surface-container-low/40 hover:bg-surface-container-low transition-colors group">
                   <td class="px-4 py-3 border-y border-l border-outline-variant/5 w-14">
-                    <div class="w-12 h-12 rounded border-2 p-0.5 relative" :class="player.status === 'present' ? 'border-primary/20' : player.status === 'absent' ? 'border-error/20' : 'border-outline-variant/10'">
+                    <div class="w-12 h-12 rounded border-2 p-0.5 relative" :class="player.isAlreadyAttended ? 'border-tertiary-fixed-dim/30' : player.status === 'present' ? 'border-primary/20' : player.status === 'absent' ? 'border-error/20' : 'border-outline-variant/10'">
                       <img v-if="player.avatar" :src="player.avatar" :alt="player.name" class="w-full h-full object-cover rounded-sm">
                       <div v-else class="w-full h-full bg-surface-container-highest rounded-sm"></div>
-                      <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-surface" :class="player.status === 'present' ? 'bg-primary' : player.status === 'absent' ? 'bg-error' : 'bg-surface-container-highest'"></div>
+                      <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-surface" :class="player.isAlreadyAttended ? 'bg-tertiary-fixed-dim' : player.status === 'present' ? 'bg-primary' : player.status === 'absent' ? 'bg-error' : 'bg-surface-container-highest'"></div>
                     </div>
                   </td>
                   <td class="px-4 py-3 border-y border-outline-variant/5">
-                    <p class="font-headline font-bold text-on-surface text-sm uppercase leading-tight">{{ player.name }}</p>
+                    <p class="font-headline font-bold text-on-surface text-sm uppercase leading-tight" :class="player.isAlreadyAttended ? 'text-on-surface-variant' : ''">{{ player.name }}</p>
                     <p class="text-[10px] text-on-surface-variant font-mono tracking-tighter">REF: {{ player.id }}</p>
                   </td>
                   <td class="px-4 py-3 border-y border-outline-variant/5 text-center">
@@ -306,8 +309,14 @@ onMounted(loadCategories)
                   <td class="px-4 py-3 border-y border-outline-variant/5">
                     <span class="bg-surface-container-highest px-3 py-1.5 rounded text-[11px] font-bold text-on-surface-variant border border-outline-variant/20 uppercase tracking-tighter">{{ localizePosition(player.position) }}</span>
                   </td>
-                  <td class="px-4 py-3 border-y border-r border-outline-variant/5">
-                    <div class="flex justify-center gap-2">
+                   <td class="px-4 py-3 border-y border-r border-outline-variant/5">
+                    <div v-if="player.isAlreadyAttended" class="flex justify-center">
+                      <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-tertiary-fixed-dim/10 text-tertiary-fixed-dim text-[11px] font-black uppercase tracking-widest border border-tertiary-fixed-dim/20">
+                        <span class="material-symbols-outlined text-sm">check_circle</span>
+                        {{ t('matchMonitor.alreadyRecorded') }}
+                      </span>
+                    </div>
+                    <div v-else class="flex justify-center gap-2">
                       <button type="button"
                         :class="[
                           'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
@@ -336,12 +345,12 @@ onMounted(loadCategories)
               <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black mb-2">{{ t('matchMonitor.totalPresent') }}</p>
               <div class="flex items-baseline gap-3">
                 <span class="text-6xl font-display font-black text-primary leading-none">{{ presentCount }}</span>
-                <span class="text-base font-mono font-bold text-on-surface-variant">/ {{ playersForTable.length }}</span>
+                <span class="text-base font-mono font-bold text-on-surface-variant">/ {{ totalEligible }}</span>
               </div>
               <div class="mt-4 h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
-                <div class="h-full bg-primary" :style="{ width: `${playersForTable.length ? Math.round((presentCount / playersForTable.length) * 100) : 0}%` }" style="box-shadow: 0 0 10px rgba(0,255,65,0.4)"></div>
+                <div class="h-full bg-primary" :style="{ width: `${totalEligible ? Math.round((presentCount / totalEligible) * 100) : 0}%` }" style="box-shadow: 0 0 10px rgba(0,255,65,0.4)"></div>
               </div>
-              <p class="text-[10px] font-bold text-primary mt-2 uppercase tracking-widest">{{ playersForTable.length ? t('matchMonitor.availability', { pct: Math.round((presentCount / playersForTable.length) * 100) }) : t('matchMonitor.availability', { pct: 0 }) }}</p>
+              <p class="text-[10px] font-bold text-primary mt-2 uppercase tracking-widest">{{ totalEligible ? t('matchMonitor.availability', { pct: Math.round((presentCount / totalEligible) * 100) }) : t('matchMonitor.availability', { pct: 0 }) }}</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -361,7 +370,7 @@ onMounted(loadCategories)
                 <div class="flex flex-col gap-1.5">
                   <label class="text-[9px] uppercase tracking-widest text-on-surface-variant font-black">{{ t('matchMonitor.selectPlayer') }}</label>
                   <select class="bg-surface-container-high border-outline-variant/20 text-on-surface text-[10px] font-bold rounded px-3 py-2 focus:ring-1 focus:ring-primary-fixed w-full uppercase">
-                    <option v-for="player in playersForTable" :key="player.id">{{ player.name }}</option>
+                    <option v-for="player in eligiblePlayers" :key="player.id">{{ player.name }}</option>
                   </select>
                 </div>
                 <div class="grid grid-cols-4 gap-2">
