@@ -429,7 +429,7 @@ onMounted(loadCategories)
 .status-btn {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.active-pill-present { background-color: #00ff41 !important; color: #003907 !important; font-weight: 800; border-color: #00ff41 !important; }
+.active-pill-present { background-color: #00ff41 !important; color: #000000 !important; font-weight: 800; border-color: #00ff41 !important; }
 .active-pill-absent { background-color: #93000a !important; color: #ffdad6 !important; font-weight: 800; border-color: #93000a !important; }
 .active-pill-excused { background-color: #ffd6a1 !important; color: #452b00 !important; font-weight: 800; border-color: #ffd6a1 !important; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
