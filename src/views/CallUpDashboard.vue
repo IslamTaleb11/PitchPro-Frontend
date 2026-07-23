@@ -92,7 +92,7 @@ function normalizeAvailablePlayers(payload) {
       position: pos.label,
       positionKey: pos.key,
       jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
-      isCalled: !!(p.isCalled ?? p.IsCalled ?? false),
+      isAlreadyAttended: !!(p.isAlreadyAttended ?? p.IsAlreadyAttended ?? false),
     }
   })
 }
@@ -236,7 +236,7 @@ const ringOffset = computed(() =>
 )
 
 function toggleSelect(player) {
-  if (player.isCalled) return
+  if (player.isAlreadyAttended) return
   const idx = selectedIds.value.indexOf(player.id)
   if (idx === -1) {
     selectedIds.value = [...selectedIds.value, player.id]
@@ -306,7 +306,7 @@ async function loadRoster(categoryId) {
   players.value = []
   if (!categoryId) return
   try {
-    const response = await playerService.getAvailablePlayersByCategory(categoryId)
+    const response = await playerService.getMatchCallUpPlayersByCategory(categoryId)
     players.value = normalizeAvailablePlayers(response?.data)
   } catch (error) {
     console.warn('Call-Up: could not load available players for', categoryId, error)
@@ -631,7 +631,7 @@ watch(selectedCategory, (id) => {
                   :class="[
                     'group hover:bg-surface-container-high/40 transition-colors',
                     isSelected(player.id) ? 'bg-green-400/[0.04]' : '',
-                    player.isCalled ? 'bg-error-container/10' : ''
+                    player.isAlreadyAttended ? 'bg-error-container/10' : ''
                   ]"
                 >
                   <!-- Player -->
@@ -650,7 +650,7 @@ watch(selectedCategory, (id) => {
                         </div>
                       </div>
                       <div>
-                        <p class="font-headline font-bold" :class="player.isCalled ? 'text-error' : 'text-on-surface'">{{ player.name }}</p>
+                        <p class="font-headline font-bold" :class="player.isAlreadyAttended ? 'text-error' : 'text-on-surface'">{{ player.name }}</p>
                         <p v-if="player.tag?.market" class="text-[10px] text-outline-variant uppercase font-bold tracking-tighter">
                           {{ $t('callUp.marketValue') }}: £{{ player.tag.market }}M
                         </p>
@@ -672,7 +672,7 @@ watch(selectedCategory, (id) => {
                   <!-- Selection -->
                   <td class="px-6 py-4 flex justify-end items-center">
                     <button
-                      v-if="!player.isCalled"
+                      v-if="!player.isAlreadyAttended"
                       type="button"
                       @click="toggleSelect(player)"
                       :class="[

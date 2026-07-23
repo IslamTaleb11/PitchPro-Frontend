@@ -131,7 +131,7 @@ function normalizeAvailablePlayers(payload) {
       position: pos.label,
       positionKey: pos.key,
       jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
-      isCalled: !!(p.isCalled ?? p.IsCalled ?? false),
+      isAlreadyAttended: !!(p.isAlreadyAttended ?? p.IsAlreadyAttended ?? false),
     }
   })
 }
@@ -216,7 +216,7 @@ async function loadMatchIntelligence() {
   try {
     const [matchRes, playersRes] = await Promise.all([
       matchService.getUpcomingMatch(selectedCategory.value),
-      playerService.getAvailablePlayersByCategory(selectedCategory.value),
+      playerService.getMatchCallUpPlayersByCategory(selectedCategory.value),
     ])
     match.value = normalizeUpcomingMatch(matchRes?.data)
     callUpPlayers.value = normalizeAvailablePlayers(playersRes?.data)

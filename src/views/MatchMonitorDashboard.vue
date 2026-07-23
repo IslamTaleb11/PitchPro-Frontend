@@ -58,8 +58,12 @@ const players = ref([])
 const playerStatuses = ref({})
 const matchId = ref(null)
 
+const eligiblePlayers = computed(() =>
+  players.value.filter(p => !p.isAlreadyAttended)
+)
+
 const playersForTable = computed(() =>
-  players.value.map(p => ({
+  eligiblePlayers.value.map(p => ({
     ...p,
     status: playerStatuses.value[p.id] ?? null,
   }))
@@ -98,10 +102,11 @@ function normalizePlayers(payload) {
   if (!Array.isArray(data)) return []
   return data.map(p => ({
     id: p.PlayerID ?? p.playerID ?? p.id ?? p.Id,
-    name: p.FullName ?? p.fullName ?? p.PlayerName ?? p.playerName ?? p.name ?? '',
+    name: p.PlayerName ?? p.playerName ?? p.FullName ?? p.fullName ?? p.name ?? '',
     position: p.PositionName ?? p.positionName ?? p.position ?? '',
     jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
     avatar: p.PlayerImage ?? p.playerImage ?? p.photo ?? p.Photo ?? '',
+    isAlreadyAttended: !!(p.isAlreadyAttended ?? p.IsAlreadyAttended ?? false),
   }))
 }
 
@@ -121,7 +126,7 @@ async function loadCategories() {
 async function loadPlayersByCategory(categoryId) {
   isLoadingPlayers.value = true
   try {
-    const response = await playerService.getPlayersByCategorySimple(categoryId)
+    const response = await playerService.getMatchCallUpPlayersByCategory(categoryId)
     const list = normalizePlayers(response?.data)
     players.value = list
     playerStatuses.value = Object.fromEntries(list.map(p => [p.id, null]))
@@ -161,7 +166,7 @@ async function markAllPresent() {
 
   if (!matchId.value) return
   const playersAttendance = {}
-  for (const p of players.value) {
+  for (const p of eligiblePlayers.value) {
     playersAttendance[p.id] = true
   }
   try {
@@ -183,7 +188,7 @@ async function saveAttendance() {
     return
   }
   const playersAttendance = {}
-  for (const p of players.value) {
+  for (const p of eligiblePlayers.value) {
     playersAttendance[p.id] = playerStatuses.value[p.id] === 'present'
   }
   try {
