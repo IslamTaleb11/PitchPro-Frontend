@@ -496,7 +496,9 @@
     "attendanceSavedTitle": "Attendance Saved",
     "attendanceSavedMsg": "Attendance records have been saved successfully.",
     "attendanceSaveErrorTitle": "Save Failed",
-    "attendanceSaveErrorMsg": "Failed to save attendance records. Please try again."
+    "attendanceSaveErrorMsg": "Failed to save attendance records. Please try again.",
+    "attendanceResetTitle": "Attendance Reset",
+    "attendanceResetMsg": "Attendance records have been reset."
   },
   "medical": {
     "sectionTitle": "Department Telemetry",

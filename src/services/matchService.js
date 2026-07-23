@@ -35,5 +35,11 @@ export const matchService = {
   // POST /api/match-attendance  body: { matchID, playersAttendance: { [playerId]: bool } }
   markAttendance(payload) {
     return api.post('/match-attendance', payload);
+  },
+
+  // Reset attendance for specific players in a match.
+  // POST /api/match-attendance/reset  body: { matchID, playerIDs: [int] }
+  resetAttendance(payload) {
+    return api.post('/match-attendance/reset', payload);
   }
 };

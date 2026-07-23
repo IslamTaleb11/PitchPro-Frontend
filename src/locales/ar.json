@@ -493,7 +493,9 @@
     "attendanceSavedTitle": "تم حفظ الحضور",
     "attendanceSavedMsg": "تم حفظ سجلات الحضور بنجاح.",
     "attendanceSaveErrorTitle": "فشل الحفظ",
-    "attendanceSaveErrorMsg": "فشل حفظ سجلات الحضور. حاول مرة أخرى."
+    "attendanceSaveErrorMsg": "فشل حفظ سجلات الحضور. حاول مرة أخرى.",
+    "attendanceResetTitle": "إعادة تعيين الحضور",
+    "attendanceResetMsg": "تم إعادة تعيين سجلات الحضور."
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",

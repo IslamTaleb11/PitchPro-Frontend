@@ -181,8 +181,22 @@ async function markAllPresent() {
   }
 }
 
-function resetAll() {
-  playerStatuses.value = {}
+async function resetAll() {
+  if (!matchId.value) {
+    showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: t('matchMonitor.noMatchForAttendance'), mode: 'error' })
+    return
+  }
+  const playerIDs = eligiblePlayers.value.map(p => p.id)
+  if (!playerIDs.length) return
+  try {
+    const res = await matchService.resetAttendance({ matchID: matchId.value, playerIDs })
+    playerStatuses.value = {}
+    const msg = res?.data?.message || t('matchMonitor.attendanceResetMsg')
+    showToast({ title: t('matchMonitor.attendanceResetTitle'), message: msg, mode: 'success' })
+  } catch (e) {
+    const msg = e?.response?.data?.message || t('matchMonitor.attendanceSaveErrorMsg')
+    showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: msg, mode: 'error' })
+  }
 }
 
 async function saveAttendance() {
