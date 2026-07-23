@@ -12,6 +12,11 @@ export const playerService = {
     return api.get(`/players/by-category/${categoryId}`);
   },
 
+  // Fetch players by category with simplified response.
+  getPlayersByCategorySimple(categoryId) {
+    return api.get(`/players/by-category-simple/${categoryId}`);
+  },
+
   // Fetch every player in a squad category that currently has no active injury
   // (available for selection). GET /api/players/available/{categoryId}.
   getAvailablePlayersByCategory(categoryId) {
