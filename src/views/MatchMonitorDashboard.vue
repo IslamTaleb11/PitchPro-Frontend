@@ -147,10 +147,9 @@ async function onCategoryChange() {
   if (!selectedCategory.value) return
   isLoadingMatches.value = true
   try {
-    const cat = categories.value.find(c => c.id == selectedCategory.value)
-    const res = await lookupService.getUpcomingSchedule({ pageNumber: 1, pageSize: 50, eventClassification: 'Match', category: cat?.name })
+    const res = await matchService.getIncompleteMatchesByCategory(selectedCategory.value)
     const list = res?.data?.data ?? []
-    matches.value = list.filter(m => m.eventType === 'Match')
+    matches.value = list
   } catch {
     matches.value = []
   } finally {
@@ -167,7 +166,7 @@ function startSession() {
     showToast({ title: t('matchMonitor.selectionRequiredTitle'), message: t('matchMonitor.noMatchForAttendance'), mode: 'error' })
     return
   }
-  matchId.value = selectedMatch.value.eventId
+  matchId.value = selectedMatch.value.id
   startupModalOpen.value = false
   loadPlayersByCategory(selectedCategory.value)
 }
@@ -256,20 +255,20 @@ onMounted(loadCategories)
           <span class="text-[11px] text-on-surface-variant font-bold uppercase tracking-widest">{{ t('matchMonitor.loading') }}</span>
         </div>
         <div v-else-if="matches.length" class="space-y-2 max-h-64 overflow-y-auto no-scrollbar">
-          <div v-for="m in matches" :key="m.eventId"
+          <div v-for="m in matches" :key="m.id"
             @click="selectedMatch = m"
             class="flex items-center gap-4 p-4 rounded border cursor-pointer transition-all"
-            :class="selectedMatch?.eventId === m.eventId ? 'bg-primary-container/20 border-primary/40' : 'bg-surface-container-high border-outline-variant/10 hover:border-outline-variant/30'">
-            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0" :class="selectedMatch?.eventId === m.eventId ? 'border-primary' : 'border-outline-variant/30'">
-              <div v-if="selectedMatch?.eventId === m.eventId" class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+            :class="selectedMatch?.id === m.id ? 'bg-primary-container/20 border-primary/40' : 'bg-surface-container-high border-outline-variant/10 hover:border-outline-variant/30'">
+            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0" :class="selectedMatch?.id === m.id ? 'border-primary' : 'border-outline-variant/30'">
+              <div v-if="selectedMatch?.id === m.id" class="w-2.5 h-2.5 rounded-full bg-primary"></div>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="font-headline font-black text-on-surface text-sm uppercase leading-tight truncate">{{ m.title }}</p>
+              <p class="font-headline font-black text-on-surface text-sm uppercase leading-tight truncate">{{ m.opponentName }}</p>
               <p class="text-[11px] text-on-surface-variant font-medium">
-                {{ new Date(m.eventDate).toLocaleDateString() }}
-                <span v-if="m.startTime"> • {{ m.startTime }}</span>
+                {{ new Date(m.date).toLocaleDateString() }}
+                <span v-if="m.kickoffTime"> • {{ m.kickoffTime }}</span>
               </p>
-              <p v-if="m.location" class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tight truncate">{{ m.location }}</p>
+              <p v-if="m.stadiumName" class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tight truncate">{{ m.stadiumName }}</p>
             </div>
             <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded shrink-0" :class="m.isHome ? 'bg-primary/10 text-primary' : 'bg-surface-container-highest text-on-surface-variant'">{{ m.isHome ? 'HOME' : 'AWAY' }}</span>
           </div>

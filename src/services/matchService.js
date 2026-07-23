@@ -13,10 +13,10 @@ export const matchService = {
     return api.get(`/matches/upcoming/${categoryId}`);
   },
 
-  // Get call-up match info for a category (no 404, returns hasUpcomingMatch).
-  // GET /api/matches/call-up/{categoryId} -> { hasUpcomingMatch, match: { id, opponentName, date, kickoffTime, ... } }
-  getCallUpByCategory(categoryId) {
-    return api.get(`/matches/call-up/${categoryId}`);
+  // Get all non-completed matches for a category.
+  // GET /api/matches/incomplete/{categoryId} -> { data: [ { id, opponentName, date, kickoffTime, isHome, stadiumName, ... } ] }
+  getIncompleteMatchesByCategory(categoryId) {
+    return api.get(`/matches/incomplete/${categoryId}`);
   },
 
   // Enrol one or more players into a match call-up.
