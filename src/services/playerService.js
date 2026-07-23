@@ -12,11 +12,10 @@ export const playerService = {
     return api.get(`/players/by-category/${categoryId}`);
   },
 
-  // Fetch players called up for a match by squad category.
-  // GET /api/players/match-call-up/{categoryId}?matchId={matchId} -> { data: [ { playerID, playerName, playerImage, jerseyNumber, positionName, isAlreadyAttended } ] }
+  // Fetch players called up for a match by squad category & match.
+  // GET /api/players/match-call-up/{categoryId}/{matchID} -> { data: [ { playerID, playerName, playerImage, jerseyNumber, positionName, isAlreadyAttended } ] }
   getMatchCallUpPlayersByCategory(categoryId, matchId) {
-    const params = matchId ? { matchId } : {}
-    return api.get(`/players/match-call-up/${categoryId}`, { params });
+    return api.get(`/players/match-call-up/${categoryId}/${matchId}`);
   },
 
   // Record a new player injury. `payload` must match the backend
