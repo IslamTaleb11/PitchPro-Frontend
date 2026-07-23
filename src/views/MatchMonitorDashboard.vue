@@ -1,33 +1,120 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.vue'
 import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
+import { useUiToast } from '../composables/useUiToast'
+import { lookupService } from '../services/lookupService'
+import { matchService } from '../services/matchService'
+import { playerService } from '../services/playerService'
+
+const { t: $t } = useI18n()
+const { showToast } = useUiToast()
 
 const isSidebarOpen = ref(true)
+const startupModalOpen = ref(true)
+const isLoadingCategories = ref(false)
+const isLoadingPlayers = ref(false)
 
+const categories = ref([])
+const sessionTypes = ref([])
 const selectedCategory = ref('')
 const selectedSessionType = ref('Training Session')
+const selectedMatch = ref('')
+const players = ref([])
 
-const players = ref([
-  { id: 'SIL-0824-A', name: 'L. Silva', position: 'CAM', status: 'present', note: '' },
-  { id: 'RAS-0824-B', name: 'M. Rashford', position: 'ST', status: 'absent', note: 'Medical Leave' },
-  { id: 'DEB-0824-C', name: 'K. De Bruyne', position: 'CAM', status: 'present', note: '' },
-  { id: 'SAK-0824-D', name: 'B. Saka', position: 'RW', status: 'present', note: '' },
-  { id: 'HAA-0824-E', name: 'E. Haaland', position: 'ST', status: 'excused', note: 'Personal' },
-  { id: 'ROD-0824-F', name: 'Rodri', position: 'CDM', status: 'present', note: '' },
+const matchOptions = computed(() => [
+  { id: 'matchday-prep', label: `Matchday Prep` },
+  { id: 'training-session', label: 'Training Session' },
+  { id: 'recovery-gym', label: 'Recovery / Gym' },
+  { id: 'technical-video', label: 'Technical Video' },
 ])
 
-const playerStatuses = ref(
-  Object.fromEntries(players.value.map(p => [p.id, p.status]))
-)
+const playerStatuses = ref({})
 
 const playersForTable = computed(() =>
-  players.value.map(p => ({ ...p, status: playerStatuses.value[p.id] || p.status }))
+  players.value.map(p => ({
+    ...p,
+    status: playerStatuses.value[p.id] || p.status || 'present',
+  }))
 )
 
 const presentCount = computed(() => playersForTable.value.filter(p => p.status === 'present').length)
 const absentCount = computed(() => playersForTable.value.filter(p => p.status === 'absent').length)
 const excusedCount = computed(() => playersForTable.value.filter(p => p.status === 'excused').length)
+
+function normalizeLookupItem(item) {
+  if (!item) return { id: 'Unknown', name: 'Unknown' }
+  if (typeof item === 'string' || typeof item === 'number') return { id: item, name: String(item) }
+  const idCandidates = ['id', 'Id', 'ID', 'value', 'categoryId', 'categoryID']
+  const nameCandidates = ['name', 'Name', 'label', 'title', 'categoryName']
+  let id = null
+  let name = null
+  for (const key of idCandidates) { if (item[key] !== undefined && item[key] !== null) { id = item[key]; break } }
+  for (const key of nameCandidates) { if (item[key] !== undefined && item[key] !== null) { name = item[key]; break } }
+  return { id: id ?? name ?? 'Unknown', name: name ?? String(id ?? 'Unknown') }
+}
+
+function normalizeLookupArray(data) {
+  let array = data
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    array = data.data || data.items || data.result || data.value || data.$values || []
+  }
+  if (!Array.isArray(array)) return []
+  return array.map(normalizeLookupItem).filter(i => i.id !== 'Unknown')
+}
+
+function normalizePlayers(payload) {
+  let data = payload
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    data = data.data ?? data.Data ?? data.$values ?? data.result ?? data.Result ?? []
+  }
+  if (!Array.isArray(data)) return []
+  return data.map(p => ({
+    id: p.PlayerID ?? p.playerID ?? p.id ?? p.Id,
+    name: p.PlayerName ?? p.playerName ?? p.name ?? p.FullName ?? '',
+    position: p.PositionName ?? p.positionName ?? p.position ?? '',
+    jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
+    status: 'present',
+    note: '',
+  }))
+}
+
+async function loadCategories() {
+  isLoadingCategories.value = true
+  try {
+    const response = await lookupService.getCategories()
+    const list = normalizeLookupArray(response?.data)
+    if (list.length) categories.value = list
+  } catch (e) {
+    console.warn('Could not load categories', e)
+  } finally {
+    isLoadingCategories.value = false
+  }
+}
+
+async function loadPlayersByCategory(categoryId) {
+  isLoadingPlayers.value = true
+  try {
+    const response = await playerService.getPlayersByCategory(categoryId)
+    const list = normalizePlayers(response?.data)
+    players.value = list
+    playerStatuses.value = Object.fromEntries(list.map(p => [p.id, 'present']))
+  } catch (e) {
+    showToast({ title: 'Error', message: 'Failed to load players', mode: 'error' })
+  } finally {
+    isLoadingPlayers.value = false
+  }
+}
+
+function startSession() {
+  if (!selectedCategory.value) {
+    showToast({ title: 'Selection Required', message: 'Please select a squad category', mode: 'error' })
+    return
+  }
+  startupModalOpen.value = false
+  loadPlayersByCategory(selectedCategory.value)
+}
 
 function updateStatus(playerId, type) {
   playerStatuses.value = { ...playerStatuses.value, [playerId]: type }
@@ -41,12 +128,46 @@ function markAllPresent() {
 
 function resetAll() {
   const updated = {}
-  players.value.forEach(p => { updated[p.id] = p.status })
+  players.value.forEach(p => { updated[p.id] = 'present' })
   playerStatuses.value = updated
 }
+
+onMounted(loadCategories)
 </script>
 
 <template>
+  <!-- Startup modal -->
+  <div v-if="startupModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+    <div class="w-full max-w-2xl rounded-3xl bg-surface-container-lowest border border-outline-variant/10 p-8 shadow-2xl">
+      <h2 class="font-headline text-2xl font-black uppercase tracking-tighter text-on-surface">Select Squad &amp; Session</h2>
+      <p class="mt-2 text-sm text-on-surface-variant">Choose your squad category and session type before entering the operations terminal.</p>
+      <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="space-y-2">
+          <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">Squad Category</label>
+          <select v-model="selectedCategory" class="w-full bg-surface-container-high border border-outline-variant/20 text-on-surface text-sm rounded px-4 py-3 focus:ring-1 focus:ring-primary-fixed">
+            <option value="" disabled>Select category</option>
+            <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+          </select>
+        </div>
+        <div class="space-y-2">
+          <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">Session Type</label>
+          <select v-model="selectedSessionType" class="w-full bg-surface-container-high border border-outline-variant/20 text-on-surface text-sm rounded px-4 py-3 focus:ring-1 focus:ring-primary-fixed">
+            <option>Training Session</option>
+            <option>Matchday Prep</option>
+            <option>Recovery / Gym</option>
+            <option>Technical Video</option>
+          </select>
+        </div>
+      </div>
+      <div class="mt-8 flex items-center justify-between">
+        <button @click="startSession" :disabled="isLoadingPlayers" class="w-full sm:w-auto bg-primary-container text-on-primary-container text-[11px] font-black uppercase tracking-widest px-6 py-3 rounded shadow-lg hover:brightness-110 transition-all disabled:opacity-50">
+          {{ isLoadingPlayers ? 'Loading...' : 'Start Session' }}
+        </button>
+        <p class="text-[11px] text-on-surface-variant">{{ selectedCategory ? 'Ready' : 'Select a category' }}</p>
+      </div>
+    </div>
+  </div>
+
   <div class="min-h-screen bg-background text-on-surface lg:flex lg:items-stretch">
     <DashboardSidebar active-item="match-monitor" :is-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
     <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
@@ -63,11 +184,9 @@ function resetAll() {
               <div class="flex gap-4">
                 <div class="flex flex-col gap-1.5">
                   <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">Squad Category</label>
-                  <select v-model="selectedCategory" class="bg-surface-container-high border-outline-variant/20 text-on-surface text-xs font-bold rounded px-4 py-2.5 focus:ring-1 focus:ring-primary-fixed min-w-[160px] uppercase tracking-wider">
-                    <option value="">U-16 Elite</option>
-                    <option>Senior A-Team</option>
-                    <option>Reserve Squad</option>
-                    <option>Academy U-14</option>
+                  <select v-model="selectedCategory" @change="loadPlayersByCategory(selectedCategory)" class="bg-surface-container-high border-outline-variant/20 text-on-surface text-xs font-bold rounded px-4 py-2.5 focus:ring-1 focus:ring-primary-fixed min-w-[160px] uppercase tracking-wider">
+                    <option value="" disabled>Select Squad</option>
+                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                   </select>
                 </div>
                 <div class="flex flex-col gap-1.5">
