@@ -485,7 +485,9 @@
     "activeSidelined": "الغائبون النشطون",
     "critical": "{count} حرجة",
     "syncCloudRoster": "مزامنة القائمة السحابية",
-    "finalizeSession": "إنهاء الجلسة"
+    "finalizeSession": "إنهاء الجلسة",
+    "saveAttendance": "حفظ سجلات الحضور",
+    "colJersey": "القميص"
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",

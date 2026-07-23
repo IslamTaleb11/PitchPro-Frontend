@@ -488,7 +488,9 @@
     "activeSidelined": "Active Sidelined",
     "critical": "{count} CRITICAL",
     "syncCloudRoster": "Sync Cloud Roster",
-    "finalizeSession": "Finalize Session"
+    "finalizeSession": "Finalize Session",
+    "saveAttendance": "Save Attendance Records",
+    "colJersey": "Jersey"
   },
   "medical": {
     "sectionTitle": "Department Telemetry",

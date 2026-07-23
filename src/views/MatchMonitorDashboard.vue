@@ -10,6 +10,40 @@ import { playerService } from '../services/playerService'
 const { t } = useI18n()
 const { showToast } = useUiToast()
 
+const POSITION_GROUPS = {
+  'callUp.posGoalkeeper': ['goalkeeper', 'keeper', 'gk'],
+  'callUp.posCentreBack': ['centre back', 'center back', 'cb', 'lcb', 'rcb'],
+  'callUp.posLeftBack': ['left back', 'lb'],
+  'callUp.posRightBack': ['right back', 'rb'],
+  'callUp.posSweeper': ['sweeper', 'sw', 'libero'],
+  'callUp.posLeftWingBack': ['left wing back', 'left wing-back', 'lwb'],
+  'callUp.posRightWingBack': ['right wing back', 'right wing-back', 'rwb'],
+  'callUp.posFullBack': ['full back', 'fb'],
+  'callUp.posDefender': ['defender', 'defence', 'defense', 'back', 'df'],
+  'callUp.posDefensiveMidfielder': ['defensive midfielder', 'defensive midfield', 'dm', 'cdm'],
+  'callUp.posCentralMidfielder': ['central midfielder', 'centre midfielder', 'cm'],
+  'callUp.posAttackingMidfielder': ['attacking midfielder', 'attacking midfield', 'am', 'cam'],
+  'callUp.posLeftMidfielder': ['left midfielder', 'lm'],
+  'callUp.posRightMidfielder': ['right midfielder', 'rm'],
+  'callUp.posWideMidfielder': ['wide midfielder', 'wm'],
+  'callUp.posMidfielder': ['midfielder', 'midfield', 'mf'],
+  'callUp.posStriker': ['striker', 'st', 'cf'],
+  'callUp.posCentreForward': ['centre forward', 'center forward'],
+  'callUp.posSecondStriker': ['second striker', 'ss'],
+  'callUp.posLeftWinger': ['left winger', 'left wing', 'lw'],
+  'callUp.posRightWinger': ['right winger', 'right wing', 'rw'],
+  'callUp.posForward': ['forward', 'fw', 'attacker'],
+}
+const POSITION_KEYS = Object.fromEntries(
+  Object.entries(POSITION_GROUPS).flatMap(([key, names]) => names.map((n) => [n, key]))
+)
+function localizePosition(raw) {
+  const name = String(raw ?? '').trim().toLowerCase()
+  if (!name) return ''
+  const key = POSITION_KEYS[name]
+  return key ? t(key) : raw
+}
+
 const isSidebarOpen = ref(true)
 const startupModalOpen = ref(true)
 const isLoadingCategories = ref(false)
@@ -65,8 +99,8 @@ function normalizePlayers(payload) {
     name: p.FullName ?? p.fullName ?? p.PlayerName ?? p.playerName ?? p.name ?? '',
     position: p.PositionName ?? p.positionName ?? p.position ?? '',
     jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
+    avatar: p.PlayerImage ?? p.playerImage ?? p.photo ?? p.Photo ?? '',
     status: 'present',
-    note: '',
   }))
 }
 
@@ -187,7 +221,7 @@ onMounted(loadCategories)
                 <span class="material-symbols-outlined text-sm">done_all</span> {{ t('matchMonitor.markAllPresent') }}
               </button>
               <button class="bg-primary-container text-on-primary-container text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button">
-                <span class="material-symbols-outlined text-sm">task_alt</span> {{ t('matchMonitor.finalizeMatch') }}
+                <span class="material-symbols-outlined text-sm">save</span> {{ t('matchMonitor.saveAttendance') }}
               </button>
               <button class="text-[11px] font-black text-on-surface-variant hover:text-on-surface px-4 py-2.5 rounded transition-all flex items-center gap-2 uppercase tracking-widest border border-outline-variant/20 bg-surface-container-high" type="button" @click="resetAll">
                 <span class="material-symbols-outlined text-sm">refresh</span> {{ t('matchMonitor.resetAll') }}
@@ -203,30 +237,32 @@ onMounted(loadCategories)
             <table class="w-full text-left border-separate border-spacing-y-2">
               <thead>
                 <tr class="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">
-                  <th class="px-4 pb-2">{{ t('matchMonitor.playerProfile') }}</th>
+                  <th class="px-4 pb-2" colspan="2">{{ t('matchMonitor.playerProfile') }}</th>
+                  <th class="px-4 pb-2 text-center">{{ t('matchMonitor.colJersey') }}</th>
                   <th class="px-4 pb-2">{{ t('matchMonitor.pos') }}</th>
                   <th class="px-4 pb-2 text-center">{{ t('matchMonitor.operationalStatus') }}</th>
-                  <th class="px-4 pb-2 text-right">{{ t('matchMonitor.activityNotes') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="player in playersForTable" :key="player.id" class="bg-surface-container-low/40 hover:bg-surface-container-low transition-colors group">
-                  <td class="px-4 py-3 border-y border-l border-outline-variant/5">
-                    <div class="flex items-center gap-4">
-                      <div class="w-12 h-12 rounded border-2 border-primary/20 p-0.5 relative">
-                        <div class="w-full h-full bg-surface-container-highest rounded-sm"></div>
-                        <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-surface" :class="player.status === 'present' ? 'bg-primary' : 'bg-error'"></div>
-                      </div>
-                      <div>
-                        <p class="font-headline font-bold text-on-surface text-base uppercase leading-tight">{{ player.name }}</p>
-                        <p class="text-[10px] text-on-surface-variant font-mono tracking-tighter">REF: {{ player.id }}</p>
-                      </div>
+                  <td class="px-4 py-3 border-y border-l border-outline-variant/5 w-14">
+                    <div class="w-12 h-12 rounded border-2 p-0.5 relative" :class="player.status === 'present' ? 'border-primary/20' : 'border-error/20'">
+                      <img v-if="player.avatar" :src="player.avatar" :alt="player.name" class="w-full h-full object-cover rounded-sm">
+                      <div v-else class="w-full h-full bg-surface-container-highest rounded-sm"></div>
+                      <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-surface" :class="player.status === 'present' ? 'bg-primary' : 'bg-error'"></div>
                     </div>
                   </td>
                   <td class="px-4 py-3 border-y border-outline-variant/5">
-                    <span class="bg-surface-container-highest px-2 py-1 rounded text-[10px] font-mono font-bold text-on-surface-variant border border-outline-variant/20 uppercase tracking-tighter">{{ player.position }}</span>
+                    <p class="font-headline font-bold text-on-surface text-sm uppercase leading-tight">{{ player.name }}</p>
+                    <p class="text-[10px] text-on-surface-variant font-mono tracking-tighter">REF: {{ player.id }}</p>
+                  </td>
+                  <td class="px-4 py-3 border-y border-outline-variant/5 text-center">
+                    <span class="font-mono font-bold text-on-surface text-base">{{ player.jersey }}</span>
                   </td>
                   <td class="px-4 py-3 border-y border-outline-variant/5">
+                    <span class="bg-surface-container-highest px-3 py-1.5 rounded text-[11px] font-bold text-on-surface-variant border border-outline-variant/20 uppercase tracking-tighter">{{ localizePosition(player.position) }}</span>
+                  </td>
+                  <td class="px-4 py-3 border-y border-r border-outline-variant/5">
                     <div class="flex justify-center gap-2">
                       <button type="button"
                         :class="[
@@ -241,9 +277,6 @@ onMounted(loadCategories)
                         ]"
                         @click="updateStatus(player.id, 'absent')">{{ t('matchMonitor.absent') }}</button>
                     </div>
-                  </td>
-                  <td class="px-4 py-3 border-y border-r border-outline-variant/5 text-right">
-                    <input class="bg-transparent border-b border-outline-variant/20 text-on-surface-variant text-[11px] py-1 text-right focus:border-primary outline-none transition-all w-full max-w-[200px] placeholder:italic placeholder:opacity-30" :placeholder="t('matchMonitor.addNote')" type="text">
                   </td>
                 </tr>
               </tbody>
