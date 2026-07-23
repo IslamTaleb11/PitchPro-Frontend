@@ -61,7 +61,7 @@ const matchId = ref(null)
 const playersForTable = computed(() =>
   players.value.map(p => ({
     ...p,
-    status: playerStatuses.value[p.id] || p.status || 'present',
+    status: playerStatuses.value[p.id] ?? null,
   }))
 )
 
@@ -102,7 +102,6 @@ function normalizePlayers(payload) {
     position: p.PositionName ?? p.positionName ?? p.position ?? '',
     jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
     avatar: p.PlayerImage ?? p.playerImage ?? p.photo ?? p.Photo ?? '',
-    status: 'present',
   }))
 }
 
@@ -125,7 +124,7 @@ async function loadPlayersByCategory(categoryId) {
     const response = await playerService.getPlayersByCategorySimple(categoryId)
     const list = normalizePlayers(response?.data)
     players.value = list
-    playerStatuses.value = Object.fromEntries(list.map(p => [p.id, 'present']))
+    playerStatuses.value = Object.fromEntries(list.map(p => [p.id, null]))
 
     const matchRes = await matchService.getUpcomingMatch(categoryId)
     const match = matchRes?.data?.data ?? matchRes?.data
@@ -175,9 +174,7 @@ async function markAllPresent() {
 }
 
 function resetAll() {
-  const updated = {}
-  players.value.forEach(p => { updated[p.id] = 'present' })
-  playerStatuses.value = updated
+  playerStatuses.value = {}
 }
 
 async function saveAttendance() {
@@ -288,10 +285,10 @@ onMounted(loadCategories)
               <tbody>
                 <tr v-for="player in playersForTable" :key="player.id" class="bg-surface-container-low/40 hover:bg-surface-container-low transition-colors group">
                   <td class="px-4 py-3 border-y border-l border-outline-variant/5 w-14">
-                    <div class="w-12 h-12 rounded border-2 p-0.5 relative" :class="player.status === 'present' ? 'border-primary/20' : 'border-error/20'">
+                    <div class="w-12 h-12 rounded border-2 p-0.5 relative" :class="player.status === 'present' ? 'border-primary/20' : player.status === 'absent' ? 'border-error/20' : 'border-outline-variant/10'">
                       <img v-if="player.avatar" :src="player.avatar" :alt="player.name" class="w-full h-full object-cover rounded-sm">
                       <div v-else class="w-full h-full bg-surface-container-highest rounded-sm"></div>
-                      <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-surface" :class="player.status === 'present' ? 'bg-primary' : 'bg-error'"></div>
+                      <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-surface" :class="player.status === 'present' ? 'bg-primary' : player.status === 'absent' ? 'bg-error' : 'bg-surface-container-highest'"></div>
                     </div>
                   </td>
                   <td class="px-4 py-3 border-y border-outline-variant/5">
@@ -308,14 +305,14 @@ onMounted(loadCategories)
                     <div class="flex justify-center gap-2">
                       <button type="button"
                         :class="[
-                          'status-btn flex-1 min-w-[100px] py-2.5 rounded border border-outline-variant/20 text-[11px] font-black uppercase tracking-widest',
-                          player.status === 'present' ? 'active-pill-present' : 'hover:border-primary/40'
+                          'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
+                          player.status === 'present' ? 'active-pill-present' : 'border-outline-variant/20 hover:border-primary/40'
                         ]"
                         @click="updateStatus(player.id, 'present')">{{ t('matchMonitor.present') }}</button>
                       <button type="button"
                         :class="[
-                          'status-btn flex-1 min-w-[100px] py-2.5 rounded border border-outline-variant/20 text-[11px] font-black uppercase tracking-widest',
-                          player.status === 'absent' ? 'active-pill-absent' : 'hover:border-error/40'
+                          'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
+                          player.status === 'absent' ? 'active-pill-absent' : 'border-outline-variant/20 hover:border-error/40'
                         ]"
                         @click="updateStatus(player.id, 'absent')">{{ t('matchMonitor.absent') }}</button>
                     </div>
