@@ -487,7 +487,12 @@
     "syncCloudRoster": "مزامنة القائمة السحابية",
     "finalizeSession": "إنهاء الجلسة",
     "saveAttendance": "حفظ سجلات الحضور",
-    "colJersey": "القميص"
+    "colJersey": "القميص",
+    "noMatchForAttendance": "لا توجد مباراة قادمة لهذه الفئة. يرجى التأكد من جدولة مباراة.",
+    "attendanceSavedTitle": "تم حفظ الحضور",
+    "attendanceSavedMsg": "تم حفظ سجلات الحضور بنجاح.",
+    "attendanceSaveErrorTitle": "فشل الحفظ",
+    "attendanceSaveErrorMsg": "فشل حفظ سجلات الحضور. حاول مرة أخرى."
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",

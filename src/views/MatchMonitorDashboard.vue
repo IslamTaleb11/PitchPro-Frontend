@@ -6,6 +6,7 @@ import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue
 import { useUiToast } from '../composables/useUiToast'
 import { lookupService } from '../services/lookupService'
 import { playerService } from '../services/playerService'
+import { matchService } from '../services/matchService'
 
 const { t } = useI18n()
 const { showToast } = useUiToast()
@@ -55,6 +56,7 @@ const selectedSessionType = ref('Training Session')
 const players = ref([])
 
 const playerStatuses = ref({})
+const matchId = ref(null)
 
 const playersForTable = computed(() =>
   players.value.map(p => ({
@@ -124,7 +126,16 @@ async function loadPlayersByCategory(categoryId) {
     const list = normalizePlayers(response?.data)
     players.value = list
     playerStatuses.value = Object.fromEntries(list.map(p => [p.id, 'present']))
+
+    const matchRes = await matchService.getUpcomingMatch(categoryId)
+    const match = matchRes?.data?.data ?? matchRes?.data
+    if (match?.matchID ?? match?.id) {
+      matchId.value = match.matchID ?? match.id
+    } else {
+      matchId.value = null
+    }
   } catch (e) {
+    matchId.value = null
     showToast({ title: t('matchMonitor.loadErrorTitle'), message: t('matchMonitor.loadErrorMsg'), mode: 'error' })
   } finally {
     isLoadingPlayers.value = false
@@ -144,16 +155,47 @@ function updateStatus(playerId, type) {
   playerStatuses.value = { ...playerStatuses.value, [playerId]: type }
 }
 
-function markAllPresent() {
+async function markAllPresent() {
   const updated = { ...playerStatuses.value }
   Object.keys(updated).forEach(id => { updated[id] = 'present' })
   playerStatuses.value = updated
+
+  if (!matchId.value) return
+  const playersAttendance = {}
+  for (const p of players.value) {
+    playersAttendance[p.id] = true
+  }
+  try {
+    await matchService.markAttendance({ matchID: matchId.value, playersAttendance })
+    showToast({ title: t('matchMonitor.attendanceSavedTitle'), message: t('matchMonitor.attendanceSavedMsg'), mode: 'success' })
+  } catch (e) {
+    const msg = e?.response?.data?.message || t('matchMonitor.attendanceSaveErrorMsg')
+    showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: msg, mode: 'error' })
+  }
 }
 
 function resetAll() {
   const updated = {}
   players.value.forEach(p => { updated[p.id] = 'present' })
   playerStatuses.value = updated
+}
+
+async function saveAttendance() {
+  if (!matchId.value) {
+    showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: t('matchMonitor.noMatchForAttendance'), mode: 'error' })
+    return
+  }
+  const playersAttendance = {}
+  for (const p of players.value) {
+    playersAttendance[p.id] = playerStatuses.value[p.id] === 'present'
+  }
+  try {
+    await matchService.markAttendance({ matchID: matchId.value, playersAttendance })
+    showToast({ title: t('matchMonitor.attendanceSavedTitle'), message: t('matchMonitor.attendanceSavedMsg'), mode: 'success' })
+  } catch (e) {
+    const msg = e?.response?.data?.message || t('matchMonitor.attendanceSaveErrorMsg')
+    showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: msg, mode: 'error' })
+  }
 }
 
 onMounted(loadCategories)
@@ -220,7 +262,7 @@ onMounted(loadCategories)
               <button class="bg-primary-container text-on-primary-container text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="markAllPresent">
                 <span class="material-symbols-outlined text-sm">done_all</span> {{ t('matchMonitor.markAllPresent') }}
               </button>
-              <button class="bg-primary-container text-on-primary-container text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button">
+              <button class="bg-primary-container text-on-primary-container text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="saveAttendance">
                 <span class="material-symbols-outlined text-sm">save</span> {{ t('matchMonitor.saveAttendance') }}
               </button>
               <button class="text-[11px] font-black text-on-surface-variant hover:text-on-surface px-4 py-2.5 rounded transition-all flex items-center gap-2 uppercase tracking-widest border border-outline-variant/20 bg-surface-container-high" type="button" @click="resetAll">

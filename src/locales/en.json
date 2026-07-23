@@ -490,7 +490,12 @@
     "syncCloudRoster": "Sync Cloud Roster",
     "finalizeSession": "Finalize Session",
     "saveAttendance": "Save Attendance Records",
-    "colJersey": "Jersey"
+    "colJersey": "Jersey",
+    "noMatchForAttendance": "No upcoming match found for this category. Please ensure a match is scheduled.",
+    "attendanceSavedTitle": "Attendance Saved",
+    "attendanceSavedMsg": "Attendance records have been saved successfully.",
+    "attendanceSaveErrorTitle": "Save Failed",
+    "attendanceSaveErrorMsg": "Failed to save attendance records. Please try again."
   },
   "medical": {
     "sectionTitle": "Department Telemetry",

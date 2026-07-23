@@ -29,5 +29,11 @@ export const matchService = {
   // DELETE /api/match-callup-players/{matchId} -> { matchId, removed, message }
   resetCallUp(matchId) {
     return api.delete(`/match-callup-players/${matchId}`);
+  },
+
+  // Mark attendance for players in a match.
+  // POST /api/match-attendance  body: { matchID, playersAttendance: { [playerId]: bool } }
+  markAttendance(payload) {
+    return api.post('/match-attendance', payload);
   }
 };
