@@ -27,5 +27,11 @@ export const lookupService = {
 
   getSessionTypes() {
     return api.get('/lookups/sessiontypes');
+  },
+
+  // Get upcoming schedule (matches & training).
+  // GET /api/lookups/upcoming-schedule?pageNumber=1&pageSize=50&eventClassification=Match&category=...
+  getUpcomingSchedule(params) {
+    return api.get('/lookups/upcoming-schedule', { params });
   }
 };

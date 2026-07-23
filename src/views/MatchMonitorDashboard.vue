@@ -52,8 +52,9 @@ const isLoadingPlayers = ref(false)
 
 const categories = ref([])
 const selectedCategory = ref('')
+const matches = ref([])
 const selectedMatch = ref(null)
-const isLoadingMatch = ref(false)
+const isLoadingMatches = ref(false)
 const selectedSessionType = ref('Training Session')
 const players = ref([])
 
@@ -142,20 +143,18 @@ async function loadPlayersByCategory(categoryId) {
 
 async function onCategoryChange() {
   selectedMatch.value = null
+  matches.value = []
   if (!selectedCategory.value) return
-  isLoadingMatch.value = true
+  isLoadingMatches.value = true
   try {
-    const res = await matchService.getCallUpByCategory(selectedCategory.value)
-    const data = res?.data
-    if (data?.hasUpcomingMatch && data?.match) {
-      selectedMatch.value = data.match
-    } else {
-      selectedMatch.value = null
-    }
+    const cat = categories.value.find(c => c.id == selectedCategory.value)
+    const res = await lookupService.getUpcomingSchedule({ pageNumber: 1, pageSize: 50, eventClassification: 'Match', category: cat?.name })
+    const list = res?.data?.data ?? []
+    matches.value = list.filter(m => m.eventType === 'Match')
   } catch {
-    selectedMatch.value = null
+    matches.value = []
   } finally {
-    isLoadingMatch.value = false
+    isLoadingMatches.value = false
   }
 }
 
@@ -168,7 +167,7 @@ function startSession() {
     showToast({ title: t('matchMonitor.selectionRequiredTitle'), message: t('matchMonitor.noMatchForAttendance'), mode: 'error' })
     return
   }
-  matchId.value = selectedMatch.value.id
+  matchId.value = selectedMatch.value.eventId
   startupModalOpen.value = false
   loadPlayersByCategory(selectedCategory.value)
 }
@@ -252,21 +251,27 @@ onMounted(loadCategories)
       </div>
 
       <div v-if="selectedCategory" class="mt-6">
-        <div v-if="isLoadingMatch" class="flex items-center justify-center py-6">
+        <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black mb-3">{{ t('matchMonitor.upcomingFixture') }}</p>
+        <div v-if="isLoadingMatches" class="flex items-center justify-center py-6">
           <span class="text-[11px] text-on-surface-variant font-bold uppercase tracking-widest">{{ t('matchMonitor.loading') }}</span>
         </div>
-        <div v-else-if="selectedMatch" class="bg-surface-container-high rounded border border-outline-variant/10 p-5">
-          <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black mb-3">{{ t('matchMonitor.upcomingFixture') }}</p>
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="font-headline font-black text-on-surface text-base uppercase leading-tight">{{ selectedMatch.opponentName }}</p>
-              <p class="text-[11px] text-on-surface-variant font-medium mt-1">
-                {{ selectedMatch.date ? new Date(selectedMatch.date).toLocaleDateString() : '' }}
-                {{ selectedMatch.kickoffTime ? `• ${selectedMatch.kickoffTime}` : '' }}
-              </p>
-              <p v-if="selectedMatch.stadiumName" class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tight mt-0.5">{{ selectedMatch.stadiumName }}</p>
+        <div v-else-if="matches.length" class="space-y-2 max-h-64 overflow-y-auto no-scrollbar">
+          <div v-for="m in matches" :key="m.eventId"
+            @click="selectedMatch = m"
+            class="flex items-center gap-4 p-4 rounded border cursor-pointer transition-all"
+            :class="selectedMatch?.eventId === m.eventId ? 'bg-primary-container/20 border-primary/40' : 'bg-surface-container-high border-outline-variant/10 hover:border-outline-variant/30'">
+            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0" :class="selectedMatch?.eventId === m.eventId ? 'border-primary' : 'border-outline-variant/30'">
+              <div v-if="selectedMatch?.eventId === m.eventId" class="w-2.5 h-2.5 rounded-full bg-primary"></div>
             </div>
-            <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded" :class="selectedMatch.isHome ? 'bg-primary/10 text-primary' : 'bg-surface-container-highest text-on-surface-variant'">{{ selectedMatch.isHome ? 'HOME' : 'AWAY' }}</span>
+            <div class="flex-1 min-w-0">
+              <p class="font-headline font-black text-on-surface text-sm uppercase leading-tight truncate">{{ m.title }}</p>
+              <p class="text-[11px] text-on-surface-variant font-medium">
+                {{ new Date(m.eventDate).toLocaleDateString() }}
+                <span v-if="m.startTime"> • {{ m.startTime }}</span>
+              </p>
+              <p v-if="m.location" class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tight truncate">{{ m.location }}</p>
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded shrink-0" :class="m.isHome ? 'bg-primary/10 text-primary' : 'bg-surface-container-highest text-on-surface-variant'">{{ m.isHome ? 'HOME' : 'AWAY' }}</span>
           </div>
         </div>
         <div v-else class="bg-surface-container-high rounded border border-outline-variant/10 p-5 text-center">
@@ -278,7 +283,7 @@ onMounted(loadCategories)
         <button @click="startSession" :disabled="isLoadingPlayers || !selectedMatch" class="w-full sm:w-auto bg-primary-container text-on-primary-container text-[11px] font-black uppercase tracking-widest px-6 py-3 rounded shadow-lg hover:brightness-110 transition-all disabled:opacity-50">
           {{ isLoadingPlayers ? t('matchMonitor.loading') : t('matchMonitor.startSession') }}
         </button>
-        <p class="text-[11px] text-on-surface-variant">{{ selectedMatch ? t('matchMonitor.ready') : (selectedCategory ? t('matchMonitor.noMatch') : t('matchMonitor.selectRequired')) }}</p>
+        <p class="text-[11px] text-on-surface-variant">{{ selectedMatch ? t('matchMonitor.ready') : (selectedCategory ? t('matchMonitor.selectMatch') : t('matchMonitor.selectRequired')) }}</p>
       </div>
     </div>
   </div>

@@ -459,6 +459,7 @@
     "startSession": "Start Session",
     "ready": "Ready",
     "selectRequired": "Select a category",
+    "selectMatch": "Select a match",
     "noMatch": "No match available",
     "selectionRequiredTitle": "Selection Required",
     "selectionRequiredMsg": "Please select a squad category",
