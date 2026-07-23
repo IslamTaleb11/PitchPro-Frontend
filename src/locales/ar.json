@@ -447,7 +447,15 @@
     "matchLoadedTitle": "تم تحميل المباراة",
     "matchLoadedSubtitle": "أصبحت المباراة القادمة جاهزة. تابع لفتح المراقبة التكتيكية.",
     "continue": "متابعة المراقبة",
-    "backToLoad": "رجوع"
+    "backToLoad": "رجوع",
+    "selectSquadTitle": "اختر الفريق والجلسة",
+    "selectSquadDesc": "اختر فئة الفريق قبل الدخول إلى محطة العمليات.",
+    "squadCategory": "فئة الفريق",
+    "selectCategory": "اختر الفئة",
+    "sessionType": "نوع الجلسة",
+    "startSession": "بدء الجلسة",
+    "ready": "جاهز",
+    "selectRequired": "اختر فئة"
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",

@@ -5,10 +5,9 @@ import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.
 import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
 import { useUiToast } from '../composables/useUiToast'
 import { lookupService } from '../services/lookupService'
-import { matchService } from '../services/matchService'
 import { playerService } from '../services/playerService'
 
-const { t: $t } = useI18n()
+const { t } = useI18n()
 const { showToast } = useUiToast()
 
 const isSidebarOpen = ref(true)
@@ -138,32 +137,21 @@ onMounted(loadCategories)
 <template>
   <!-- Startup modal -->
   <div v-if="startupModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-    <div class="w-full max-w-2xl rounded-3xl bg-surface-container-lowest border border-outline-variant/10 p-8 shadow-2xl">
-      <h2 class="font-headline text-2xl font-black uppercase tracking-tighter text-on-surface">Select Squad &amp; Session</h2>
-      <p class="mt-2 text-sm text-on-surface-variant">Choose your squad category and session type before entering the operations terminal.</p>
-      <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="space-y-2">
-          <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">Squad Category</label>
-          <select v-model="selectedCategory" class="w-full bg-surface-container-high border border-outline-variant/20 text-on-surface text-sm rounded px-4 py-3 focus:ring-1 focus:ring-primary-fixed">
-            <option value="" disabled>Select category</option>
-            <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-          </select>
-        </div>
-        <div class="space-y-2">
-          <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">Session Type</label>
-          <select v-model="selectedSessionType" class="w-full bg-surface-container-high border border-outline-variant/20 text-on-surface text-sm rounded px-4 py-3 focus:ring-1 focus:ring-primary-fixed">
-            <option>Training Session</option>
-            <option>Matchday Prep</option>
-            <option>Recovery / Gym</option>
-            <option>Technical Video</option>
-          </select>
-        </div>
+    <div class="w-full max-w-lg rounded-3xl bg-surface-container-lowest border border-outline-variant/10 p-8 shadow-2xl">
+      <h2 class="font-headline text-2xl font-black uppercase tracking-tighter text-on-surface">{{ t('matchMonitor.selectSquadTitle') }}</h2>
+      <p class="mt-2 text-sm text-on-surface-variant">{{ t('matchMonitor.selectSquadDesc') }}</p>
+      <div class="mt-8 space-y-2">
+        <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">{{ t('matchMonitor.squadCategory') }}</label>
+        <select v-model="selectedCategory" class="w-full bg-surface-container-high border border-outline-variant/20 text-on-surface text-sm rounded px-4 py-3 focus:ring-1 focus:ring-primary-fixed">
+          <option value="" disabled>{{ t('matchMonitor.selectCategory') }}</option>
+          <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+        </select>
       </div>
       <div class="mt-8 flex items-center justify-between">
         <button @click="startSession" :disabled="isLoadingPlayers" class="w-full sm:w-auto bg-primary-container text-on-primary-container text-[11px] font-black uppercase tracking-widest px-6 py-3 rounded shadow-lg hover:brightness-110 transition-all disabled:opacity-50">
-          {{ isLoadingPlayers ? 'Loading...' : 'Start Session' }}
+          {{ isLoadingPlayers ? t('matchMonitor.loading') : t('matchMonitor.startSession') }}
         </button>
-        <p class="text-[11px] text-on-surface-variant">{{ selectedCategory ? 'Ready' : 'Select a category' }}</p>
+        <p class="text-[11px] text-on-surface-variant">{{ selectedCategory ? t('matchMonitor.ready') : t('matchMonitor.selectRequired') }}</p>
       </div>
     </div>
   </div>

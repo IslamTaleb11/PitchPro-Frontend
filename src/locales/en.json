@@ -451,7 +451,14 @@
     "backToLoad": "Back",
     "noCategorySelected": "No category selected",
     "selectedCategoryLabel": "Selected Category",
-    "playersLoadedLabel": "Players Loaded"
+    "playersLoadedLabel": "Players Loaded",
+    "selectSquadTitle": "Select Squad & Session",
+    "selectSquadDesc": "Choose your squad category before entering the operations terminal.",
+    "squadCategory": "Squad Category",
+    "sessionType": "Session Type",
+    "startSession": "Start Session",
+    "ready": "Ready",
+    "selectRequired": "Select a category"
   },
   "medical": {
     "sectionTitle": "Department Telemetry",
