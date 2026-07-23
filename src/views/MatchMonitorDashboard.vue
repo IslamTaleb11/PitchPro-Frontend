@@ -130,7 +130,7 @@ async function loadCategories() {
 async function loadPlayersByCategory(categoryId) {
   isLoadingPlayers.value = true
   try {
-    const response = await playerService.getMatchCallUpPlayersByCategory(categoryId)
+    const response = await playerService.getMatchCallUpPlayersByCategory(categoryId, matchId.value)
     const list = normalizePlayers(response?.data)
     players.value = list
     playerStatuses.value = Object.fromEntries(list.map(p => [p.id, null]))
@@ -254,7 +254,7 @@ onMounted(loadCategories)
         <div v-if="isLoadingMatches" class="flex items-center justify-center py-6">
           <span class="text-[11px] text-on-surface-variant font-bold uppercase tracking-widest">{{ t('matchMonitor.loading') }}</span>
         </div>
-        <div v-else-if="matches.length" class="space-y-2 max-h-64 overflow-y-auto no-scrollbar">
+        <div v-else-if="matches.length" class="space-y-2 max-h-64 overflow-y-auto matches-scroll">
           <div v-for="m in matches" :key="m.id"
             @click="selectedMatch = m"
             class="flex items-center gap-4 p-4 rounded border cursor-pointer transition-all"
@@ -505,6 +505,9 @@ onMounted(loadCategories)
 .active-pill-present { background-color: #00ff41 !important; color: #000000 !important; font-weight: 800; border-color: #00ff41 !important; }
 .active-pill-absent { background-color: #93000a !important; color: #ffdad6 !important; font-weight: 800; border-color: #93000a !important; }
 .active-pill-excused { background-color: #ffd6a1 !important; color: #452b00 !important; font-weight: 800; border-color: #ffd6a1 !important; }
+.matches-scroll::-webkit-scrollbar { width: 4px; }
+.matches-scroll::-webkit-scrollbar-track { background: transparent; }
+.matches-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
