@@ -8,7 +8,7 @@ import SubscriptionDashboard from '../views/SubscriptionDashboard.vue'
 import PaymentSuccess from '../views/PaymentSuccess.vue'
 import PaymentFailure from '../views/PaymentFailure.vue'
 import ComingSoon from '../views/ComingSoon.vue'
-import { getAuthToken } from '../services/axiosConfig'
+import { getAuthToken, getRefreshToken, refreshAuthToken, isAccessTokenExpired } from '../services/axiosConfig'
 
 const routes = [
   {
@@ -120,15 +120,45 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to) => {
-  const isLoggedIn = Boolean(getAuthToken())
+router.beforeEach(async (to) => {
   const authPages = ['Login', 'ClubRegistration', 'ClubPresidentRegistration']
 
-  if (to.meta.requiresAuth && !isLoggedIn) {
-    return { name: 'Login' }
+  if (to.meta.requiresAuth) {
+    const token = getAuthToken()
+    const refreshTokenValue = getRefreshToken()
+
+    if (token && refreshTokenValue && isAccessTokenExpired(token)) {
+      try {
+        await refreshAuthToken()
+        if (getAuthToken()) {
+          return true
+        }
+      } catch {
+        return { name: 'Login' }
+      }
+      return { name: 'Login' }
+    }
+
+    if (!token && refreshTokenValue) {
+      try {
+        await refreshAuthToken()
+        if (getAuthToken()) {
+          return true
+        }
+      } catch {
+        return { name: 'Login' }
+      }
+      return { name: 'Login' }
+    }
+
+    if (!token) {
+      return { name: 'Login' }
+    }
+
+    return true
   }
 
-  if (isLoggedIn && authPages.includes(to.name)) {
+  if (getAuthToken() && authPages.includes(to.name)) {
     return { name: 'StaffManagementDashboard' }
   }
 
