@@ -407,7 +407,9 @@
     "resetSuccessTitle": "Call-Up Reset",
     "resetSuccessMessage": "Removed {count} players from the match call-up.",
     "resetFailedTitle": "Reset Failed",
-    "resetFailedMessage": "Could not reset the match call-up. Please try again."
+    "resetFailedMessage": "Could not reset the match call-up. Please try again.",
+    "resetWarningAttendance": "Players marked as attended for this match will be reset as if they never attended.",
+    "resetWarningEvents": "All match events linked to this match (goals, assists, cards, substitutions, etc.) will be permanently deleted."
   },
   "matchMonitor": {
     "sectionTitle": "MATCH MONITOR",
