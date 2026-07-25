@@ -64,7 +64,7 @@ const showResetConfirm = ref(false)
 const showMarkAllConfirm = ref(false)
 const highlightedRow = ref(null)
 
-const eligiblePlayers = computed(() =>
+const pendingPlayers = computed(() =>
   players.value.filter(p => playerStatuses.value[p.id] !== undefined)
 )
 
@@ -215,7 +215,7 @@ function markAllPresent() {
 async function confirmMarkAllPresent() {
   showMarkAllConfirm.value = false
   const playersAttendance = {}
-  for (const p of eligiblePlayers.value) {
+  for (const p of pendingPlayers.value) {
     playersAttendance[p.id] = true
   }
   try {
@@ -267,7 +267,7 @@ async function saveAttendance() {
     return
   }
   const playersAttendance = {}
-  for (const p of eligiblePlayers.value) {
+  for (const p of pendingPlayers.value) {
     playersAttendance[p.id] = playerStatuses.value[p.id] === 'present'
   }
   try {
@@ -507,7 +507,7 @@ onMounted(loadCategories)
           </div>
           <h2 class="font-headline text-lg font-black uppercase tracking-tight text-on-surface">{{ t('matchMonitor.markAllPresentConfirmTitle') }}</h2>
           <p class="mt-3 text-sm text-on-surface-variant">
-            {{ t('matchMonitor.markAllPresentConfirmMessage', { count: eligiblePlayers.length }) }}
+            {{ t('matchMonitor.markAllPresentConfirmMessage', { count: pendingPlayers.length }) }}
           </p>
         </div>
         <div class="flex gap-3 border-t border-outline-variant/10 p-4">
