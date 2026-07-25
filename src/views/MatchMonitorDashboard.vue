@@ -456,21 +456,21 @@ onMounted(loadCategories)
                     <span class="bg-surface-container-highest px-3 py-1.5 rounded text-[11px] font-bold text-on-surface-variant border border-outline-variant/20 uppercase tracking-tighter">{{ localizePosition(player.position) }}</span>
                   </td>
                    <td class="px-4 py-3 border-y border-r border-outline-variant/5">
-                      <div v-if="player.isAlreadyAttended" class="flex justify-center gap-2">
-                        <button type="button"
-                          :class="[
-                            'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
-                            player.recordedStatus === 'present' ? 'active-pill-present' : 'border-outline-variant/20 hover:border-primary/40'
-                          ]"
-                          disabled>{{ t('matchMonitor.present') }}</button>
-                        <button type="button"
-                          :class="[
-                            'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
-                            player.recordedStatus === 'absent' ? 'active-pill-absent' : 'border-outline-variant/20 hover:border-error/40'
-                          ]"
-                          disabled>{{ t('matchMonitor.absent') }}</button>
-                      </div>
-                      <div v-else class="flex justify-center gap-2">
+<div v-if="player.isAlreadyAttended" class="flex justify-center gap-2">
+                         <button type="button"
+                           :class="[
+                             'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
+                             player.status === 'present' ? 'active-pill-present' : 'border-outline-variant/20 hover:border-primary/40'
+                           ]"
+                           @click="updateStatus(player.id, 'present')">{{ t('matchMonitor.present') }}</button>
+                         <button type="button"
+                           :class="[
+                             'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
+                             player.status === 'absent' ? 'active-pill-absent' : 'border-outline-variant/20 hover:border-error/40'
+                           ]"
+                           @click="updateStatus(player.id, 'absent')">{{ t('matchMonitor.absent') }}</button>
+                       </div>
+                       <div v-else class="flex justify-center gap-2">
                         <button type="button"
                           :class="[
                             'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
