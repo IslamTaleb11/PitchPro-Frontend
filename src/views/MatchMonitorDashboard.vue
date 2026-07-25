@@ -206,7 +206,7 @@ async function resetAll() {
     showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: t('matchMonitor.noMatchForAttendance'), mode: 'error' })
     return
   }
-  const playerIDs = eligiblePlayers.value.map(p => p.id)
+  const playerIDs = players.value.map(p => p.id)
   if (!playerIDs.length) return
   try {
     const res = await matchService.resetAttendance({ matchID: matchId.value, playerIDs })
@@ -341,10 +341,10 @@ onMounted(loadCategories)
 
           <div class="flex items-center justify-between bg-surface-container-low border border-outline-variant/10 p-4 rounded mb-2">
             <div class="flex items-center gap-4">
-              <button class="bg-primary-container text-on-primary-container text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="markAllPresent">
+              <button class="bg-primary-container text-black text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="markAllPresent">
                 <span class="material-symbols-outlined text-sm">done_all</span> {{ t('matchMonitor.markAllPresent') }}
               </button>
-              <button class="bg-primary-container text-on-primary-container text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="saveAttendance">
+              <button class="bg-primary-container text-black text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="saveAttendance">
                 <span class="material-symbols-outlined text-sm">save</span> {{ t('matchMonitor.saveAttendance') }}
               </button>
               <button class="text-[11px] font-black text-on-surface-variant hover:text-on-surface px-4 py-2.5 rounded transition-all flex items-center gap-2 uppercase tracking-widest border border-outline-variant/20 bg-surface-container-high" type="button" @click="resetAll">
