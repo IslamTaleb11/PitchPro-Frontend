@@ -23,6 +23,7 @@ const isLoadingCategories = ref(false)
 const isLoadingIntel = ref(false)
 const matchLoaded = ref(false)
 const monitoring = ref(false)
+const highlightedRow = ref(null)
 
 // ── Match intelligence state ─────────────────────────────────────────────────
 const match = ref(null)
@@ -307,10 +308,18 @@ function statusButtonClass(player, type) {
 }
 
 function setPlayerStatus(playerId, type) {
+  const player = callUpPlayers.value.find(p => String(p.id) === String(playerId))
   playerStatuses.value = {
     ...playerStatuses.value,
     [playerId]: type,
   }
+  showToast({
+    title: $t('matchMonitor.statusChangedTitle'),
+    message: $t('matchMonitor.statusChangedMsg', { name: player?.name ?? '', status: type }),
+    mode: 'success',
+  })
+  highlightedRow.value = playerId
+  setTimeout(() => { highlightedRow.value = null }, 1500)
 }
 
 function startSession() {
@@ -442,7 +451,9 @@ onMounted(loadCategories)
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="player in playersForTable" :key="player.id" class="bg-surface-container-low/40 hover:bg-surface-container-low transition-colors group">
+<tr v-for="player in playersForTable" :key="player.id" 
+                class="bg-surface-container-low/40 hover:bg-surface-container-low transition-colors group"
+                :class="highlightedRow === player.id ? 'highlight-row' : ''">
                   <td class="px-4 py-3 border-y border-l border-outline-variant/5">
                     <div class="flex items-center gap-4">
                       <div class="w-12 h-12 rounded border-2 border-primary/20 p-0.5 relative">
@@ -597,4 +608,9 @@ onMounted(loadCategories)
 .active-pill-present { background-color: #00ff41 !important; color: #003907 !important; font-weight: 800; border-color: #00ff41 !important; }
 .active-pill-absent { background-color: #93000a !important; color: #ffdad6 !important; font-weight: 800; border-color: #93000a !important; }
 .active-pill-excused { background-color: #ffd6a1 !important; color: #452b00 !important; font-weight: 800; border-color: #ffd6a1 !important; }
+.highlight-row { animation: status-flash 1.5s ease-out; }
+@keyframes status-flash {
+  0% { background-color: rgba(0, 255, 65, 0.15); }
+  100% { background-color: transparent; }
+}
 </style>

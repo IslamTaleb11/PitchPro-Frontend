@@ -62,6 +62,7 @@ const playerStatuses = ref({})
 const matchId = ref(null)
 const showResetConfirm = ref(false)
 const showMarkAllConfirm = ref(false)
+const highlightedRow = ref(null)
 
 const eligiblePlayers = computed(() =>
   players.value.filter(p => !p.isAlreadyAttended)
@@ -188,6 +189,13 @@ function updateStatus(playerId, type) {
   const player = players.value.find(p => p.id === playerId)
   if (player?.isAlreadyAttended) return
   playerStatuses.value = { ...playerStatuses.value, [playerId]: type }
+  showToast({
+    title: t('matchMonitor.statusChangedTitle'),
+    message: t('matchMonitor.statusChangedMsg', { name: player?.name ?? '', status: type }),
+    mode: 'success',
+  })
+  highlightedRow.value = playerId
+  setTimeout(() => { highlightedRow.value = null }, 1500)
 }
 
 function markAllPresent() {
@@ -419,7 +427,9 @@ onMounted(loadCategories)
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="player in playersForTable" :key="player.id" class="bg-surface-container-low/40 hover:bg-surface-container-low transition-colors group">
+<tr v-for="player in playersForTable" :key="player.id"
+                class="bg-surface-container-low/40 hover:bg-surface-container-low transition-colors group"
+                :class="highlightedRow === player.id ? 'highlight-row' : ''">
                   <td class="px-4 py-3 border-y border-l border-outline-variant/5 w-14">
                     <div class="w-12 h-12 rounded border-2 p-0.5 relative" :class="player.isAlreadyAttended ? 'border-tertiary-fixed-dim/30' : player.status === 'present' ? 'border-primary/20' : player.status === 'absent' ? 'border-error/20' : 'border-outline-variant/10'">
                       <img v-if="player.avatar" :src="player.avatar" :alt="player.name" class="w-full h-full object-cover rounded-sm">
@@ -649,4 +659,9 @@ onMounted(loadCategories)
 .matches-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.highlight-row { animation: status-flash 1.5s ease-out; }
+@keyframes status-flash {
+  0% { background-color: rgba(0, 255, 65, 0.15); }
+  100% { background-color: transparent; }
+}
 </style>
