@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.vue'
 import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
@@ -143,6 +143,17 @@ async function loadPlayersByCategory(categoryId) {
   }
 }
 
+function handleCategorySelect() {
+  selectedMatch.value = null
+  matches.value = []
+  if (!startupModalOpen.value) {
+    players.value = []
+    playerStatuses.value = {}
+    matchId.value = null
+    startupModalOpen.value = true
+  }
+}
+
 async function onCategoryChange() {
   selectedMatch.value = null
   matches.value = []
@@ -258,6 +269,12 @@ async function saveAttendance() {
   }
 }
 
+watch(startupModalOpen, (open) => {
+  if (open && selectedCategory.value) {
+    onCategoryChange()
+  }
+})
+
 onMounted(loadCategories)
 </script>
 
@@ -329,7 +346,7 @@ onMounted(loadCategories)
               <div class="flex gap-4">
                 <div class="flex flex-col gap-1.5">
                   <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">{{ t('matchMonitor.squadCategory') }}</label>
-                  <select v-model="selectedCategory" @change="loadPlayersByCategory(selectedCategory)" class="bg-surface-container-high border-outline-variant/20 text-on-surface text-xs font-bold rounded px-4 py-2.5 focus:ring-1 focus:ring-primary-fixed min-w-[160px] uppercase tracking-wider">
+                  <select v-model="selectedCategory" @change="handleCategorySelect" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-xs font-bold rounded px-4 py-2.5 focus:ring-1 focus:ring-primary-fixed min-w-[160px] uppercase tracking-wider">
                     <option value="" disabled>{{ t('matchMonitor.selectCategory') }}</option>
                     <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                   </select>
