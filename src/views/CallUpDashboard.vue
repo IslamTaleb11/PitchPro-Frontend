@@ -342,7 +342,7 @@ async function loadRoster(categoryId, matchId) {
   players.value = []
   if (!categoryId || !matchId) return
   try {
-    const response = await playerService.getAvailablePlayersByCategoryAndMatch(categoryId, matchId)
+    const response = await matchService.getAvailablePlayers(categoryId, matchId)
     players.value = normalizeAvailablePlayers(response?.data)
   } catch (error) {
     console.warn('Call-Up: could not load available players for', categoryId, error)

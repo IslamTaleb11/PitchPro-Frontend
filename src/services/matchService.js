@@ -19,6 +19,12 @@ export const matchService = {
     return api.get(`/matches/incomplete/${categoryId}`);
   },
 
+  // Get available players for call-up by category and match.
+  // GET /api/match-callup-players/available/{categoryId}/{matchId} -> { data: [ { playerID, playerName, playerImage, jerseyNumber, positionName, isAlreadyAttended } ] }
+  getAvailablePlayers(categoryId, matchId) {
+    return api.get(`/match-callup-players/available/${categoryId}/${matchId}`);
+  },
+
   // Enrol one or more players into a match call-up.
   // POST /api/match-callup-players  body: { MatchID, CategoryID, PlayerIDs }
   addCallUpPlayers(payload) {
