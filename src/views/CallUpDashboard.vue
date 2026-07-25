@@ -826,6 +826,16 @@ watch(selectedMatch, (match) => {
             <p class="mt-3 text-sm text-on-surface-variant">
               {{ $t('callUp.resetConfirmMessage', { count: squadCount }) }}
             </p>
+            <div class="mt-4 space-y-2 text-left">
+              <div class="flex items-start gap-2 text-xs text-error">
+                <span class="material-symbols-outlined text-sm flex-shrink-0 mt-0.5">delete_forever</span>
+                <span>Players marked as attended for this match will be reset as if they never attended.</span>
+              </div>
+              <div class="flex items-start gap-2 text-xs text-error">
+                <span class="material-symbols-outlined text-sm flex-shrink-0 mt-0.5">sports_score</span>
+                <span>All match events linked to this match (goals, assists, cards, substitutions, etc.) will be permanently deleted.</span>
+              </div>
+            </div>
           </div>
           <div class="flex gap-3 border-t border-outline-variant/10 p-4">
             <button
