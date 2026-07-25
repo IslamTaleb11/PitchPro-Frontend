@@ -60,6 +60,8 @@ const players = ref([])
 
 const playerStatuses = ref({})
 const matchId = ref(null)
+const showResetConfirm = ref(false)
+const showMarkAllConfirm = ref(false)
 
 const eligiblePlayers = computed(() =>
   players.value.filter(p => !p.isAlreadyAttended)
@@ -177,12 +179,13 @@ function updateStatus(playerId, type) {
   playerStatuses.value = { ...playerStatuses.value, [playerId]: type }
 }
 
-async function markAllPresent() {
-  const updated = { ...playerStatuses.value }
-  Object.keys(updated).forEach(id => { updated[id] = 'present' })
-  playerStatuses.value = updated
-
+function markAllPresent() {
   if (!matchId.value) return
+  showMarkAllConfirm.value = true
+}
+
+async function confirmMarkAllPresent() {
+  showMarkAllConfirm.value = false
   const playersAttendance = {}
   for (const p of eligiblePlayers.value) {
     playersAttendance[p.id] = true
@@ -201,13 +204,18 @@ async function markAllPresent() {
   }
 }
 
-async function resetAll() {
+function resetAll() {
   if (!matchId.value) {
     showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: t('matchMonitor.noMatchForAttendance'), mode: 'error' })
     return
   }
+  showResetConfirm.value = true
+}
+
+async function confirmResetAttendance() {
   const playerIDs = players.value.map(p => p.id)
   if (!playerIDs.length) return
+  showResetConfirm.value = false
   try {
     const res = await matchService.resetAttendance({ matchID: matchId.value, playerIDs })
     players.value = players.value.map(p => ({
@@ -509,6 +517,76 @@ onMounted(loadCategories)
       </div>
     </main>
   </div>
+
+  <!-- ── Mark All Present confirmation ── -->
+  <Teleport to="body">
+    <div v-if="showMarkAllConfirm" class="fixed inset-0 z-[130] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-background/80 backdrop-blur-md" @click="showMarkAllConfirm = false"></div>
+      <div class="relative w-full max-w-md overflow-hidden rounded-xl border border-primary/20 bg-surface-container-low shadow-2xl">
+        <div class="flex flex-col items-center p-6 text-center">
+          <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/15">
+            <span class="material-symbols-outlined text-3xl text-primary">done_all</span>
+          </div>
+          <h2 class="font-headline text-lg font-black uppercase tracking-tight text-on-surface">{{ t('matchMonitor.markAllPresentConfirmTitle') }}</h2>
+          <p class="mt-3 text-sm text-on-surface-variant">
+            {{ t('matchMonitor.markAllPresentConfirmMessage', { count: eligiblePlayers.length }) }}
+          </p>
+        </div>
+        <div class="flex gap-3 border-t border-outline-variant/10 p-4">
+          <button
+            type="button"
+            @click="showMarkAllConfirm = false"
+            class="flex-1 rounded-md py-3 text-[10px] font-black uppercase tracking-widest text-on-surface-variant transition-colors hover:bg-surface-container-high"
+          >
+            {{ t('common.cancel') }}
+          </button>
+          <button
+            type="button"
+            @click="confirmMarkAllPresent"
+            class="flex-1 rounded-md bg-primary py-3 text-[10px] font-black uppercase tracking-widest text-black transition-colors hover:brightness-110 flex items-center justify-center gap-1"
+          >
+            <span class="material-symbols-outlined text-sm">done_all</span>
+            {{ t('matchMonitor.confirmMarkAllPresent') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- ── Reset Attendance confirmation ── -->
+  <Teleport to="body">
+    <div v-if="showResetConfirm" class="fixed inset-0 z-[130] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-background/80 backdrop-blur-md" @click="showResetConfirm = false"></div>
+      <div class="relative w-full max-w-md overflow-hidden rounded-xl border border-red-500/20 bg-surface-container-low shadow-2xl">
+        <div class="flex flex-col items-center p-6 text-center">
+          <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-500/15">
+            <span class="material-symbols-outlined text-3xl text-red-400">warning</span>
+          </div>
+          <h2 class="font-headline text-lg font-black uppercase tracking-tight text-on-surface">{{ t('matchMonitor.resetAttendanceConfirmTitle') }}</h2>
+          <p class="mt-3 text-sm text-on-surface-variant">
+            {{ t('matchMonitor.resetAttendanceConfirmMessage', { count: players.length }) }}
+          </p>
+        </div>
+        <div class="flex gap-3 border-t border-outline-variant/10 p-4">
+          <button
+            type="button"
+            @click="showResetConfirm = false"
+            class="flex-1 rounded-md py-3 text-[10px] font-black uppercase tracking-widest text-on-surface-variant transition-colors hover:bg-surface-container-high"
+          >
+            {{ t('common.cancel') }}
+          </button>
+          <button
+            type="button"
+            @click="confirmResetAttendance"
+            class="flex-1 rounded-md bg-red-500 py-3 text-[10px] font-black uppercase tracking-widest text-white transition-colors hover:bg-red-600 flex items-center justify-center gap-1"
+          >
+            <span class="material-symbols-outlined text-sm">restart_alt</span>
+            {{ t('matchMonitor.confirmResetAttendance') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>

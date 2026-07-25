@@ -472,6 +472,9 @@
     "dailyOperations": "Daily Operations",
     "dailyOperationsSub": "Squad Availability & Attendance Terminal",
     "markAllPresent": "Mark All Present",
+    "markAllPresentConfirmTitle": "Mark All Players as Present?",
+    "markAllPresentConfirmMessage": "This will mark all {count} eligible players as present and save attendance records. This action cannot be undone.",
+    "confirmMarkAllPresent": "Yes, Mark All Present",
     "finalizeMatch": "Finalize Match & Mark Completed",
     "resetAll": "Reset All",
     "playerProfile": "Player Profile",
@@ -504,7 +507,10 @@
     "attendanceSaveErrorTitle": "Save Failed",
     "attendanceSaveErrorMsg": "Failed to save attendance records. Please try again.",
     "attendanceResetTitle": "Attendance Reset",
-    "attendanceResetMsg": "Attendance records have been reset."
+    "attendanceResetMsg": "Attendance records have been reset.",
+    "resetAttendanceConfirmTitle": "Reset Attendance Records?",
+    "resetAttendanceConfirmMessage": "This will reset attendance for all {count} players. Players marked as attended will be cleared, and all match events (goals, assists, cards, etc.) will be permanently deleted. This action cannot be undone.",
+    "confirmResetAttendance": "Yes, Reset All"
   },
   "medical": {
     "sectionTitle": "Department Telemetry",

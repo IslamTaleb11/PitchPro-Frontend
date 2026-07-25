@@ -469,6 +469,9 @@
     "dailyOperations": "العمليات اليومية",
     "dailyOperationsSub": "محطة توفر الفريق والحضور",
     "markAllPresent": "تحديد الكل حاضر",
+    "markAllPresentConfirmTitle": "تحديد جميع اللاعبين كحاضرين؟",
+    "markAllPresentConfirmMessage": "سيؤدي هذا إلى تحديد جميع اللاعبين المؤهلين ({count}) كحاضرين وحفظ سجلات الحضور. لا يمكن التراجع عن هذا الإجراء.",
+    "confirmMarkAllPresent": "نعم، تحديد الكل حاضر",
     "finalizeMatch": "إنهاء المباراة وتحديد مكتملة",
     "resetAll": "إعادة تعيين الكل",
     "playerProfile": "ملف اللاعب",
@@ -501,7 +504,10 @@
     "attendanceSaveErrorTitle": "فشل الحفظ",
     "attendanceSaveErrorMsg": "فشل حفظ سجلات الحضور. حاول مرة أخرى.",
     "attendanceResetTitle": "إعادة تعيين الحضور",
-    "attendanceResetMsg": "تم إعادة تعيين سجلات الحضور."
+    "attendanceResetMsg": "تم إعادة تعيين سجلات الحضور.",
+    "resetAttendanceConfirmTitle": "إعادة تعيين سجلات الحضور؟",
+    "resetAttendanceConfirmMessage": "سيؤدي هذا إلى إعادة تعيين الحضور لجميع اللاعبين ({count}). سيتم مسح اللاعبين الذين تم تسجيل حضورهم، وسيتم حذف جميع أحداث المباراة (الأهداف، التمريرات الحاسمة، البطاقات، إلخ) بشكل دائم. لا يمكن التراجع عن هذا الإجراء.",
+    "confirmResetAttendance": "نعم، إعادة التعيين"
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",
