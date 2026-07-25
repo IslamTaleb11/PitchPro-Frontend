@@ -122,7 +122,7 @@ function normalizePlayers(payload) {
     jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
     avatar: p.PlayerImage ?? p.playerImage ?? p.photo ?? p.Photo ?? '',
     isAlreadyAttended: !!(p.isAlreadyAttended ?? p.IsAlreadyAttended ?? p.isAbsent ?? p.IsAbsent ?? false),
-    recordedStatus: p.isAbsent === true || p.IsAbsent === true ? 'absent' : p.isAbsent === false || p.IsAbsent === false ? 'present' : null,
+    recordedStatus: p.recordedStatus ?? p.RecordedStatus ?? (p.isAbsent === true || p.IsAbsent === true ? 'absent' : (p.isAbsent === false || p.IsAbsent === false ? 'present' : null)),
   }))
 }
 
