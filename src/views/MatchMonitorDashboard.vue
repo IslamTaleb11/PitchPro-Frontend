@@ -189,9 +189,10 @@ function updateStatus(playerId, type) {
   const player = players.value.find(p => p.id === playerId)
   if (player?.isAlreadyAttended) return
   playerStatuses.value = { ...playerStatuses.value, [playerId]: type }
+  const statusLabel = t(`matchMonitor.${type}`) || type
   showToast({
     title: t('matchMonitor.statusChangedTitle'),
-    message: t('matchMonitor.statusChangedMsg', { name: player?.name ?? '', status: type }),
+    message: t('matchMonitor.statusChangedMsg', { name: player?.name ?? '', status: statusLabel }),
     mode: 'success',
   })
   highlightedRow.value = playerId
