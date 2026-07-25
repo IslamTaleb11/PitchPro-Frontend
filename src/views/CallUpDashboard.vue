@@ -99,9 +99,10 @@ function normalizeAvailablePlayers(payload) {
 const players = ref([])
 const isLoadingCategories = ref(false)
 
-// ── Upcoming match (driven by /matches/upcoming/{categoryId}) ──────────────────
-const upcomingMatch = ref(null)
-const isLoadingMatch = ref(false)
+// ── Incomplete matches (driven by /matches/incomplete/{categoryId}) ────────────
+const incompleteMatches = ref([])
+const selectedMatch = ref(null)
+const isLoadingMatches = ref(false)
 
 // Flexibly pull the first defined, non-empty value for a set of candidate keys.
 // Lets us tolerate whatever field-naming convention the match API uses
@@ -170,22 +171,57 @@ function formatMatchDate(value) {
   return `${date} • ${time}`
 }
 
-async function loadUpcomingMatch(categoryId) {
-  upcomingMatch.value = null
+function normalizeMatchListItem(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const asText = (v) => {
+    if (v == null) return null
+    if (typeof v === 'string') return v
+    if (typeof v === 'object') {
+      return v.name ?? v.Name ?? v.teamName ?? v.TeamName ?? v.title ?? v.Title ?? null
+    }
+    return null
+  }
+  const opponent = asText(
+    raw.opponentName ?? raw.OpponentName ?? raw.opponent ?? raw.Opponent ?? raw.opponentTeam ?? raw.OpponentTeam ?? raw.vsTeam ?? raw.VsTeam
+  )
+  const stadium = asText(
+    raw.stadiumName ?? raw.StadiumName ?? raw.venue ?? raw.Venue ?? raw.stadium ?? raw.Stadium ?? raw.location ?? raw.Location
+  )
+  const dateRaw = raw.date ?? raw.Date ?? raw.matchDate ?? raw.MatchDate ?? raw.dateTime ?? raw.DateTime
+  const kickoff = raw.kickoffTime ?? raw.KickoffTime ?? raw.kickoff ?? raw.Kickoff ?? raw.startTime ?? raw.StartTime
+  const isHome = raw.isHome ?? raw.IsHome ?? null
+  const matchId = raw.id ?? raw.Id ?? raw.ID ?? raw.matchId ?? raw.MatchID
+
+  let dateLabel = ''
+  if (dateRaw) {
+    const base = String(dateRaw).split('T')[0]
+    const combined = kickoff ? `${base}T${kickoff}` : `${base}T00:00:00`
+    dateLabel = formatMatchDate(combined)
+  }
+
+  return { opponentName: opponent, stadiumName: stadium, isHome, matchId, dateLabel }
+}
+
+async function loadIncompleteMatches(categoryId) {
+  selectedMatch.value = null
+  incompleteMatches.value = []
   calledUpCount.value = 0
   if (!categoryId) return
-  isLoadingMatch.value = true
+  isLoadingMatches.value = true
   try {
-    const response = await matchService.getUpcomingMatch(categoryId)
-    const match = normalizeUpcomingMatch(response?.data)
-    upcomingMatch.value = match
-    if (match?.matchId != null) loadCallUpCount(match.matchId)
+    const response = await matchService.getIncompleteMatchesByCategory(categoryId)
+    let data = response?.data
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      data = data.data ?? data.Data ?? data.$values ?? data.result ?? data.Result ?? data.items ?? data.value ?? data.Value ?? []
+    }
+    if (Array.isArray(data)) {
+      incompleteMatches.value = data.map(normalizeMatchListItem).filter(Boolean)
+    }
   } catch (error) {
-    // No upcoming match (or endpoint unavailable) — leave the card in its empty state.
-    console.warn('Call-Up: could not load upcoming match for', categoryId, error)
-    upcomingMatch.value = null
+    console.warn('Call-Up: could not load incomplete matches for', categoryId, error)
+    incompleteMatches.value = []
   } finally {
-    isLoadingMatch.value = false
+    isLoadingMatches.value = false
   }
 }
 
@@ -204,14 +240,14 @@ async function loadCallUpCount(matchId) {
 // The API returns our own club (clubName) plus the opponent and an isHome flag.
 // Place the opponent on the correct side (home/away) so the fixture reads
 // correctly. We show the club name here rather than the squad category.
-const ourSquadName = computed(() => upcomingMatch.value?.clubName || '')
+const ourSquadName = computed(() => selectedMatch.value?.clubName || '')
 const homeTeamName = computed(() => {
-  if (!upcomingMatch.value) return ''
-  return upcomingMatch.value.isHome ? ourSquadName.value : upcomingMatch.value.opponentName || ''
+  if (!selectedMatch.value) return ''
+  return selectedMatch.value.isHome ? ourSquadName.value : selectedMatch.value.opponentName || ''
 })
 const awayTeamName = computed(() => {
-  if (!upcomingMatch.value) return ''
-  return upcomingMatch.value.isHome ? upcomingMatch.value.opponentName || '' : ourSquadName.value
+  if (!selectedMatch.value) return ''
+  return selectedMatch.value.isHome ? selectedMatch.value.opponentName || '' : ourSquadName.value
 })
 
 // Track image load failures so we can fall back to initials.
@@ -257,12 +293,12 @@ const showResetConfirm = ref(false)
 const isResetting = ref(false)
 
 function openResetConfirm() {
-  if (!upcomingMatch.value?.matchId) return
+  if (!selectedMatch.value?.matchId) return
   showResetConfirm.value = true
 }
 
 async function confirmResetCallUp() {
-  const matchId = Number(upcomingMatch.value?.matchId)
+  const matchId = Number(selectedMatch.value?.matchId)
   if (!matchId || isResetting.value) return
 
   showResetConfirm.value = false
@@ -280,7 +316,7 @@ async function confirmResetCallUp() {
     const removed = Number(response?.data?.removed ?? 0)
     // Re-sync the squad counter and clear any locally-drafted selection.
     if (matchId) loadCallUpCount(matchId)
-    if (selectedCategory.value) loadRoster(selectedCategory.value)
+    if (selectedCategory.value && selectedMatch.value?.matchId) loadRoster(selectedCategory.value, selectedMatch.value.matchId)
     resetSelection()
     showToast({
       title: $t('callUp.resetSuccessTitle'),
@@ -302,11 +338,11 @@ async function confirmResetCallUp() {
 // ── Roster loading: real API ─────────────────────────────────────────────────
 // Load the players available for call-up in the chosen category from
 // GET /api/players/available/{categoryId} -> { data: [...] }.
-async function loadRoster(categoryId) {
+async function loadRoster(categoryId, matchId) {
   players.value = []
-  if (!categoryId) return
+  if (!categoryId || !matchId) return
   try {
-    const response = await playerService.getMatchCallUpPlayersByCategory(categoryId)
+    const response = await playerService.getMatchCallUpPlayersByCategory(categoryId, matchId)
     players.value = normalizeAvailablePlayers(response?.data)
   } catch (error) {
     console.warn('Call-Up: could not load available players for', categoryId, error)
@@ -381,7 +417,7 @@ function initials(name) {
 async function finaliseSquad() {
   if (selectedCount.value === 0 || isFinalising.value) return
 
-  const matchId = Number(upcomingMatch.value?.matchId)
+  const matchId = Number(selectedMatch.value?.matchId)
   const categoryId = Number(selectedCategory.value)
 
   if (!matchId || !categoryId) {
@@ -416,7 +452,7 @@ async function finaliseSquad() {
     })
     resetSelection()
     loadCallUpCount(matchId)
-    loadRoster(categoryId)
+    loadRoster(categoryId, matchId)
   } catch (error) {
     const message = error?.response?.data?.message || $t('callUp.finaliseError')
     showToast({
@@ -431,8 +467,18 @@ async function finaliseSquad() {
 
 onMounted(loadCategories)
 watch(selectedCategory, (id) => {
-  loadRoster(id)
-  loadUpcomingMatch(id)
+  resetSelection()
+  loadIncompleteMatches(id)
+})
+watch(selectedMatch, (match) => {
+  resetSelection()
+  if (!match?.matchId) {
+    players.value = []
+    calledUpCount.value = 0
+    return
+  }
+  loadRoster(selectedCategory.value, match.matchId)
+  loadCallUpCount(match.matchId)
 })
 </script>
 
@@ -463,19 +509,14 @@ watch(selectedCategory, (id) => {
             <div v-if="selectedCategory" class="relative z-10">
               <div class="flex items-center justify-between mb-5">
                 <span class="font-label text-[10px] uppercase tracking-[0.2em] text-green-400">{{ $t('callUp.nextFixture') }}</span>
-                <span v-if="upcomingMatch?.isCompleted != null" class="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full"
-                  :class="upcomingMatch.isCompleted ? 'bg-surface-container-lowest text-on-surface-variant' : 'bg-green-400/10 text-green-400'"
-                >
-                  {{ upcomingMatch.isCompleted ? $t('callUp.completed') : $t('callUp.upcoming') }}
-                </span>
               </div>
 
-              <div v-if="isLoadingMatch" class="flex items-center gap-2 text-on-surface-variant py-6">
+              <div v-if="isLoadingMatches" class="flex items-center gap-2 text-on-surface-variant py-6">
                 <span class="material-symbols-outlined text-sm animate-spin">progress_activity</span>
                 <span class="text-sm">{{ $t('callUp.loadingMatch') }}</span>
               </div>
 
-              <template v-else-if="upcomingMatch">
+              <template v-else-if="selectedMatch">
                 <!-- Teams -->
                 <div class="flex items-center justify-between gap-4">
                   <div class="flex-1 text-right min-w-0">
@@ -493,27 +534,70 @@ watch(selectedCategory, (id) => {
 
                 <!-- Match details -->
                 <div class="mt-7 grid grid-cols-2 lg:grid-cols-3 gap-3">
-                  <div v-if="upcomingMatch.dateLabel" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
+                  <div v-if="selectedMatch.dateLabel" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
                     <span class="material-symbols-outlined text-green-400 text-xl">calendar_today</span>
                     <div class="min-w-0">
                       <div class="text-[9px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.kickoff') }}</div>
-                      <div class="text-sm font-bold text-on-surface truncate">{{ upcomingMatch.dateLabel }}</div>
+                      <div class="text-sm font-bold text-on-surface truncate">{{ selectedMatch.dateLabel }}</div>
                     </div>
                   </div>
-                  <div v-if="upcomingMatch.stadiumName" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
+                  <div v-if="selectedMatch.stadiumName" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
                     <span class="material-symbols-outlined text-green-400 text-xl">location_on</span>
                     <div class="min-w-0">
                       <div class="text-[9px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.venue') }}</div>
-                      <div class="text-sm font-bold text-on-surface truncate">{{ upcomingMatch.stadiumName }}</div>
+                      <div class="text-sm font-bold text-on-surface truncate">{{ selectedMatch.stadiumName }}</div>
                     </div>
                   </div>
-                  <div v-if="upcomingMatch.isHome != null" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
-                    <span class="material-symbols-outlined text-green-400 text-xl">{{ upcomingMatch.isHome ? 'home' : 'flight' }}</span>
+                  <div v-if="selectedMatch.isHome != null" class="bg-surface-container-lowest rounded-lg p-3 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-green-400 text-xl">{{ selectedMatch.isHome ? 'home' : 'flight' }}</span>
                     <div class="min-w-0">
                       <div class="text-[9px] uppercase tracking-widest text-on-surface-variant">{{ $t('callUp.fixture') }}</div>
-                      <div class="text-sm font-bold text-on-surface truncate">{{ upcomingMatch.isHome ? $t('callUp.home') : $t('callUp.away') }}</div>
+                      <div class="text-sm font-bold text-on-surface truncate">{{ selectedMatch.isHome ? $t('callUp.home') : $t('callUp.away') }}</div>
                     </div>
                   </div>
+                </div>
+
+                <!-- Change match button -->
+                <button
+                  type="button"
+                  @click="selectedMatch = null"
+                  class="mt-4 text-[10px] font-bold uppercase tracking-widest text-green-400 hover:text-green-300 transition-colors flex items-center gap-1"
+                >
+                  <span class="material-symbols-outlined text-xs">swap_horiz</span>
+                  {{ $t('callUp.selectMatch') }}
+                </button>
+              </template>
+
+              <template v-else-if="incompleteMatches.length">
+                <p class="font-headline font-bold text-on-surface-variant text-sm mb-4">{{ $t('callUp.selectMatch') }}</p>
+                <div class="space-y-2 max-h-64 overflow-y-auto">
+                  <button
+                    v-for="match in incompleteMatches"
+                    :key="match.matchId"
+                    type="button"
+                    @click="selectedMatch = match"
+                    class="w-full text-left p-4 rounded-lg bg-surface-container-lowest hover:bg-surface-container-high border border-outline-variant/20 hover:border-green-400 transition-all group"
+                  >
+                    <div class="flex items-center justify-between">
+                      <span class="font-headline font-bold text-sm text-on-surface group-hover:text-green-400 transition-colors">{{ match.opponentName || $t('callUp.tbd') }}</span>
+                      <span
+                        class="text-[10px] px-2 py-1 rounded-full font-bold uppercase"
+                        :class="match.isHome ? 'bg-green-400/10 text-green-400' : 'bg-error-container/10 text-error'"
+                      >
+                        {{ match.isHome ? $t('callUp.home') : $t('callUp.away') }}
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-4 mt-2 text-xs text-on-surface-variant">
+                      <span v-if="match.dateLabel" class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">calendar_today</span>
+                        {{ match.dateLabel }}
+                      </span>
+                      <span v-if="match.stadiumName" class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">location_on</span>
+                        {{ match.stadiumName }}
+                      </span>
+                    </div>
+                  </button>
                 </div>
               </template>
 
@@ -600,11 +684,11 @@ watch(selectedCategory, (id) => {
             <!-- Reset Call-Up -->
             <button
               type="button"
-              :disabled="!upcomingMatch?.matchId || isResetting"
+              :disabled="!selectedMatch?.matchId || isResetting"
               @click="openResetConfirm"
               :class="[
                 'w-full md:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors border',
-                upcomingMatch?.matchId
+                selectedMatch?.matchId
                   ? 'border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500'
                   : 'border-outline-variant/20 text-slate-600 cursor-not-allowed'
               ]"
@@ -714,7 +798,7 @@ watch(selectedCategory, (id) => {
           </div>
           <button
             type="button"
-            :disabled="selectedCount === 0 || isFinalising || !upcomingMatch"
+            :disabled="selectedCount === 0 || isFinalising || !selectedMatch"
             @click="finaliseSquad"
             :class="[
               'font-headline font-bold text-sm uppercase tracking-tighter rounded-lg px-8 py-4 shadow-lg transition-all flex items-center gap-2',
