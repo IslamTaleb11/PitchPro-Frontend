@@ -347,6 +347,32 @@ onMounted(loadCategories)
             </div>
           </div>
 
+          <!-- Match Details Card -->
+          <div v-if="selectedMatch" class="bg-surface-container-high rounded-xl p-5 mb-4 border-l-4 border-primary relative overflow-hidden">
+            <div class="flex items-center gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{{ t('matchMonitor.upcomingFixture') }}</span>
+                  <span class="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-primary/10 text-primary">{{ selectedMatch.isHome ? t('callUp.home') : t('callUp.away') }}</span>
+                </div>
+                <div class="font-headline text-xl md:text-2xl font-black text-on-surface uppercase truncate">{{ selectedMatch.opponentName || t('callUp.tbd') }}</div>
+              </div>
+              <div class="flex items-center gap-6 text-xs text-on-surface-variant shrink-0">
+                <span v-if="selectedMatch.date" class="flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-primary text-sm">calendar_today</span>
+                  <span class="font-bold">{{ new Date(selectedMatch.date).toLocaleDateString() }}<span v-if="selectedMatch.kickoffTime"> • {{ selectedMatch.kickoffTime }}</span></span>
+                </span>
+                <span v-if="selectedMatch.stadiumName" class="flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-primary text-sm">location_on</span>
+                  <span class="font-bold">{{ selectedMatch.stadiumName }}</span>
+                </span>
+              </div>
+            </div>
+            <div class="absolute -right-8 -top-8 opacity-5 pointer-events-none">
+              <span class="material-symbols-outlined text-[160px]" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
+            </div>
+          </div>
+
           <div class="flex items-center justify-between bg-surface-container-low border border-outline-variant/10 p-4 rounded mb-2">
             <div class="flex items-center gap-4">
               <button class="bg-primary-container text-black text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="markAllPresent">

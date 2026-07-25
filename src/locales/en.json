@@ -401,7 +401,7 @@
     "finaliseError": "Could not save the match squad. Please try again.",
     "resetCallUps": "Reset Call-Ups",
     "resetConfirmTitle": "Reset Match Call-Up?",
-    "resetConfirmMessage": "This will remove all {count} called-up players from this match. Players marked as attended will be reset, and all match events (goals, assists, etc.) will be permanently deleted. This action cannot be undone.",
+    "resetConfirmMessage": "This will remove all {count} called-up players from this match. Players marked as attended will be reset, and all match events (goals, assists, etc.) will be permanently deleted.",
     "confirmReset": "Reset Call-Up",
     "resettingTitle": "Resetting Call-Up",
     "resettingMessage": "Removing all players from the match call-up...",
@@ -473,7 +473,7 @@
     "dailyOperationsSub": "Squad Availability & Attendance Terminal",
     "markAllPresent": "Mark All Present",
     "markAllPresentConfirmTitle": "Mark All Players as Present?",
-    "markAllPresentConfirmMessage": "This will mark all {count} eligible players as present and save attendance records. This action cannot be undone.",
+    "markAllPresentConfirmMessage": "This will mark all {count} eligible players as present and save attendance records.",
     "confirmMarkAllPresent": "Yes, Mark All Present",
     "finalizeMatch": "Finalize Match & Mark Completed",
     "resetAll": "Reset All",
@@ -509,7 +509,7 @@
     "attendanceResetTitle": "Attendance Reset",
     "attendanceResetMsg": "Attendance records have been reset.",
     "resetAttendanceConfirmTitle": "Reset Attendance Records?",
-    "resetAttendanceConfirmMessage": "This will reset attendance for all {count} players. Players marked as attended will be cleared, and all match events (goals, assists, cards, etc.) will be permanently deleted. This action cannot be undone.",
+    "resetAttendanceConfirmMessage": "This will reset attendance for all {count} players. Players marked as attended will be cleared, and all match events (goals, assists, cards, etc.) will be permanently deleted.",
     "confirmResetAttendance": "Yes, Reset All"
   },
   "medical": {
