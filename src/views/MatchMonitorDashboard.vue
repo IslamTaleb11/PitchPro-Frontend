@@ -113,7 +113,8 @@ function normalizePlayers(payload) {
     position: p.PositionName ?? p.positionName ?? p.position ?? '',
     jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
     avatar: p.PlayerImage ?? p.playerImage ?? p.photo ?? p.Photo ?? '',
-    isAlreadyAttended: !!(p.isAlreadyAttended ?? p.IsAlreadyAttended ?? false),
+    isAlreadyAttended: !!(p.isAlreadyAttended ?? p.IsAlreadyAttended ?? p.isAbsent ?? p.IsAbsent ?? false),
+    recordedStatus: p.isAbsent ?? p.IsAbsent ? 'absent' : 'present',
   }))
 }
 
