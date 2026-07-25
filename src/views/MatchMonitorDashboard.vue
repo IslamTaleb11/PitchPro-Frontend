@@ -75,10 +75,18 @@ const playersForTable = computed(() =>
   }))
 )
 
-const totalEligible = computed(() => eligiblePlayers.value.length)
-const presentCount = computed(() => eligiblePlayers.value.filter(p => playerStatuses.value[p.id] === 'present').length)
-const absentCount = computed(() => eligiblePlayers.value.filter(p => playerStatuses.value[p.id] === 'absent').length)
-const excusedCount = computed(() => eligiblePlayers.value.filter(p => playerStatuses.value[p.id] === 'excused').length)
+const totalEligible = computed(() =>
+  players.value.filter(p => playerStatuses.value[p.id] || p.recordedStatus)
+)
+const presentCount = computed(() =>
+  players.value.filter(p => playerStatuses.value[p.id] === 'present' || p.recordedStatus === 'present').length
+)
+const absentCount = computed(() =>
+  players.value.filter(p => playerStatuses.value[p.id] === 'absent' || p.recordedStatus === 'absent').length
+)
+const excusedCount = computed(() =>
+  players.value.filter(p => playerStatuses.value[p.id] === 'excused' || p.recordedStatus === 'excused').length
+)
 
 function normalizeLookupItem(item) {
   if (!item) return { id: 'Unknown', name: 'Unknown' }

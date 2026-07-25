@@ -54,7 +54,7 @@ const playersForTable = computed(() => {
   const source = callUpPlayers.value.length ? callUpPlayers.value : samplePlayers
   return source.map((player) => ({
     ...player,
-    status: playerStatuses.value[player.id] || player.status || 'present',
+    status: playerStatuses.value[player.id] || player.recordedStatus || player.status || 'present',
   }))
 })
 const presentCount = computed(() => playersForTable.value.filter((p) => p.status === 'present').length)
