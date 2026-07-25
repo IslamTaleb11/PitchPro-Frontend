@@ -400,7 +400,7 @@
     "finaliseError": "Could not save the match squad. Please try again.",
     "resetCallUps": "Reset Call-Ups",
     "resetConfirmTitle": "Reset Match Call-Up?",
-    "resetConfirmMessage": "This will remove all {count} called-up players from this match. This action cannot be undone.",
+    "resetConfirmMessage": "This will remove all {count} called-up players from this match. Players marked as attended will be reset, and all match events (goals, assists, etc.) will be permanently deleted. This action cannot be undone.",
     "confirmReset": "Reset Call-Up",
     "resettingTitle": "Resetting Call-Up",
     "resettingMessage": "Removing all players from the match call-up...",
