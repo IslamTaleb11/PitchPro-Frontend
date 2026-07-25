@@ -423,10 +423,6 @@ onMounted(loadCategories)
                 <span class="material-symbols-outlined text-sm">refresh</span> {{ t('matchMonitor.resetAll') }}
               </button>
             </div>
-            <div class="flex items-center gap-2 px-3 py-1 bg-surface-container-highest rounded border border-outline-variant/10">
-                <span class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">{{ totalEligible }}</span>
-                <span class="text-[11px] font-mono font-bold text-primary">Players</span>
-              </div>
           </div>
 
           <div class="flex-1 overflow-y-auto pb-8 no-scrollbar">

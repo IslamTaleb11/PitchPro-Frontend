@@ -429,14 +429,11 @@ onMounted(loadCategories)
               </button>
             </div>
             <div class="flex items-center gap-6">
-              <div class="flex items-center gap-2 px-3 py-1 bg-surface-container-highest rounded border border-outline-variant/10">
-                <span class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Active Roster:</span>
-                <span class="text-[11px] font-mono font-bold text-primary">{{ playersForTable.length }} Players</span>
               </div>
-              <div class="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer transition-colors">
-                <span class="material-symbols-outlined text-lg">filter_list</span>
-                <span class="text-[10px] font-black uppercase tracking-widest">Filter</span>
-              </div>
+            <div class="flex items-center gap-2 text-on-surface-variant hover:text-primary cursor-pointer transition-colors">
+              <span class="material-symbols-outlined text-lg">filter_list</span>
+              <span class="text-[10px] font-black uppercase tracking-widest">Filter</span>
+            </div>
             </div>
           </div>
 
