@@ -453,40 +453,36 @@ onMounted(loadCategories)
                     <span class="bg-surface-container-highest px-3 py-1.5 rounded text-[11px] font-bold text-on-surface-variant border border-outline-variant/20 uppercase tracking-tighter">{{ localizePosition(player.position) }}</span>
                   </td>
                    <td class="px-4 py-3 border-y border-r border-outline-variant/5">
-                                        <div v-if="player.isAlreadyAttended && player.recordedStatus === 'present'" class="flex justify-center">
-                      <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-primary/10 text-primary text-[11px] font-black uppercase tracking-widest border border-primary/20">
-                        <span class="material-symbols-outlined text-sm">check_circle</span>
-                        {{ t('matchMonitor.present') }}
-                      </span>
-                    </div>
-                    <div v-else-if="player.isAlreadyAttended && player.recordedStatus === 'absent'" class="flex justify-center">
-                      <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-error/10 text-error text-[11px] font-black uppercase tracking-widest border border-error/20">
-                        <span class="material-symbols-outlined text-sm">cancel</span>
-                        {{ t('matchMonitor.absent') }}
-                      </span>
-                    </div>
-                    <div v-else-if="player.isAlreadyAttended" class="flex justify-center">
-                      <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-tertiary-fixed-dim/10 text-tertiary-fixed-dim text-[11px] font-black uppercase tracking-widest border border-tertiary-fixed-dim/20">
-                        <span class="material-symbols-outlined text-sm">check_circle</span>
-                        {{ t('matchMonitor.alreadyRecorded') }}
-                      </span>
-                    </div>
-                    <div v-else class="flex justify-center gap-2">
-                      <button type="button"
-                        :class="[
-                          'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
-                          player.status === 'present' ? 'active-pill-present' : 'border-outline-variant/20 hover:border-primary/40'
-                        ]"
-                        @click="updateStatus(player.id, 'present')">{{ t('matchMonitor.present') }}</button>
-                      <button type="button"
-                        :class="[
-                          'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
-                          player.status === 'absent' ? 'active-pill-absent' : 'border-outline-variant/20 hover:border-error/40'
-                        ]"
-                        @click="updateStatus(player.id, 'absent')">{{ t('matchMonitor.absent') }}</button>
-                    </div>
-                  </td>
-                </tr>
+                      <div v-if="player.isAlreadyAttended" class="flex justify-center gap-2">
+                        <button type="button"
+                          :class="[
+                            'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
+                            player.recordedStatus === 'present' ? 'active-pill-present' : 'border-outline-variant/20 hover:border-primary/40'
+                          ]"
+                          disabled>{{ t('matchMonitor.present') }}</button>
+                        <button type="button"
+                          :class="[
+                            'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
+                            player.recordedStatus === 'absent' ? 'active-pill-absent' : 'border-outline-variant/20 hover:border-error/40'
+                          ]"
+                          disabled>{{ t('matchMonitor.absent') }}</button>
+                      </div>
+                      <div v-else class="flex justify-center gap-2">
+                        <button type="button"
+                          :class="[
+                            'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
+                            player.status === 'present' ? 'active-pill-present' : 'border-outline-variant/20 hover:border-primary/40'
+                          ]"
+                          @click="updateStatus(player.id, 'present')">{{ t('matchMonitor.present') }}</button>
+                        <button type="button"
+                          :class="[
+                            'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
+                            player.status === 'absent' ? 'active-pill-absent' : 'border-outline-variant/20 hover:border-error/40'
+                          ]"
+                          @click="updateStatus(player.id, 'absent')">{{ t('matchMonitor.absent') }}</button>
+                      </div>
+                    </td>
+                 </tr>
               </tbody>
             </table>
           </div>
