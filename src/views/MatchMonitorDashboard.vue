@@ -65,7 +65,7 @@ const showMarkAllConfirm = ref(false)
 const highlightedRow = ref(null)
 
 const eligiblePlayers = computed(() =>
-  players.value.filter(p => !p.isAlreadyAttended)
+  players.value.filter(p => playerStatuses.value[p.id] !== undefined)
 )
 
 const playersForTable = computed(() =>
@@ -195,9 +195,8 @@ function startSession() {
 }
 
 function updateStatus(playerId, type) {
-  const player = players.value.find(p => p.id === playerId)
-  if (player?.isAlreadyAttended) return
   playerStatuses.value = { ...playerStatuses.value, [playerId]: type }
+  const player = players.value.find(p => p.id === playerId)
   const statusLabel = t(`matchMonitor.${type}`) || type
   showToast({
     title: t('matchMonitor.statusChangedTitle'),
