@@ -71,7 +71,7 @@ const eligiblePlayers = computed(() =>
 const playersForTable = computed(() =>
   players.value.map(p => ({
     ...p,
-    status: playerStatuses.value[p.id] ?? (p.isAlreadyAttended ? 'recorded' : null),
+    status: playerStatuses.value[p.id] ?? p.recordedStatus ?? (p.isAlreadyAttended ? 'recorded' : null),
   }))
 )
 
@@ -215,8 +215,9 @@ async function confirmMarkAllPresent() {
     players.value = players.value.map(p => ({
       ...p,
       isAlreadyAttended: true,
+      recordedStatus: 'present',
     }))
-    playerStatuses.value = {}
+  playerStatuses.value = {}
     showToast({ title: t('matchMonitor.attendanceSavedTitle'), message: t('matchMonitor.attendanceSavedMsg'), mode: 'success' })
   } catch (e) {
     const msg = e?.response?.data?.message || t('matchMonitor.attendanceSaveErrorMsg')
@@ -238,9 +239,10 @@ async function confirmResetAttendance() {
   showResetConfirm.value = false
   try {
     const res = await matchService.resetAttendance({ matchID: matchId.value, playerIDs })
-    players.value = players.value.map(p => ({
+players.value = players.value.map(p => ({
       ...p,
       isAlreadyAttended: false,
+      recordedStatus: undefined,
     }))
     playerStatuses.value = {}
     const msg = res?.data?.message || t('matchMonitor.attendanceResetMsg')
@@ -265,6 +267,7 @@ async function saveAttendance() {
     players.value = players.value.map(p => ({
       ...p,
       isAlreadyAttended: p.isAlreadyAttended || playerStatuses.value[p.id] === 'present',
+      recordedStatus: playerStatuses.value[p.id] === 'present' ? 'present' : playerStatuses.value[p.id] === 'absent' ? 'absent' : p.recordedStatus,
     }))
     const rem = { ...playerStatuses.value }
     for (const id of players.value.filter(p => p.isAlreadyAttended).map(p => p.id)) {
@@ -449,7 +452,19 @@ onMounted(loadCategories)
                     <span class="bg-surface-container-highest px-3 py-1.5 rounded text-[11px] font-bold text-on-surface-variant border border-outline-variant/20 uppercase tracking-tighter">{{ localizePosition(player.position) }}</span>
                   </td>
                    <td class="px-4 py-3 border-y border-r border-outline-variant/5">
-                    <div v-if="player.isAlreadyAttended" class="flex justify-center">
+                                        <div v-if="player.isAlreadyAttended && player.recordedStatus === 'present'" class="flex justify-center">
+                      <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-primary/10 text-primary text-[11px] font-black uppercase tracking-widest border border-primary/20">
+                        <span class="material-symbols-outlined text-sm">check_circle</span>
+                        {{ t('matchMonitor.present') }}
+                      </span>
+                    </div>
+                    <div v-else-if="player.isAlreadyAttended && player.recordedStatus === 'absent'" class="flex justify-center">
+                      <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-error/10 text-error text-[11px] font-black uppercase tracking-widest border border-error/20">
+                        <span class="material-symbols-outlined text-sm">cancel</span>
+                        {{ t('matchMonitor.absent') }}
+                      </span>
+                    </div>
+                    <div v-else-if="player.isAlreadyAttended" class="flex justify-center">
                       <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-tertiary-fixed-dim/10 text-tertiary-fixed-dim text-[11px] font-black uppercase tracking-widest border border-tertiary-fixed-dim/20">
                         <span class="material-symbols-outlined text-sm">check_circle</span>
                         {{ t('matchMonitor.alreadyRecorded') }}
