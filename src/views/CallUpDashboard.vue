@@ -564,7 +564,7 @@ watch(selectedMatch, (match) => {
                   class="mt-4 text-[10px] font-bold uppercase tracking-widest text-green-400 hover:text-green-300 transition-colors flex items-center gap-1"
                 >
                   <span class="material-symbols-outlined text-xs">swap_horiz</span>
-                  {{ $t('callUp.selectMatch') }}
+                  {{ $t('callUp.changeMatch') }}
                 </button>
               </template>
 

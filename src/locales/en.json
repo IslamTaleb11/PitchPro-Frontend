@@ -394,6 +394,7 @@
     "loadingMatch": "Loading matches...",
     "noUpcomingMatch": "No upcoming match scheduled for this squad.",
     "selectMatch": "Select a match",
+    "changeMatch": "Change match",
     "noMatchTitle": "No match selected",
     "noMatchMessage": "Load the upcoming fixture for this category before finalising the squad.",
     "finaliseErrorTitle": "Call-up failed",
