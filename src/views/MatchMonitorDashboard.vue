@@ -189,6 +189,11 @@ async function markAllPresent() {
   }
   try {
     await matchService.markAttendance({ matchID: matchId.value, playersAttendance })
+    players.value = players.value.map(p => ({
+      ...p,
+      isAlreadyAttended: true,
+    }))
+    playerStatuses.value = {}
     showToast({ title: t('matchMonitor.attendanceSavedTitle'), message: t('matchMonitor.attendanceSavedMsg'), mode: 'success' })
   } catch (e) {
     const msg = e?.response?.data?.message || t('matchMonitor.attendanceSaveErrorMsg')
@@ -205,6 +210,10 @@ async function resetAll() {
   if (!playerIDs.length) return
   try {
     const res = await matchService.resetAttendance({ matchID: matchId.value, playerIDs })
+    players.value = players.value.map(p => ({
+      ...p,
+      isAlreadyAttended: false,
+    }))
     playerStatuses.value = {}
     const msg = res?.data?.message || t('matchMonitor.attendanceResetMsg')
     showToast({ title: t('matchMonitor.attendanceResetTitle'), message: msg, mode: 'success' })
@@ -225,6 +234,15 @@ async function saveAttendance() {
   }
   try {
     await matchService.markAttendance({ matchID: matchId.value, playersAttendance })
+    players.value = players.value.map(p => ({
+      ...p,
+      isAlreadyAttended: p.isAlreadyAttended || playerStatuses.value[p.id] === 'present',
+    }))
+    const rem = { ...playerStatuses.value }
+    for (const id of players.value.filter(p => p.isAlreadyAttended).map(p => p.id)) {
+      delete rem[id]
+    }
+    playerStatuses.value = rem
     showToast({ title: t('matchMonitor.attendanceSavedTitle'), message: t('matchMonitor.attendanceSavedMsg'), mode: 'success' })
   } catch (e) {
     const msg = e?.response?.data?.message || t('matchMonitor.attendanceSaveErrorMsg')
