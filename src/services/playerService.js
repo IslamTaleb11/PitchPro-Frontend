@@ -18,6 +18,12 @@ export const playerService = {
     return api.get(`/players/match-call-up/${categoryId}/${matchId}`);
   },
 
+  // Fetch available players for call-up by category & match.
+  // GET /api/players/available/{categoryId}/{matchId} -> { data: [ { playerID, playerName, playerImage, jerseyNumber, positionName, isAlreadyAttended } ] }
+  getAvailablePlayersByCategoryAndMatch(categoryId, matchId) {
+    return api.get(`/players/available/${categoryId}/${matchId}`);
+  },
+
   // Record a new player injury. `payload` must match the backend
   // PlayerInjuryRegistrationRequestDTO (PlayerMedicalDossierID, BodyPart,
   // Severity, Status, InjuryDate, EstimatedReturnDate).
