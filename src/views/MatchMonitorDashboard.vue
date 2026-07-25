@@ -587,8 +587,7 @@ onMounted(loadCategories)
               </button>
             </div>
           </div>
-        </aside>
-      </div>
+</div>
     </main>
   </div>
 
