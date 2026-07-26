@@ -109,7 +109,7 @@ const absentCount = computed(() =>
 )
 
 const presentPlayers = computed(() =>
-  playersForTable.value.filter((p) => p.status === 'present')
+  players.value.filter((p) => p.isAlreadyAttended)
 )
 
 function normalizeLookupItem(item) {
