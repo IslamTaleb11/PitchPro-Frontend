@@ -586,7 +586,7 @@ onMounted(loadCategories)
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black">Min</label>
-                <input v-model="eventMinute" type="number" min="1" max="120" placeholder="'" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-[11px] font-bold rounded px-3 py-2 focus:ring-1 focus:ring-primary-fixed w-20 text-center font-mono" />
+                <input v-model="eventMinute" type="number" min="1" max="150" placeholder="'" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-[11px] font-bold rounded px-3 py-2 focus:ring-1 focus:ring-primary-fixed w-20 text-center font-mono" />
               </div>
               <button @click="logEvent" class="bg-primary-container text-black text-[11px] font-black px-5 py-2 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all uppercase tracking-widest whitespace-nowrap">
                 <span class="material-symbols-outlined text-sm align-middle">add</span> {{ t('matchMonitor.logEvent') }}
