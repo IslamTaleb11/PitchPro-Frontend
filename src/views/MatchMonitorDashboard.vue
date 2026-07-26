@@ -536,6 +536,11 @@ onMounted(loadCategories)
                 </span>
               </div>
             </div>
+            <div class="flex items-center gap-2 ml-auto shrink-0">
+              <button @click="startupModalOpen = true" class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface px-3 py-1.5 rounded border border-outline-variant/20 hover:border-outline-variant/40 transition-all flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">swap_horiz</span> {{ t('matchMonitor.changeMatch') }}
+              </button>
+            </div>
             <div class="absolute -right-8 -top-8 opacity-5 pointer-events-none">
               <span class="material-symbols-outlined text-[160px]" style="font-variation-settings: 'FILL' 1;">sports_soccer</span>
             </div>
