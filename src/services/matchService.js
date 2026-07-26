@@ -59,5 +59,11 @@ export const matchService = {
   // POST /api/match-events  body: { matchAttendanceID, eventTypeID, eventAt }
   saveMatchEvent(payload) {
     return api.post('/match-events', payload);
+  },
+
+  // Get all events for a match.
+  // GET /api/match-events/by-match/{matchId} -> [{ name, eventName, eventAt }]
+  getMatchEvents(matchId) {
+    return api.get(`/match-events/by-match/${matchId}`);
   }
 };

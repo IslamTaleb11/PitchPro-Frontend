@@ -177,13 +177,24 @@ async function loadPlayersByCategory(categoryId) {
   isLoadingPlayers.value = true
   isLoadingEventTypes.value = true
   try {
-    const response = await playerService.getMatchCallUpPlayersByCategory(categoryId, matchId.value)
-    const list = normalizePlayers(response?.data)
+    const [playersRes, eventTypesRes, matchEventsRes] = await Promise.all([
+      playerService.getMatchCallUpPlayersByCategory(categoryId, matchId.value),
+      lookupService.getEventTypes(),
+      matchService.getMatchEvents(matchId.value),
+    ])
+    const list = normalizePlayers(playersRes?.data)
     players.value = list
     playerStatuses.value = Object.fromEntries(list.map((p) => [p.id, null]))
-    matchEvents.value = []
-    const eventTypesRes = await lookupService.getEventTypes()
     EVENT_TYPES.value = normalizeLookupArray(eventTypesRes?.data)
+    const rawEvents = matchEventsRes?.data ?? []
+    matchEvents.value = Array.isArray(rawEvents)
+      ? rawEvents.map((e) => ({
+          minute: e.eventAt ?? e.EventAt,
+          eventTypeName: e.eventName ?? e.EventName,
+          playerName: e.name ?? e.Name,
+          isFromServer: true,
+        }))
+      : []
   } catch (e) {
     showToast({ title: t('matchMonitor.loadErrorTitle'), message: t('matchMonitor.loadErrorMsg'), mode: 'error' })
   } finally {
@@ -577,7 +588,7 @@ onMounted(loadCategories)
                 <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
                 <span class="text-on-surface">{{ evt.eventTypeName }}</span>
                 <span class="text-on-surface-variant font-mono">{{ evt.playerName }}</span>
-                <button @click="removeEvent(idx)" class="ml-1 text-on-surface-variant hover:text-error opacity-0 group-hover:opacity-100 transition-opacity">
+                <button v-if="!evt.isFromServer" @click="removeEvent(idx)" class="ml-1 text-on-surface-variant hover:text-error opacity-0 group-hover:opacity-100 transition-opacity">
                   <span class="material-symbols-outlined text-sm">close</span>
                 </button>
               </div>
