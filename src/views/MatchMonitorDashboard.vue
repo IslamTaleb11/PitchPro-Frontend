@@ -63,29 +63,31 @@ const matchId = ref(null)
 const showResetConfirm = ref(false)
 const showMarkAllConfirm = ref(false)
 const highlightedRow = ref(null)
-
-const pendingPlayers = computed(() =>
-  players.value.filter(p => playerStatuses.value[p.id] !== undefined)
-)
+const isSaving = ref(false)
+const isResetting = ref(false)
 
 const playersForTable = computed(() =>
-  players.value.map(p => ({
-    ...p,
-    status: playerStatuses.value[p.id] ?? p.recordedStatus ?? (p.isAlreadyAttended ? 'recorded' : null),
-  }))
+  players.value.map((p) => {
+    const localStatus = playerStatuses.value[p.id] ?? null
+    const effectiveStatus = localStatus !== null ? localStatus : p.recordedStatus
+    return {
+      ...p,
+      status: effectiveStatus,
+      isLocallyChanged: localStatus !== null,
+    }
+  })
 )
 
-const totalEligible = computed(() =>
-  players.value.filter(p => playerStatuses.value[p.id] || p.recordedStatus)
+const pendingPlayers = computed(() =>
+  players.value.filter((p) => playerStatuses.value[p.id] !== null && playerStatuses.value[p.id] !== undefined)
 )
+
+const totalEligible = computed(() => players.value.length)
 const presentCount = computed(() =>
-  players.value.filter(p => playerStatuses.value[p.id] === 'present' || p.recordedStatus === 'present').length
+  playersForTable.value.filter((p) => p.status === 'present').length
 )
 const absentCount = computed(() =>
-  players.value.filter(p => playerStatuses.value[p.id] === 'absent' || p.recordedStatus === 'absent').length
-)
-const excusedCount = computed(() =>
-  players.value.filter(p => playerStatuses.value[p.id] === 'excused' || p.recordedStatus === 'excused').length
+  playersForTable.value.filter((p) => p.status === 'absent').length
 )
 
 function normalizeLookupItem(item) {
@@ -95,8 +97,18 @@ function normalizeLookupItem(item) {
   const nameCandidates = ['name', 'Name', 'label', 'title', 'categoryName']
   let id = null
   let name = null
-  for (const key of idCandidates) { if (item[key] !== undefined && item[key] !== null) { id = item[key]; break } }
-  for (const key of nameCandidates) { if (item[key] !== undefined && item[key] !== null) { name = item[key]; break } }
+  for (const key of idCandidates) {
+    if (item[key] !== undefined && item[key] !== null) {
+      id = item[key]
+      break
+    }
+  }
+  for (const key of nameCandidates) {
+    if (item[key] !== undefined && item[key] !== null) {
+      name = item[key]
+      break
+    }
+  }
   return { id: id ?? name ?? 'Unknown', name: name ?? String(id ?? 'Unknown') }
 }
 
@@ -106,7 +118,7 @@ function normalizeLookupArray(data) {
     array = data.data || data.items || data.result || data.value || data.$values || []
   }
   if (!Array.isArray(array)) return []
-  return array.map(normalizeLookupItem).filter(i => i.id !== 'Unknown')
+  return array.map(normalizeLookupItem).filter((i) => i.id !== 'Unknown')
 }
 
 function normalizePlayers(payload) {
@@ -115,15 +127,23 @@ function normalizePlayers(payload) {
     data = data.data ?? data.Data ?? data.$values ?? data.result ?? data.Result ?? []
   }
   if (!Array.isArray(data)) return []
-  return data.map(p => ({
-    id: p.PlayerID ?? p.playerID ?? p.id ?? p.Id,
-    name: p.PlayerName ?? p.playerName ?? p.FullName ?? p.fullName ?? p.name ?? '',
-    position: p.PositionName ?? p.positionName ?? p.position ?? '',
-    jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
-    avatar: p.PlayerImage ?? p.playerImage ?? p.photo ?? p.Photo ?? '',
-    isAlreadyAttended: !!(p.isAlreadyAttended ?? p.IsAlreadyAttended ?? p.isAbsent ?? p.IsAbsent ?? false),
-    recordedStatus: p.recordedStatus ?? p.RecordedStatus ?? (p.isAbsent === true || p.IsAbsent === true ? 'absent' : (p.isAbsent === false || p.IsAbsent === false ? 'present' : null)),
-  }))
+  return data.map((p) => {
+    const isAbsent = !!(p.isAbsent ?? p.IsAbsent ?? false)
+    const isAlreadyAttended = !!(p.isAlreadyAttended ?? p.IsAlreadyAttended ?? false)
+    let recordedStatus = p.recordedStatus ?? p.RecordedStatus ?? null
+    if (recordedStatus == null) {
+      recordedStatus = isAbsent ? 'absent' : (isAlreadyAttended ? 'present' : null)
+    }
+    return {
+      id: p.PlayerID ?? p.playerID ?? p.id ?? p.Id,
+      name: p.PlayerName ?? p.playerName ?? p.FullName ?? p.fullName ?? p.name ?? '',
+      position: p.PositionName ?? p.positionName ?? p.position ?? '',
+      jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
+      avatar: p.PlayerImage ?? p.playerImage ?? p.photo ?? p.Photo ?? '',
+      isAlreadyAttended,
+      recordedStatus,
+    }
+  })
 }
 
 async function loadCategories() {
@@ -145,7 +165,7 @@ async function loadPlayersByCategory(categoryId) {
     const response = await playerService.getMatchCallUpPlayersByCategory(categoryId, matchId.value)
     const list = normalizePlayers(response?.data)
     players.value = list
-    playerStatuses.value = Object.fromEntries(list.map(p => [p.id, null]))
+    playerStatuses.value = Object.fromEntries(list.map((p) => [p.id, null]))
   } catch (e) {
     showToast({ title: t('matchMonitor.loadErrorTitle'), message: t('matchMonitor.loadErrorMsg'), mode: 'error' })
   } finally {
@@ -196,7 +216,7 @@ function startSession() {
 
 function updateStatus(playerId, type) {
   playerStatuses.value = { ...playerStatuses.value, [playerId]: type }
-  const player = players.value.find(p => p.id === playerId)
+  const player = players.value.find((p) => p.id === playerId)
   const statusLabel = t(`matchMonitor.${type}`) || type
   showToast({
     title: t('matchMonitor.statusChangedTitle'),
@@ -204,7 +224,9 @@ function updateStatus(playerId, type) {
     mode: 'success',
   })
   highlightedRow.value = playerId
-  setTimeout(() => { highlightedRow.value = null }, 1500)
+  setTimeout(() => {
+    highlightedRow.value = null
+  }, 1500)
 }
 
 function markAllPresent() {
@@ -214,22 +236,26 @@ function markAllPresent() {
 
 async function confirmMarkAllPresent() {
   showMarkAllConfirm.value = false
+  if (!matchId.value) return
+  isSaving.value = true
   const playersAttendance = {}
-  for (const p of pendingPlayers.value) {
+  for (const p of players.value) {
     playersAttendance[p.id] = true
   }
   try {
     await matchService.markAttendance({ matchID: matchId.value, playersAttendance })
-    players.value = players.value.map(p => ({
+    players.value = players.value.map((p) => ({
       ...p,
       isAlreadyAttended: true,
       recordedStatus: 'present',
     }))
-  playerStatuses.value = {}
+    playerStatuses.value = Object.fromEntries(players.value.map((p) => [p.id, null]))
     showToast({ title: t('matchMonitor.attendanceSavedTitle'), message: t('matchMonitor.attendanceSavedMsg'), mode: 'success' })
   } catch (e) {
     const msg = e?.response?.data?.message || t('matchMonitor.attendanceSaveErrorMsg')
     showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: msg, mode: 'error' })
+  } finally {
+    isSaving.value = false
   }
 }
 
@@ -242,22 +268,24 @@ function resetAll() {
 }
 
 async function confirmResetAttendance() {
-  const playerIDs = players.value.map(p => p.id)
+  const playerIDs = players.value.map((p) => p.id)
   if (!playerIDs.length) return
   showResetConfirm.value = false
+  isResetting.value = true
   try {
-    const res = await matchService.resetAttendance({ matchID: matchId.value, playerIDs })
-players.value = players.value.map(p => ({
+    await matchService.resetAttendance({ matchID: matchId.value, playerIDs })
+    players.value = players.value.map((p) => ({
       ...p,
       isAlreadyAttended: false,
-      recordedStatus: undefined,
+      recordedStatus: null,
     }))
-    playerStatuses.value = {}
-    const msg = res?.data?.message || t('matchMonitor.attendanceResetMsg')
-    showToast({ title: t('matchMonitor.attendanceResetTitle'), message: msg, mode: 'success' })
+    playerStatuses.value = Object.fromEntries(players.value.map((p) => [p.id, null]))
+    showToast({ title: t('matchMonitor.attendanceResetTitle'), message: t('matchMonitor.attendanceResetMsg'), mode: 'success' })
   } catch (e) {
     const msg = e?.response?.data?.message || t('matchMonitor.attendanceSaveErrorMsg')
     showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: msg, mode: 'error' })
+  } finally {
+    isResetting.value = false
   }
 }
 
@@ -266,19 +294,28 @@ async function saveAttendance() {
     showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: t('matchMonitor.noMatchForAttendance'), mode: 'error' })
     return
   }
+  if (!pendingPlayers.value.length) {
+    showToast({ title: t('matchMonitor.attendanceSavedTitle'), message: t('matchMonitor.noChangesToSave'), mode: 'info' })
+    return
+  }
+  isSaving.value = true
   const playersAttendance = {}
   for (const p of pendingPlayers.value) {
     playersAttendance[p.id] = playerStatuses.value[p.id] === 'present'
   }
   try {
     await matchService.markAttendance({ matchID: matchId.value, playersAttendance })
-    players.value = players.value.map(p => ({
-      ...p,
-      isAlreadyAttended: p.isAlreadyAttended || playerStatuses.value[p.id] === 'present',
-      recordedStatus: playerStatuses.value[p.id] === 'present' ? 'present' : playerStatuses.value[p.id] === 'absent' ? 'absent' : p.recordedStatus,
-    }))
+    players.value = players.value.map((p) => {
+      const localStatus = playerStatuses.value[p.id]
+      if (localStatus === null || localStatus === undefined) return p
+      return {
+        ...p,
+        isAlreadyAttended: localStatus === 'present' || p.isAlreadyAttended,
+        recordedStatus: localStatus === 'present' ? 'present' : localStatus === 'absent' ? 'absent' : p.recordedStatus,
+      }
+    })
     const rem = { ...playerStatuses.value }
-    for (const id of players.value.filter(p => p.isAlreadyAttended).map(p => p.id)) {
+    for (const id of pendingPlayers.value.map((p) => p.id)) {
       delete rem[id]
     }
     playerStatuses.value = rem
@@ -286,6 +323,8 @@ async function saveAttendance() {
   } catch (e) {
     const msg = e?.response?.data?.message || t('matchMonitor.attendanceSaveErrorMsg')
     showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: msg, mode: 'error' })
+  } finally {
+    isSaving.value = false
   }
 }
 
@@ -412,15 +451,19 @@ onMounted(loadCategories)
 
           <div class="flex items-center justify-between bg-surface-container-low border border-outline-variant/10 p-4 rounded mb-2">
             <div class="flex items-center gap-4">
-              <button class="bg-primary-container text-black text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="markAllPresent">
+              <button class="bg-primary-container text-black text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="markAllPresent" :disabled="isSaving || isResetting">
                 <span class="material-symbols-outlined text-sm">done_all</span> {{ t('matchMonitor.markAllPresent') }}
               </button>
-              <button class="bg-primary-container text-black text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="saveAttendance">
+              <button class="bg-primary-container text-black text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="saveAttendance" :disabled="isSaving || isResetting || !pendingPlayers.length">
                 <span class="material-symbols-outlined text-sm">save</span> {{ t('matchMonitor.saveAttendance') }}
               </button>
-              <button class="text-[11px] font-black text-on-surface-variant hover:text-on-surface px-4 py-2.5 rounded transition-all flex items-center gap-2 uppercase tracking-widest border border-outline-variant/20 bg-surface-container-high" type="button" @click="resetAll">
+              <button class="text-[11px] font-black text-on-surface-variant hover:text-on-surface px-4 py-2.5 rounded transition-all flex items-center gap-2 uppercase tracking-widest border border-outline-variant/20 bg-surface-container-high" type="button" @click="resetAll" :disabled="isSaving || isResetting">
                 <span class="material-symbols-outlined text-sm">refresh</span> {{ t('matchMonitor.resetAll') }}
               </button>
+            </div>
+            <div class="flex items-center gap-4 text-[11px] text-on-surface-variant font-bold uppercase tracking-wider">
+              <span class="text-primary">{{ presentCount }} {{ t('matchMonitor.present') }}</span>
+              <span class="text-error">{{ absentCount }} {{ t('matchMonitor.absent') }}</span>
             </div>
           </div>
 
@@ -435,9 +478,9 @@ onMounted(loadCategories)
                 </tr>
               </thead>
               <tbody>
-<tr v-for="player in playersForTable" :key="player.id"
-                class="bg-surface-container-low/40 hover:bg-surface-container-low transition-colors group"
-                :class="highlightedRow === player.id ? 'highlight-row' : ''">
+                <tr v-for="player in playersForTable" :key="player.id"
+                  class="bg-surface-container-low/40 hover:bg-surface-container-low transition-colors group"
+                  :class="highlightedRow === player.id ? 'highlight-row' : ''">
                   <td class="px-4 py-3 border-y border-l border-outline-variant/5 w-14">
                     <div class="w-12 h-12 rounded border-2 p-0.5 relative" :class="player.isAlreadyAttended ? 'border-tertiary-fixed-dim/30' : player.status === 'present' ? 'border-primary/20' : player.status === 'absent' ? 'border-error/20' : 'border-outline-variant/10'">
                       <img v-if="player.avatar" :src="player.avatar" :alt="player.name" class="w-full h-full object-cover rounded-sm">
@@ -455,44 +498,43 @@ onMounted(loadCategories)
                   <td class="px-4 py-3 border-y border-outline-variant/5">
                     <span class="bg-surface-container-highest px-3 py-1.5 rounded text-[11px] font-bold text-on-surface-variant border border-outline-variant/20 uppercase tracking-tighter">{{ localizePosition(player.position) }}</span>
                   </td>
-                   <td class="px-4 py-3 border-y border-r border-outline-variant/5">
-<div v-if="player.isAlreadyAttended" class="flex justify-center gap-2">
-                         <button type="button"
-                           :class="[
-                             'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
-                             player.status === 'present' ? 'active-pill-present' : 'border-outline-variant/20 hover:border-primary/40'
-                           ]"
-                           @click="updateStatus(player.id, 'present')">{{ t('matchMonitor.present') }}</button>
-                         <button type="button"
-                           :class="[
-                             'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
-                             player.status === 'absent' ? 'active-pill-absent' : 'border-outline-variant/20 hover:border-error/40'
-                           ]"
-                           @click="updateStatus(player.id, 'absent')">{{ t('matchMonitor.absent') }}</button>
-                       </div>
-                       <div v-else class="flex justify-center gap-2">
-                        <button type="button"
-                          :class="[
-                            'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
-                            player.status === 'present' ? 'active-pill-present' : 'border-outline-variant/20 hover:border-primary/40'
-                          ]"
-                          @click="updateStatus(player.id, 'present')">{{ t('matchMonitor.present') }}</button>
-                        <button type="button"
-                          :class="[
-                            'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
-                            player.status === 'absent' ? 'active-pill-absent' : 'border-outline-variant/20 hover:border-error/40'
-                          ]"
-                          @click="updateStatus(player.id, 'absent')">{{ t('matchMonitor.absent') }}</button>
-                      </div>
-                    </td>
-                 </tr>
+                  <td class="px-4 py-3 border-y border-r border-outline-variant/5">
+                    <div v-if="player.isAlreadyAttended" class="flex justify-center gap-2">
+                      <button type="button"
+                        :class="[
+                          'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
+                          player.status === 'present' ? 'active-pill-present' : 'border-outline-variant/20 hover:border-primary/40'
+                        ]"
+                        @click="updateStatus(player.id, 'present')">{{ t('matchMonitor.present') }}</button>
+                      <button type="button"
+                        :class="[
+                          'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
+                          player.status === 'absent' ? 'active-pill-absent' : 'border-outline-variant/20 hover:border-error/40'
+                        ]"
+                        @click="updateStatus(player.id, 'absent')">{{ t('matchMonitor.absent') }}</button>
+                    </div>
+                    <div v-else class="flex justify-center gap-2">
+                      <button type="button"
+                        :class="[
+                          'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
+                          player.status === 'present' ? 'active-pill-present' : 'border-outline-variant/20 hover:border-primary/40'
+                        ]"
+                        @click="updateStatus(player.id, 'present')">{{ t('matchMonitor.present') }}</button>
+                      <button type="button"
+                        :class="[
+                          'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
+                          player.status === 'absent' ? 'active-pill-absent' : 'border-outline-variant/20 hover:border-error/40'
+                        ]"
+                        @click="updateStatus(player.id, 'absent')">{{ t('matchMonitor.absent') }}</button>
+                    </div>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
         </div>
 
-
-</div>
+      </div>
     </main>
   </div>
 
@@ -507,7 +549,7 @@ onMounted(loadCategories)
           </div>
           <h2 class="font-headline text-lg font-black uppercase tracking-tight text-on-surface">{{ t('matchMonitor.markAllPresentConfirmTitle') }}</h2>
           <p class="mt-3 text-sm text-on-surface-variant">
-            {{ t('matchMonitor.markAllPresentConfirmMessage', { count: pendingPlayers.length }) }}
+            {{ t('matchMonitor.markAllPresentConfirmMessage', { count: totalEligible }) }}
           </p>
         </div>
         <div class="flex gap-3 border-t border-outline-variant/10 p-4">

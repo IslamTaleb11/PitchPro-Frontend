@@ -510,7 +510,8 @@
     "attendanceResetMsg": "Attendance records have been reset.",
     "resetAttendanceConfirmTitle": "Reset Attendance Records?",
     "resetAttendanceConfirmMessage": "This will reset attendance for all {count} players. Players marked as attended will be cleared, and all match events (goals, assists, cards, etc.) will be permanently deleted.",
-    "confirmResetAttendance": "Yes, Reset All"
+    "confirmResetAttendance": "Yes, Reset All",
+    "noChangesToSave": "No pending changes to save."
   },
   "medical": {
     "sectionTitle": "Department Telemetry",
