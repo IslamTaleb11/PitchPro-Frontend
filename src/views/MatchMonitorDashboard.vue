@@ -56,7 +56,7 @@ const selectedCategory = ref('')
 const matches = ref([])
 const selectedMatch = ref(null)
 const isLoadingMatches = ref(false)
-const selectedSessionType = ref('Training Session')
+const selectedSessionType = ref('Matchday Prep')
 const players = ref([])
 
 const playerStatuses = ref({})
@@ -491,8 +491,8 @@ onMounted(loadCategories)
           <div class="mb-8">
             <div class="flex items-start justify-between">
               <div>
-                <h1 class="font-headline text-4xl font-black text-on-surface tracking-tight uppercase leading-none">{{ t('matchMonitor.dailyOperations') }}</h1>
-                <p class="text-on-surface-variant font-medium text-sm mt-2 opacity-80">{{ t('matchMonitor.dailyOperationsSub') }}</p>
+                <h1 class="font-headline text-4xl font-black text-on-surface tracking-tight uppercase leading-none">{{ t('matchMonitor.matchCenter') }}</h1>
+                <p class="text-on-surface-variant font-medium text-sm mt-2 opacity-80">{{ t('matchMonitor.matchCenterSub') }}</p>
               </div>
               <div class="flex gap-4">
                 <div class="flex flex-col gap-1.5">
@@ -504,7 +504,7 @@ onMounted(loadCategories)
                 </div>
                 <div class="flex flex-col gap-1.5">
                   <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">{{ t('matchMonitor.sessionType') }}</label>
-                  <select v-model="selectedSessionType" class="bg-surface-container-high border-outline-variant/20 text-on-surface text-xs font-bold rounded px-4 py-2.5 focus:ring-1 focus:ring-primary-fixed min-w-[160px] uppercase tracking-wider">
+                  <select v-model="selectedSessionType" disabled class="bg-surface-container-high border-outline-variant/20 text-on-surface text-xs font-bold rounded px-4 py-2.5 focus:ring-1 focus:ring-primary-fixed min-w-[160px] uppercase tracking-wider opacity-60 cursor-not-allowed">
                     <option>Training Session</option>
                     <option>Matchday Prep</option>
                     <option>Recovery / Gym</option>
@@ -570,9 +570,6 @@ onMounted(loadCategories)
               <h3 class="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant">
                 {{ t('matchMonitor.matchEvents') }} ({{ matchEvents.length }})
               </h3>
-              <button v-if="matchEvents.length" @click="matchEvents = []" class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-error transition-colors flex items-center gap-1">
-                <span class="material-symbols-outlined text-sm">delete_sweep</span> {{ t('matchMonitor.clearEvents') }}
-              </button>
             </div>
             <div class="flex flex-wrap gap-3 items-end">
               <div class="flex flex-col gap-1">
