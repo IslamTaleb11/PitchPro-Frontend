@@ -524,7 +524,7 @@
     "logEventErrorMsg": "Please select a player and enter a minute.",
     "playerMustBePresent": "Only present players can be logged as events.",
     "playerNotAttended": "Player attendance must be saved before logging events.",
-    "selectEventType": "Select event type...",
+    "selectEventType": "Select event type..."
   },
   "medical": {
     "sectionTitle": "Department Telemetry",
