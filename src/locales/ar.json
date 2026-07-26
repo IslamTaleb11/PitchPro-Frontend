@@ -521,7 +521,8 @@
     "logEventErrorMsg": "الرجاء اختيار لاعب وإدخال الدقيقة.",
     "playerMustBePresent": "فقط اللاعبون الحاضرون يمكن تسجيلهم كأحداث.",
     "playerNotAttended": "يجب حفظ حضور اللاعب قبل تسجيل الأحداث.",
-    "selectEventType": "اختر نوع الحدث..."
+    "selectEventType": "اختر نوع الحدث...",
+    "changeMatch": "تغيير المباراة"
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",
