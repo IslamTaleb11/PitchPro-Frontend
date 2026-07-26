@@ -338,7 +338,7 @@ async function removeEvent(index) {
   if (!evt) return
   if (evt.isFromServer && evt.id) {
     try {
-      await matchService.deleteMatchEvent(evt.id)
+      await matchService.deleteMatchEvent(matchId.value, evt.id)
     } catch {
       showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: t('matchMonitor.attendanceSaveErrorMsg'), mode: 'error' })
       return

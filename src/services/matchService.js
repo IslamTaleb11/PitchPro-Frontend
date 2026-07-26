@@ -68,8 +68,8 @@ export const matchService = {
   },
 
   // Delete a match event.
-  // DELETE /api/match-events/{id}
-  deleteMatchEvent(id) {
-    return api.delete(`/match-events/${id}`);
+  // DELETE /api/match-events?MatchID={matchId}&EventID={eventId}
+  deleteMatchEvent(matchId, eventId) {
+    return api.delete('/match-events', { params: { MatchID: matchId, EventID: eventId } });
   }
 };
