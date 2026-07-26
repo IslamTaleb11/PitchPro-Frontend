@@ -62,8 +62,14 @@ export const matchService = {
   },
 
   // Get all events for a match.
-  // GET /api/match-events/by-match/{matchId} -> [{ name, eventName, eventAt }]
+  // GET /api/match-events/by-match/{matchId} -> [{ eventID, name, eventName, eventAt }]
   getMatchEvents(matchId) {
     return api.get(`/match-events/by-match/${matchId}`);
+  },
+
+  // Delete a match event.
+  // DELETE /api/match-events/{id}
+  deleteMatchEvent(id) {
+    return api.delete(`/match-events/${id}`);
   }
 };

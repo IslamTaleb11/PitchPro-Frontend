@@ -189,6 +189,7 @@ async function loadPlayersByCategory(categoryId) {
     const rawEvents = matchEventsRes?.data ?? []
     matchEvents.value = Array.isArray(rawEvents)
       ? rawEvents.map((e) => ({
+          id: e.eventID ?? e.EventID,
           minute: e.eventAt ?? e.EventAt,
           eventTypeName: e.eventName ?? e.EventName,
           playerName: e.name ?? e.Name,
@@ -332,7 +333,17 @@ async function logEvent() {
   }
 }
 
-function removeEvent(index) {
+async function removeEvent(index) {
+  const evt = matchEvents.value[index]
+  if (!evt) return
+  if (evt.isFromServer && evt.id) {
+    try {
+      await matchService.deleteMatchEvent(evt.id)
+    } catch {
+      showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: t('matchMonitor.attendanceSaveErrorMsg'), mode: 'error' })
+      return
+    }
+  }
   matchEvents.value = matchEvents.value.filter((_, i) => i !== index)
 }
 
@@ -588,7 +599,7 @@ onMounted(loadCategories)
                 <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
                 <span class="text-on-surface">{{ evt.eventTypeName }}</span>
                 <span class="text-on-surface-variant font-mono">{{ evt.playerName }}</span>
-                <button v-if="!evt.isFromServer" @click="removeEvent(idx)" class="ml-1 text-on-surface-variant hover:text-error opacity-0 group-hover:opacity-100 transition-opacity">
+                <button @click="removeEvent(idx)" class="ml-1 text-on-surface-variant hover:text-error opacity-0 group-hover:opacity-100 transition-opacity">
                   <span class="material-symbols-outlined text-sm">close</span>
                 </button>
               </div>
