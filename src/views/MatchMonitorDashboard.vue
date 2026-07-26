@@ -66,6 +66,24 @@ const highlightedRow = ref(null)
 const isSaving = ref(false)
 const isResetting = ref(false)
 
+const EVENT_TYPES = [
+  { key: 'goal', label: 'Goal' },
+  { key: 'assist', label: 'Assist' },
+  { key: 'own_goal', label: 'Own Goal' },
+  { key: 'penalty_goal', label: 'Penalty Goal' },
+  { key: 'penalty_miss', label: 'Penalty Miss' },
+  { key: 'red_card', label: 'Red Card' },
+  { key: 'yellow_card', label: 'Yellow Card' },
+  { key: 'sub_in', label: 'Substitution In' },
+  { key: 'sub_out', label: 'Substitution Out' },
+]
+
+const matchEvents = ref([])
+const showEventLogger = ref(true)
+const eventPlayer = ref('')
+const eventType = ref('goal')
+const eventMinute = ref('')
+
 const playersForTable = computed(() =>
   players.value.map((p) => {
     const localStatus = playerStatuses.value[p.id] ?? null
@@ -88,6 +106,10 @@ const presentCount = computed(() =>
 )
 const absentCount = computed(() =>
   playersForTable.value.filter((p) => p.status === 'absent').length
+)
+
+const presentPlayers = computed(() =>
+  playersForTable.value.filter((p) => p.status === 'present')
 )
 
 function normalizeLookupItem(item) {
@@ -166,6 +188,7 @@ async function loadPlayersByCategory(categoryId) {
     const list = normalizePlayers(response?.data)
     players.value = list
     playerStatuses.value = Object.fromEntries(list.map((p) => [p.id, null]))
+    matchEvents.value = []
   } catch (e) {
     showToast({ title: t('matchMonitor.loadErrorTitle'), message: t('matchMonitor.loadErrorMsg'), mode: 'error' })
   } finally {
@@ -259,6 +282,43 @@ async function confirmMarkAllPresent() {
   }
 }
 
+function logEvent() {
+  const playerId = eventPlayer.value
+  if (!playerId) {
+    showToast({ title: t('matchMonitor.selectPlayerTitle'), message: t('matchMonitor.selectPlayerMessage'), mode: 'error' })
+    return
+  }
+  const player = presentPlayers.value.find((p) => String(p.id) === String(playerId))
+  if (!player) {
+    showToast({ title: t('matchMonitor.logEventErrorTitle'), message: t('matchMonitor.playerMustBePresent'), mode: 'error' })
+    return
+  }
+  if (!eventMinute.value || isNaN(Number(eventMinute.value))) {
+    showToast({ title: t('matchMonitor.logEventErrorTitle'), message: t('matchMonitor.logEventErrorMsg'), mode: 'error' })
+    return
+  }
+  const typeInfo = EVENT_TYPES.find((e) => e.key === eventType.value) || EVENT_TYPES[0]
+  matchEvents.value = [
+    ...matchEvents.value,
+    {
+      minute: Number(eventMinute.value),
+      type: typeInfo.key,
+      typeLabel: typeInfo.label,
+      playerId: player.id,
+      playerName: player.name,
+      jersey: player.jersey,
+    },
+  ]
+  eventPlayer.value = ''
+  eventType.value = 'goal'
+  eventMinute.value = ''
+  showToast({ title: t('matchMonitor.eventLoggedTitle'), message: t('matchMonitor.eventLoggedMsg', { type: typeInfo.label, player: player.name }), mode: 'success' })
+}
+
+function removeEvent(index) {
+  matchEvents.value = matchEvents.value.filter((_, i) => i !== index)
+}
+
 function resetAll() {
   if (!matchId.value) {
     showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: t('matchMonitor.noMatchForAttendance'), mode: 'error' })
@@ -280,6 +340,7 @@ async function confirmResetAttendance() {
       recordedStatus: null,
     }))
     playerStatuses.value = Object.fromEntries(players.value.map((p) => [p.id, null]))
+    matchEvents.value = []
     showToast({ title: t('matchMonitor.attendanceResetTitle'), message: t('matchMonitor.attendanceResetMsg'), mode: 'success' })
   } catch (e) {
     const msg = e?.response?.data?.message || t('matchMonitor.attendanceSaveErrorMsg')
@@ -464,6 +525,52 @@ onMounted(loadCategories)
             <div class="flex items-center gap-4 text-[11px] text-on-surface-variant font-bold uppercase tracking-wider">
               <span class="text-primary">{{ presentCount }} {{ t('matchMonitor.present') }}</span>
               <span class="text-error">{{ absentCount }} {{ t('matchMonitor.absent') }}</span>
+            </div>
+          </div>
+
+          <!-- Match Event Logger -->
+          <div v-if="players.length" class="bg-surface-container-low border border-outline-variant/10 rounded-lg p-4 mb-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant">
+                {{ t('matchMonitor.matchEvents') }} ({{ matchEvents.length }})
+              </h3>
+              <button v-if="matchEvents.length" @click="matchEvents = []" class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-error transition-colors flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">delete_sweep</span> {{ t('matchMonitor.clearEvents') }}
+              </button>
+            </div>
+            <div class="flex flex-wrap gap-3 items-end">
+              <div class="flex flex-col gap-1">
+                <label class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black">{{ t('matchMonitor.player') }}</label>
+                <select v-model="eventPlayer" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-[11px] font-bold rounded px-3 py-2 focus:ring-1 focus:ring-primary-fixed min-w-[150px]">
+                  <option value="" disabled>{{ t('matchMonitor.selectPlayer') }}</option>
+                  <option v-for="p in presentPlayers" :key="p.id" :value="p.id">{{ p.name }} ({{ p.jersey }})</option>
+                </select>
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black">{{ t('matchMonitor.eventType') }}</label>
+                <select v-model="eventType" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-[11px] font-bold rounded px-3 py-2 focus:ring-1 focus:ring-primary-fixed min-w-[140px]">
+                  <option v-for="e in EVENT_TYPES" :key="e.key" :value="e.key">{{ t('matchMonitor.' + e.key) }}</option>
+                </select>
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black">Min</label>
+                <input v-model="eventMinute" type="number" min="1" max="120" placeholder="'" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-[11px] font-bold rounded px-3 py-2 focus:ring-1 focus:ring-primary-fixed w-20 text-center font-mono" />
+              </div>
+              <button @click="logEvent" class="bg-primary-container text-black text-[11px] font-black px-5 py-2 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all uppercase tracking-widest whitespace-nowrap">
+                <span class="material-symbols-outlined text-sm align-middle">add</span> {{ t('matchMonitor.logEvent') }}
+              </button>
+            </div>
+            <div v-if="matchEvents.length" class="mt-3 flex flex-wrap gap-2">
+              <div v-for="(evt, idx) in matchEvents" :key="idx"
+                class="flex items-center gap-2 bg-surface-container-high border border-outline-variant/20 rounded px-3 py-1.5 text-[11px] font-bold text-on-surface hover:border-outline-variant/40 transition-colors group">
+                <span class="font-mono text-on-surface-variant text-[10px]">{{ evt.minute }}'</span>
+                <span class="w-1.5 h-1.5 rounded-full" :class="evt.type === 'red_card' ? 'bg-error' : evt.type === 'yellow_card' ? 'bg-yellow-500' : evt.type === 'goal' || evt.type === 'penalty_goal' ? 'bg-primary' : 'bg-on-surface-variant'"></span>
+                <span class="text-on-surface">{{ evt.typeLabel }}</span>
+                <span class="text-on-surface-variant font-mono">{{ evt.playerName }}</span>
+                <button @click="removeEvent(idx)" class="ml-1 text-on-surface-variant hover:text-error opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+              </div>
             </div>
           </div>
 
