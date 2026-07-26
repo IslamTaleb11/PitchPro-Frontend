@@ -464,7 +464,7 @@ onMounted(loadCategories)
               </p>
               <p v-if="m.stadiumName" class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tight truncate">{{ m.stadiumName }}</p>
             </div>
-            <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded shrink-0" :class="m.isHome ? 'bg-primary/10 text-primary' : 'bg-surface-container-highest text-on-surface-variant'">{{ m.isHome ? 'HOME' : 'AWAY' }}</span>
+            <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded shrink-0" :class="m.isHome ? 'bg-primary/10 text-primary' : 'bg-surface-container-highest text-on-surface-variant'">{{ m.isHome ? t('callUp.home') : t('callUp.away') }}</span>
           </div>
         </div>
         <div v-else class="bg-surface-container-high rounded border border-outline-variant/10 p-5 text-center">
