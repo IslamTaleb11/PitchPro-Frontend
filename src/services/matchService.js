@@ -53,5 +53,11 @@ export const matchService = {
   // POST /api/match-attendance/reset  body: { matchID, playerIDs: [int] }
   resetAttendance(payload) {
     return api.post('/match-attendance/reset', payload);
+  },
+
+  // Save a match event (goal, card, substitution, etc.).
+  // POST /api/match-events  body: { matchAttendanceID, eventTypeID, eventAt }
+  saveMatchEvent(payload) {
+    return api.post('/match-events', payload);
   }
 };

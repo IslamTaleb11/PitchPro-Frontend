@@ -520,15 +520,8 @@
     "logEventErrorTitle": "بيانات ناقصة",
     "logEventErrorMsg": "الرجاء اختيار لاعب وإدخال الدقيقة.",
     "playerMustBePresent": "فقط اللاعبون الحاضرون يمكن تسجيلهم كأحداث.",
-    "goal": "هدف",
-    "assist": "تقديم",
-    "own_goal": "هدف عكسي",
-    "penalty_goal": "ركلة جزاء",
-    "penalty_miss": "ركلة جزاء مضاعة",
-    "red_card": "بطاقة حمراء",
-    "yellow_card": "بطاقة صفراء",
-    "sub_in": "دخول بديل",
-    "sub_out": "خروج بديل"
+    "playerNotAttended": "يجب حفظ حضور اللاعب قبل تسجيل الأحداث.",
+    "selectEventType": "اختر نوع الحدث...",
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",

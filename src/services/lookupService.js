@@ -29,6 +29,12 @@ export const lookupService = {
     return api.get('/lookups/sessiontypes');
   },
 
+  // Get all match event types.
+  // GET /api/lookups/eventtypes -> [{ id, name }]
+  getEventTypes() {
+    return api.get('/lookups/eventtypes');
+  },
+
   // Get upcoming schedule (matches & training).
   // GET /api/lookups/upcoming-schedule?pageNumber=1&pageSize=50&eventClassification=Match&category=...
   getUpcomingSchedule(params) {

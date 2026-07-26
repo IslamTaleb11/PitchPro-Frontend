@@ -49,6 +49,7 @@ const isSidebarOpen = ref(true)
 const startupModalOpen = ref(true)
 const isLoadingCategories = ref(false)
 const isLoadingPlayers = ref(false)
+const isLoadingEventTypes = ref(false)
 
 const categories = ref([])
 const selectedCategory = ref('')
@@ -66,17 +67,7 @@ const highlightedRow = ref(null)
 const isSaving = ref(false)
 const isResetting = ref(false)
 
-const EVENT_TYPES = [
-  { key: 'goal', label: 'Goal' },
-  { key: 'assist', label: 'Assist' },
-  { key: 'own_goal', label: 'Own Goal' },
-  { key: 'penalty_goal', label: 'Penalty Goal' },
-  { key: 'penalty_miss', label: 'Penalty Miss' },
-  { key: 'red_card', label: 'Red Card' },
-  { key: 'yellow_card', label: 'Yellow Card' },
-  { key: 'sub_in', label: 'Substitution In' },
-  { key: 'sub_out', label: 'Substitution Out' },
-]
+const EVENT_TYPES = ref([])
 
 const matchEvents = ref([])
 const showEventLogger = ref(true)
@@ -164,6 +155,7 @@ function normalizePlayers(payload) {
       avatar: p.PlayerImage ?? p.playerImage ?? p.photo ?? p.Photo ?? '',
       isAlreadyAttended,
       recordedStatus,
+      matchAttendanceId: p.MatchAttendanceID ?? p.matchAttendanceID ?? p.matchAttendanceId ?? null,
     }
   })
 }
@@ -183,13 +175,23 @@ async function loadCategories() {
 
 async function loadPlayersByCategory(categoryId) {
   isLoadingPlayers.value = true
+  isLoadingEventTypes.value = true
   try {
     const response = await playerService.getMatchCallUpPlayersByCategory(categoryId, matchId.value)
     const list = normalizePlayers(response?.data)
     players.value = list
     playerStatuses.value = Object.fromEntries(list.map((p) => [p.id, null]))
     matchEvents.value = []
+    const eventTypesRes = await lookupService.getEventTypes()
+    const typeList = eventTypesRes?.data?.data ?? eventTypesRes?.data?.EventTypeList ?? eventTypesRes?.data ?? []
+    EVENT_TYPES.value = Array.isArray(typeList) ? typeList : []
   } catch (e) {
+    showToast({ title: t('matchMonitor.loadErrorTitle'), message: t('matchMonitor.loadErrorMsg'), mode: 'error' })
+  } finally {
+    isLoadingPlayers.value = false
+    isLoadingEventTypes.value = false
+  }
+}
     showToast({ title: t('matchMonitor.loadErrorTitle'), message: t('matchMonitor.loadErrorMsg'), mode: 'error' })
   } finally {
     isLoadingPlayers.value = false
@@ -239,13 +241,6 @@ function startSession() {
 
 function updateStatus(playerId, type) {
   playerStatuses.value = { ...playerStatuses.value, [playerId]: type }
-  const player = players.value.find((p) => p.id === playerId)
-  const statusLabel = t(`matchMonitor.${type}`) || type
-  showToast({
-    title: t('matchMonitor.statusChangedTitle'),
-    message: t('matchMonitor.statusChangedMsg', { name: player?.name ?? '', status: statusLabel }),
-    mode: 'success',
-  })
   highlightedRow.value = playerId
   setTimeout(() => {
     highlightedRow.value = null
@@ -266,11 +261,13 @@ async function confirmMarkAllPresent() {
     playersAttendance[p.id] = true
   }
   try {
-    await matchService.markAttendance({ matchID: matchId.value, playersAttendance })
+    const res = await matchService.markAttendance({ matchID: matchId.value, playersAttendance })
+    const attendanceIds = res?.data?.attendanceIds ?? {}
     players.value = players.value.map((p) => ({
       ...p,
       isAlreadyAttended: true,
       recordedStatus: 'present',
+      matchAttendanceId: attendanceIds[p.id] ?? p.matchAttendanceId,
     }))
     playerStatuses.value = Object.fromEntries(players.value.map((p) => [p.id, null]))
     showToast({ title: t('matchMonitor.attendanceSavedTitle'), message: t('matchMonitor.attendanceSavedMsg'), mode: 'success' })
@@ -282,10 +279,14 @@ async function confirmMarkAllPresent() {
   }
 }
 
-function logEvent() {
+async function logEvent() {
   const playerId = eventPlayer.value
   if (!playerId) {
     showToast({ title: t('matchMonitor.selectPlayerTitle'), message: t('matchMonitor.selectPlayerMessage'), mode: 'error' })
+    return
+  }
+  if (!eventMinute.value || isNaN(Number(eventMinute.value))) {
+    showToast({ title: t('matchMonitor.logEventErrorTitle'), message: t('matchMonitor.logEventErrorMsg'), mode: 'error' })
     return
   }
   const player = presentPlayers.value.find((p) => String(p.id) === String(playerId))
@@ -293,26 +294,37 @@ function logEvent() {
     showToast({ title: t('matchMonitor.logEventErrorTitle'), message: t('matchMonitor.playerMustBePresent'), mode: 'error' })
     return
   }
-  if (!eventMinute.value || isNaN(Number(eventMinute.value))) {
-    showToast({ title: t('matchMonitor.logEventErrorTitle'), message: t('matchMonitor.logEventErrorMsg'), mode: 'error' })
+  const selectedType = EVENT_TYPES.value.find((e) => String(e.id) === String(eventType.value))
+  if (!selectedType) return
+  if (!player.matchAttendanceId) {
+    showToast({ title: t('matchMonitor.logEventErrorTitle'), message: t('matchMonitor.playerNotAttended'), mode: 'error' })
     return
   }
-  const typeInfo = EVENT_TYPES.find((e) => e.key === eventType.value) || EVENT_TYPES[0]
-  matchEvents.value = [
-    ...matchEvents.value,
-    {
-      minute: Number(eventMinute.value),
-      type: typeInfo.key,
-      typeLabel: typeInfo.label,
-      playerId: player.id,
-      playerName: player.name,
-      jersey: player.jersey,
-    },
-  ]
-  eventPlayer.value = ''
-  eventType.value = 'goal'
-  eventMinute.value = ''
-  showToast({ title: t('matchMonitor.eventLoggedTitle'), message: t('matchMonitor.eventLoggedMsg', { type: typeInfo.label, player: player.name }), mode: 'success' })
+  try {
+    await matchService.saveMatchEvent({
+      matchAttendanceID: player.matchAttendanceId,
+      eventTypeID: Number(selectedType.id),
+      eventAt: Number(eventMinute.value),
+    })
+    matchEvents.value = [
+      ...matchEvents.value,
+      {
+        minute: Number(eventMinute.value),
+        eventTypeId: selectedType.id,
+        eventTypeName: selectedType.name,
+        playerId: player.id,
+        playerName: player.name,
+        jersey: player.jersey,
+      },
+    ]
+    eventPlayer.value = ''
+    eventType.value = ''
+    eventMinute.value = ''
+    showToast({ title: t('matchMonitor.eventLoggedTitle'), message: t('matchMonitor.eventLoggedMsg', { type: selectedType.name, player: player.name }), mode: 'success' })
+  } catch (e) {
+    const msg = e?.response?.data?.message || t('matchMonitor.attendanceSaveErrorMsg')
+    showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: msg, mode: 'error' })
+  }
 }
 
 function removeEvent(index) {
@@ -341,6 +353,7 @@ async function confirmResetAttendance() {
     }))
     playerStatuses.value = Object.fromEntries(players.value.map((p) => [p.id, null]))
     matchEvents.value = []
+    EVENT_TYPES.value = []
     showToast({ title: t('matchMonitor.attendanceResetTitle'), message: t('matchMonitor.attendanceResetMsg'), mode: 'success' })
   } catch (e) {
     const msg = e?.response?.data?.message || t('matchMonitor.attendanceSaveErrorMsg')
@@ -365,7 +378,8 @@ async function saveAttendance() {
     playersAttendance[p.id] = playerStatuses.value[p.id] === 'present'
   }
   try {
-    await matchService.markAttendance({ matchID: matchId.value, playersAttendance })
+    const res = await matchService.markAttendance({ matchID: matchId.value, playersAttendance })
+    const attendanceIds = res?.data?.attendanceIds ?? {}
     players.value = players.value.map((p) => {
       const localStatus = playerStatuses.value[p.id]
       if (localStatus === null || localStatus === undefined) return p
@@ -373,6 +387,7 @@ async function saveAttendance() {
         ...p,
         isAlreadyAttended: localStatus === 'present' || p.isAlreadyAttended,
         recordedStatus: localStatus === 'present' ? 'present' : localStatus === 'absent' ? 'absent' : p.recordedStatus,
+        matchAttendanceId: attendanceIds[p.id] ?? p.matchAttendanceId,
       }
     })
     const rem = { ...playerStatuses.value }
@@ -549,7 +564,8 @@ onMounted(loadCategories)
               <div class="flex flex-col gap-1">
                 <label class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black">{{ t('matchMonitor.eventType') }}</label>
                 <select v-model="eventType" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-[11px] font-bold rounded px-3 py-2 focus:ring-1 focus:ring-primary-fixed min-w-[140px]">
-                  <option v-for="e in EVENT_TYPES" :key="e.key" :value="e.key">{{ t('matchMonitor.' + e.key) }}</option>
+                  <option value="" disabled>{{ t('matchMonitor.selectEventType') }}</option>
+                  <option v-for="e in EVENT_TYPES" :key="e.id" :value="e.id">{{ e.name }}</option>
                 </select>
               </div>
               <div class="flex flex-col gap-1">
@@ -564,8 +580,8 @@ onMounted(loadCategories)
               <div v-for="(evt, idx) in matchEvents" :key="idx"
                 class="flex items-center gap-2 bg-surface-container-high border border-outline-variant/20 rounded px-3 py-1.5 text-[11px] font-bold text-on-surface hover:border-outline-variant/40 transition-colors group">
                 <span class="font-mono text-on-surface-variant text-[10px]">{{ evt.minute }}'</span>
-                <span class="w-1.5 h-1.5 rounded-full" :class="evt.type === 'red_card' ? 'bg-error' : evt.type === 'yellow_card' ? 'bg-yellow-500' : evt.type === 'goal' || evt.type === 'penalty_goal' ? 'bg-primary' : 'bg-on-surface-variant'"></span>
-                <span class="text-on-surface">{{ evt.typeLabel }}</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                <span class="text-on-surface">{{ evt.eventTypeName }}</span>
                 <span class="text-on-surface-variant font-mono">{{ evt.playerName }}</span>
                 <button @click="removeEvent(idx)" class="ml-1 text-on-surface-variant hover:text-error opacity-0 group-hover:opacity-100 transition-opacity">
                   <span class="material-symbols-outlined text-sm">close</span>
