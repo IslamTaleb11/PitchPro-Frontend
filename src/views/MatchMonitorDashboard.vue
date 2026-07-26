@@ -183,18 +183,12 @@ async function loadPlayersByCategory(categoryId) {
     playerStatuses.value = Object.fromEntries(list.map((p) => [p.id, null]))
     matchEvents.value = []
     const eventTypesRes = await lookupService.getEventTypes()
-    const typeList = eventTypesRes?.data?.data ?? eventTypesRes?.data?.EventTypeList ?? eventTypesRes?.data ?? []
-    EVENT_TYPES.value = Array.isArray(typeList) ? typeList : []
+    EVENT_TYPES.value = normalizeLookupArray(eventTypesRes?.data)
   } catch (e) {
     showToast({ title: t('matchMonitor.loadErrorTitle'), message: t('matchMonitor.loadErrorMsg'), mode: 'error' })
   } finally {
     isLoadingPlayers.value = false
     isLoadingEventTypes.value = false
-  }
-}
-    showToast({ title: t('matchMonitor.loadErrorTitle'), message: t('matchMonitor.loadErrorMsg'), mode: 'error' })
-  } finally {
-    isLoadingPlayers.value = false
   }
 }
 
