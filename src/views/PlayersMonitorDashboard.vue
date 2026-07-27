@@ -127,7 +127,7 @@ async function loadStats() {
   isLoading.value = true
   players.value = []
   try {
-    const res = await matchService.getPlayerStats(selectedCategory.value)
+    const res = await matchService.getPlayersMonitor(selectedCategory.value)
     const list = res?.data?.data ?? []
     players.value = Array.isArray(list)
       ? list.map((p) => ({
@@ -144,7 +144,7 @@ async function loadStats() {
         }))
       : []
   } catch {
-    showToast({ title: t('playerStats.loadErrorTitle'), message: t('playerStats.loadErrorMsg'), mode: 'error' })
+    showToast({ title: t('playersMonitor.loadErrorTitle'), message: t('playersMonitor.loadErrorMsg'), mode: 'error' })
   } finally {
     isLoading.value = false
   }
@@ -155,7 +155,7 @@ onMounted(loadCategories)
 
 <template>
   <div class="min-h-screen bg-background text-on-surface lg:flex lg:items-stretch">
-    <DashboardSidebar active-item="player-stats" :is-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
+    <DashboardSidebar active-item="players-monitor" :is-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
     <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
 
     <main class="pt-24 h-[calc(100vh-5rem)] overflow-y-auto bg-background transition-all duration-300 lg:flex-1">
@@ -163,65 +163,65 @@ onMounted(loadCategories)
         <div class="flex-1 flex flex-col overflow-hidden">
           <div class="mb-8 flex items-start justify-between">
             <div>
-              <h1 class="font-headline text-4xl font-black text-on-surface tracking-tight uppercase leading-none">{{ t('playerStats.pageTitle') }}</h1>
-              <p class="text-on-surface-variant font-medium text-sm mt-2 opacity-80">{{ t('playerStats.pageSubtitle') }}</p>
+              <h1 class="font-headline text-4xl font-black text-on-surface tracking-tight uppercase leading-none">{{ t('playersMonitor.pageTitle') }}</h1>
+              <p class="text-on-surface-variant font-medium text-sm mt-2 opacity-80">{{ t('playersMonitor.pageSubtitle') }}</p>
             </div>
             <div class="flex flex-col gap-1.5">
-              <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">{{ t('playerStats.squadCategory') }}</label>
+              <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">{{ t('playersMonitor.squadCategory') }}</label>
               <select v-model="selectedCategory" @change="loadStats" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-xs font-bold rounded px-4 py-2.5 focus:ring-1 focus:ring-primary-fixed min-w-[160px] uppercase tracking-wider">
-                <option value="" disabled>{{ t('playerStats.selectCategory') }}</option>
+                <option value="" disabled>{{ t('playersMonitor.selectCategory') }}</option>
                 <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
               </select>
             </div>
           </div>
 
           <div v-if="isLoading" class="flex items-center justify-center py-20">
-            <span class="text-[11px] text-on-surface-variant font-bold uppercase tracking-widest">{{ t('playerStats.loading') }}</span>
+            <span class="text-[11px] text-on-surface-variant font-bold uppercase tracking-widest">{{ t('playersMonitor.loading') }}</span>
           </div>
 
           <div v-else-if="!selectedCategory" class="flex flex-col items-center justify-center py-20 text-on-surface-variant">
             <span class="material-symbols-outlined text-5xl mb-4 opacity-30">bar_chart</span>
-            <p class="text-sm font-bold uppercase tracking-wider">{{ t('playerStats.selectCategoryPrompt') }}</p>
+            <p class="text-sm font-bold uppercase tracking-wider">{{ t('playersMonitor.selectCategoryPrompt') }}</p>
           </div>
 
           <div v-else-if="!players.length" class="flex flex-col items-center justify-center py-20 text-on-surface-variant">
             <span class="material-symbols-outlined text-5xl mb-4 opacity-30">sentiment_neutral</span>
-            <p class="text-sm font-bold uppercase tracking-wider">{{ t('playerStats.noPlayers') }}</p>
+            <p class="text-sm font-bold uppercase tracking-wider">{{ t('playersMonitor.noPlayers') }}</p>
           </div>
 
           <div v-else class="flex-1 overflow-y-auto pb-8 no-scrollbar">
             <table class="w-full text-left border-separate border-spacing-y-2">
               <thead>
                 <tr class="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">
-                  <th class="px-4 pb-2" colspan="2">{{ t('playerStats.player') }}</th>
-                  <th class="px-4 pb-2">{{ t('playerStats.pos') }}</th>
+                  <th class="px-4 pb-2" colspan="2">{{ t('playersMonitor.player') }}</th>
+                  <th class="px-4 pb-2">{{ t('playersMonitor.pos') }}</th>
                   <th class="px-4 pb-2 text-center cursor-pointer select-none" @click="toggleSort('matchesPlayed')">
                     <span class="inline-flex items-center gap-1 hover:text-on-surface transition-colors">
-                      {{ t('playerStats.mp') }}
+                      {{ t('playersMonitor.mp') }}
                       <span class="material-symbols-outlined text-sm">{{ sortIcon('matchesPlayed') }}</span>
                     </span>
                   </th>
                   <th class="px-4 pb-2 text-center cursor-pointer select-none" @click="toggleSort('goals')">
                     <span class="inline-flex items-center gap-1 hover:text-on-surface transition-colors">
-                      {{ t('playerStats.goals') }}
+                      {{ t('playersMonitor.goals') }}
                       <span class="material-symbols-outlined text-sm">{{ sortIcon('goals') }}</span>
                     </span>
                   </th>
                   <th class="px-4 pb-2 text-center cursor-pointer select-none" @click="toggleSort('assists')">
                     <span class="inline-flex items-center gap-1 hover:text-on-surface transition-colors">
-                      {{ t('playerStats.assists') }}
+                      {{ t('playersMonitor.assists') }}
                       <span class="material-symbols-outlined text-sm">{{ sortIcon('assists') }}</span>
                     </span>
                   </th>
                   <th class="px-4 pb-2 text-center cursor-pointer select-none" @click="toggleSort('yellowCards')">
                     <span class="inline-flex items-center gap-1 hover:text-on-surface transition-colors">
-                      {{ t('playerStats.yellowCards') }}
+                      {{ t('playersMonitor.yellowCards') }}
                       <span class="material-symbols-outlined text-sm">{{ sortIcon('yellowCards') }}</span>
                     </span>
                   </th>
                   <th class="px-4 pb-2 text-center cursor-pointer select-none" @click="toggleSort('redCards')">
                     <span class="inline-flex items-center gap-1 hover:text-on-surface transition-colors">
-                      {{ t('playerStats.redCards') }}
+                      {{ t('playersMonitor.redCards') }}
                       <span class="material-symbols-outlined text-sm">{{ sortIcon('redCards') }}</span>
                     </span>
                   </th>

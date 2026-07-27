@@ -91,10 +91,10 @@ export const matchService = {
     return api.get(`/match-attendance/${matchId}/players`, { params: { categoryId } });
   },
 
-  // Get player statistics for a category.
-  // GET /api/players/stats/{categoryId} -> { data: [ { playerID, playerName, jerseyNumber, positionName, playerImage, matchesPlayed, goals, assists, yellowCards, redCards } ] }
-  getPlayerStats(categoryId) {
-    return api.get(`/players/stats/${categoryId}`);
+  // Get player records with statistics for a category.
+  // GET /api/players/monitor/{categoryId} -> { data: [ { playerID, playerName, jerseyNumber, positionName, playerImage, matchesPlayed, goals, assists, yellowCards, redCards } ] }
+  getPlayersMonitor(categoryId) {
+    return api.get(`/players/monitor/${categoryId}`);
   },
 
   // Get all completed matches for a category with pagination.

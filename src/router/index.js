@@ -79,9 +79,9 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/dashboard/player-stats',
-    name: 'PlayerStatisticsDashboard',
-    component: () => import('../views/PlayerStatisticsDashboard.vue'),
+    path: '/dashboard/players-monitor',
+    name: 'PlayersMonitorDashboard',
+    component: () => import('../views/PlayersMonitorDashboard.vue'),
     meta: { requiresAuth: true }
   },
   {
