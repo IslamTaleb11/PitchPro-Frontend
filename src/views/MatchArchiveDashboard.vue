@@ -162,36 +162,44 @@ function closeDetail() {
 async function loadDetailData(matchId) {
   isLoadingDetail.value = true
   try {
-    const [playersRes, eventsRes] = await Promise.all([
+    const [playersRes, eventsRes] = await Promise.allSettled([
       matchService.getAttendancePlayersByMatch(matchId, selectedCategory.value),
       matchService.getMatchEvents(matchId),
     ])
-    const rawPlayers = playersRes?.data?.data ?? []
-    detailPlayers.value = Array.isArray(rawPlayers)
-      ? rawPlayers.map((p) => ({
-          id: p.playerID ?? p.PlayerID,
-          name: p.playerName ?? p.PlayerName ?? '',
-          position: p.positionName ?? p.PositionName ?? '',
-          jersey: p.jerseyNumber ?? p.JerseyNumber ?? '',
-          avatar: null,
-          isAlreadyAttended: p.attended === true || p.Attended === true,
-          isAbsent: p.attended === false || p.Attended === false,
-          status: p.attended === true || p.Attended === true ? 'present' : 'absent',
-        }))
-      : []
-    const rawEvents = eventsRes?.data ?? []
-    detailEvents.value = Array.isArray(rawEvents)
-      ? rawEvents.map((e) => ({
-          id: e.eventID ?? e.EventID,
-          minute: e.eventAt ?? e.EventAt,
-          eventTypeName: e.eventName ?? e.EventName,
-          playerName: e.name ?? e.Name,
-        }))
-      : []
-  } catch {
-    showToast({ title: t('matchArchive.loadErrorTitle'), message: t('matchArchive.loadErrorMsg'), mode: 'error' })
-    detailPlayers.value = []
-    detailEvents.value = []
+
+    if (playersRes.status === 'fulfilled') {
+      const rawPlayers = playersRes.value?.data?.data ?? []
+      detailPlayers.value = Array.isArray(rawPlayers)
+        ? rawPlayers.map((p) => ({
+            id: p.playerID ?? p.PlayerID,
+            name: p.playerName ?? p.PlayerName ?? '',
+            position: p.positionName ?? p.PositionName ?? '',
+            jersey: p.jerseyNumber ?? p.JerseyNumber ?? '',
+            avatar: null,
+            isAlreadyAttended: p.attended === true || p.Attended === true,
+            isAbsent: p.attended === false || p.Attended === false,
+            status: p.attended === true || p.Attended === true ? 'present' : 'absent',
+          }))
+        : []
+    } else {
+      console.error('Players load failed:', playersRes.reason)
+      const msg = playersRes.reason?.response?.data?.message || playersRes.reason?.message || ''
+      showToast({ title: t('matchArchive.loadErrorTitle'), message: msg || t('matchArchive.loadErrorMsg'), mode: 'error' })
+    }
+
+    if (eventsRes.status === 'fulfilled') {
+      const rawEvents = eventsRes.value?.data ?? []
+      detailEvents.value = Array.isArray(rawEvents)
+        ? rawEvents.map((e) => ({
+            id: e.eventID ?? e.EventID,
+            minute: e.eventAt ?? e.EventAt,
+            eventTypeName: e.eventName ?? e.EventName,
+            playerName: e.name ?? e.Name,
+          }))
+        : []
+    } else {
+      console.error('Events load failed:', eventsRes.reason)
+    }
   } finally {
     isLoadingDetail.value = false
   }
