@@ -134,10 +134,13 @@ async function onCategoryChange() {
     const res = await trainingService.getSessionsByCategory(selectedCategory.value)
     const list = res?.data?.data ?? []
     sessions.value = Array.isArray(list)
-      ? list.map((s) => ({
+      ?         list.map((s) => ({
           id: s.id ?? s.ID,
           date: s.date ?? s.Date,
           sessionTypeName: s.sessionTypeName ?? s.SessionTypeName ?? '',
+          location: s.location ?? s.Location ?? '',
+          startTime: s.startTime ?? s.StartTime ?? '',
+          endTime: s.endTime ?? s.EndTime ?? '',
           focusArea: s.focusArea ?? s.FocusArea ?? '',
           duration: s.duration ?? s.Duration ?? 0,
           playersAttended: s.playersAttended ?? s.PlayersAttended ?? 0,
@@ -215,8 +218,12 @@ onMounted(loadCategories)
             </div>
             <div class="flex-1 min-w-0">
               <p class="font-headline font-black text-on-surface text-sm uppercase leading-tight truncate">{{ s.sessionTypeName || t('trainingMonitor.session') }}</p>
-              <p class="text-[11px] text-on-surface-variant font-medium">{{ normalizeDate(s.date) }} <span v-if="s.focusArea"> • {{ s.focusArea }}</span></p>
-              <p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tight">{{ s.duration }} min • {{ s.playersAttended }} {{ t('trainingMonitor.players') }}</p>
+              <p class="text-[11px] text-on-surface-variant font-medium">{{ normalizeDate(s.date) }}</p>
+              <p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tight">
+                <span v-if="s.location">{{ s.location }}</span>
+                <span v-if="s.startTime"> • {{ s.startTime }}</span>
+                <span v-if="s.endTime"> – {{ s.endTime }}</span>
+              </p>
             </div>
             <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded shrink-0"
               :class="s.status === 'Completed' || s.status === 'completed' ? 'bg-[#00ff41]/10 text-[#00ff41]' : 'bg-surface-container-highest text-on-surface-variant'">{{ s.status || t('trainingMonitor.scheduled') }}</span>
