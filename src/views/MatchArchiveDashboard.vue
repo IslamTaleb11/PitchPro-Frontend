@@ -175,7 +175,7 @@ async function loadDetailData(matchId) {
             name: p.playerName ?? p.PlayerName ?? '',
             position: p.positionName ?? p.PositionName ?? '',
             jersey: p.jerseyNumber ?? p.JerseyNumber ?? '',
-            avatar: null,
+            avatar: p.playerImage ?? p.PlayerImage ?? null,
             isAlreadyAttended: p.attended === true || p.Attended === true,
             isAbsent: p.attended === false || p.Attended === false,
             status: p.attended === true || p.Attended === true ? 'present' : 'absent',
