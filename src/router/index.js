@@ -81,7 +81,7 @@ const routes = [
   {
     path: '/dashboard/players-monitor',
     name: 'PlayersMonitorDashboard',
-    component: () => import('../views/PlayersMonitorDashboard.vue'),
+    component: ComingSoon,
     meta: { requiresAuth: true }
   },
   {
