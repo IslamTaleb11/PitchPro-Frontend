@@ -8,8 +8,9 @@ export const trainingService = {
     return api.put('/training-sessions', data);
   },
   // Get training sessions by category.
-  // GET /api/training-sessions/by-category/{categoryId} -> { data: [ { id, date, sessionTypeName, focusArea, duration, playersAttended, status } ] }
+  // POST /api/training-sessions/by-category  body: { categoryId }
+  // -> { data: [ { id, date, sessionTypeName, focusArea, duration, playersAttended, status } ] }
   getSessionsByCategory(categoryId) {
-    return api.get(`/training-sessions/by-category/${categoryId}`);
+    return api.post('/training-sessions/by-category', { categoryId });
   }
 };
