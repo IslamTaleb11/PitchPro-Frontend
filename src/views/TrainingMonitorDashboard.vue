@@ -49,6 +49,7 @@ const startupModalOpen = ref(true)
 const isLoadingCategories = ref(false)
 const isLoadingSessions = ref(false)
 const isLoadingPlayers = ref(false)
+const savingAttendance = ref(false)
 
 const categories = ref([])
 const selectedCategory = ref('')
@@ -204,6 +205,32 @@ function updateStatus(playerId, type) {
   playerStatuses.value = { ...playerStatuses.value, [playerId]: type }
 }
 
+async function saveAttendance() {
+  const changed = Object.keys(playerStatuses.value)
+  if (!changed.length) {
+    showToast({ title: t('trainingMonitor.noChanges'), mode: 'info' })
+    return
+  }
+  savingAttendance.value = true
+  try {
+    const attendanceMap = {}
+    changed.forEach((pid) => {
+      attendanceMap[pid] = playerStatuses.value[pid] === 'present'
+    })
+    await trainingService.saveAttendance(selectedSession.value.id, attendanceMap)
+    showToast({ title: t('trainingMonitor.saveSuccess'), mode: 'success' })
+    changed.forEach((pid) => {
+      const p = players.value.find((x) => x.id === Number(pid))
+      if (p) p.recordedStatus = playerStatuses.value[pid]
+    })
+    playerStatuses.value = {}
+  } catch {
+    showToast({ title: t('trainingMonitor.saveError'), mode: 'error' })
+  } finally {
+    savingAttendance.value = false
+  }
+}
+
 watch(startupModalOpen, (open) => {
   if (open && selectedCategory.value) {
     onCategoryChange()
@@ -331,6 +358,13 @@ onMounted(loadCategories)
                 <span class="text-xs font-black text-[#00ff41] flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#00ff41]"></span>{{ t('trainingMonitor.presentCount') }} {{ presentCount }}</span>
                 <span class="text-xs font-black text-[#ff4141] flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#ff4141]"></span>{{ t('trainingMonitor.absentCount') }} {{ absentCount }}</span>
                 <span class="text-xs font-black text-on-surface-variant flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-on-surface-variant"></span>{{ t('trainingMonitor.totalEligible') }} {{ totalEligible }}</span>
+                <div class="ml-auto">
+                  <button @click="saveAttendance" :disabled="savingAttendance"
+                    class="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded transition-all"
+                    :class="savingAttendance ? 'bg-surface-container-highest text-on-surface-variant/50' : 'bg-primary-container text-on-primary-container hover:brightness-110'">
+                    {{ savingAttendance ? t('trainingMonitor.saving') : t('trainingMonitor.saveAttendance') }}
+                  </button>
+                </div>
               </div>
 
               <div class="overflow-x-auto">

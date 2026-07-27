@@ -625,7 +625,12 @@
     "presentCount": "Present",
     "absentCount": "Absent",
     "totalEligible": "Total Eligible",
-    "attendanceSummary": "Attendance Summary"
+    "attendanceSummary": "Attendance Summary",
+    "saveAttendance": "Save Attendance",
+    "saving": "Saving...",
+    "saveSuccess": "Attendance saved successfully",
+    "saveError": "Failed to save attendance",
+    "noChanges": "No changes to save"
   },
   "medical": {
     "sectionTitle": "Department Telemetry",

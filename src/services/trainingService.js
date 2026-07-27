@@ -19,5 +19,16 @@ export const trainingService = {
   // -> { data: [ { playerID, playerName, jerseyNumber, positionName, playerImage } ] }
   getPlayersByCategory(categoryId) {
     return api.get(`/training-sessions/players/${categoryId}`);
+  },
+
+  // Mark attendance for a training session.
+  // POST /api/training-attendance
+  // Body: { trainingSessionID, playersAttendance: { [playerId]: bool } }
+  // -> { message, attendanceIds }
+  saveAttendance(trainingSessionId, playersAttendance) {
+    return api.post('/training-attendance', {
+      trainingSessionID: trainingSessionId,
+      playersAttendance
+    });
   }
 };

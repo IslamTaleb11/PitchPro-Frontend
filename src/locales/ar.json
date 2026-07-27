@@ -622,7 +622,12 @@
     "presentCount": "الحاضرون",
     "absentCount": "الغائبون",
     "totalEligible": "الإجمالي",
-    "attendanceSummary": "ملخص الحضور"
+    "attendanceSummary": "ملخص الحضور",
+    "saveAttendance": "حفظ الحضور",
+    "saving": "جارٍ الحفظ...",
+    "saveSuccess": "تم حفظ الحضور بنجاح",
+    "saveError": "فشل حفظ الحضور",
+    "noChanges": "لا توجد تغييرات للحفظ"
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",
