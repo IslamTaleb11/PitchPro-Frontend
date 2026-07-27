@@ -552,6 +552,9 @@
     "noEvents": "لم يتم تسجيل أحداث",
     "totalMatches": "مباراة",
     "club": "النادي",
+    "win": "فوز",
+    "loss": "خسارة",
+    "draw": "تعادل",
     "loadErrorTitle": "خطأ",
     "loadErrorMsg": "فشل تحميل تفاصيل المباراة"
   },

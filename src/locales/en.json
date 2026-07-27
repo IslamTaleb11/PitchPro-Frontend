@@ -555,6 +555,9 @@
     "noEvents": "No match events recorded",
     "totalMatches": "matches",
     "club": "Club",
+    "win": "Win",
+    "loss": "Loss",
+    "draw": "Draw",
     "loadErrorTitle": "Error",
     "loadErrorMsg": "Failed to load match details"
   },
