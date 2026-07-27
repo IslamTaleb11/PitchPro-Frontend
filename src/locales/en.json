@@ -551,6 +551,8 @@
     "noPresentPlayers": "No present players recorded",
     "noAbsentPlayers": "No absent players recorded",
     "noEvents": "No match events recorded",
+    "totalMatches": "matches",
+    "club": "Club",
     "loadErrorTitle": "Error",
     "loadErrorMsg": "Failed to load match details"
   },

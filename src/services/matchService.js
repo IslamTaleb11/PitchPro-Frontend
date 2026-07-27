@@ -79,9 +79,10 @@ export const matchService = {
     return api.post(`/matches/${matchId}/complete`);
   },
 
-  // Get all completed matches for a category.
-  // GET /api/matches/completed/{categoryId} -> { data: [ { id, opponentName, date, kickoffTime, isHome, stadiumName, ... } ] }
-  getCompletedMatchesByCategory(categoryId) {
-    return api.get(`/matches/completed/${categoryId}`);
+  // Get all completed matches for a category with pagination.
+  // GET /api/matches/completed/{categoryId}?page=1&pageSize=10
+  // -> { data: [ { id, clubID, categoryID, opponentName, date, kickoffTime, endTime, isCompleted, isHome, stadiumName, clubName } ], totalCount, page, pageSize }
+  getCompletedMatchesByCategory(categoryId, page = 1, pageSize = 10) {
+    return api.get(`/matches/completed/${categoryId}`, { params: { page, pageSize } });
   }
 };

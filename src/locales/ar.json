@@ -548,6 +548,8 @@
     "noPresentPlayers": "لم يتم تسجيل لاعبين حاضرين",
     "noAbsentPlayers": "لم يتم تسجيل لاعبين غائبين",
     "noEvents": "لم يتم تسجيل أحداث",
+    "totalMatches": "مباراة",
+    "club": "النادي",
     "loadErrorTitle": "خطأ",
     "loadErrorMsg": "فشل تحميل تفاصيل المباراة"
   },

@@ -19,6 +19,11 @@ const matches = ref([])
 const isLoading = ref(false)
 const isLoadingCategories = ref(false)
 
+const page = ref(1)
+const pageSize = ref(10)
+const totalCount = ref(0)
+const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize.value)))
+
 const selectedMatch = ref(null)
 const showDetailModal = ref(false)
 const isLoadingDetail = ref(false)
@@ -59,18 +64,35 @@ function normalizeLookupArray(data) {
   return array.map(normalizeLookupItem).filter((i) => i.id !== 'Unknown')
 }
 
+function normalizeMatch(raw) {
+  if (!raw) return null
+  return {
+    id: raw.ID ?? raw.id,
+    clubID: raw.ClubID ?? raw.clubID,
+    categoryID: raw.CategoryID ?? raw.categoryID,
+    opponentName: raw.OpponentName ?? raw.opponentName ?? '',
+    date: raw.Date ?? raw.date,
+    kickoffTime: raw.KickoffTime ?? raw.kickoffTime,
+    endTime: raw.EndTime ?? raw.endTime,
+    isCompleted: raw.IsCompleted ?? raw.isCompleted ?? true,
+    isHome: raw.IsHome ?? raw.isHome ?? false,
+    stadiumName: raw.StadiumName ?? raw.stadiumName ?? '',
+    clubName: raw.ClubName ?? raw.clubName ?? '',
+  }
+}
+
 function normalizeDate(dateStr) {
   if (!dateStr) return '-'
   try {
     return new Date(dateStr).toLocaleDateString()
   } catch {
-    return dateStr
+    return String(dateStr)
   }
 }
 
 function normalizeTime(timeStr) {
   if (!timeStr) return ''
-  return timeStr
+  return String(timeStr).substring(0, 5)
 }
 
 async function loadCategories() {
@@ -79,27 +101,50 @@ async function loadCategories() {
     const response = await lookupService.getCategories()
     const list = normalizeLookupArray(response?.data)
     if (list.length) categories.value = list
-  } catch (e) {
-    console.warn('Could not load categories', e)
+  } catch {
+    console.warn('Could not load categories')
   } finally {
     isLoadingCategories.value = false
   }
 }
 
-async function loadMatches() {
+async function loadMatches(newPage) {
   if (!selectedCategory.value) return
+  if (newPage !== undefined) page.value = newPage
   isLoading.value = true
   matches.value = []
   try {
-    const res = await matchService.getCompletedMatchesByCategory(selectedCategory.value)
-    const list = res?.data?.data ?? []
-    matches.value = list
+    const res = await matchService.getCompletedMatchesByCategory(selectedCategory.value, page.value, pageSize.value)
+    const body = res?.data
+    const list = Array.isArray(body?.data) ? body.data : []
+    matches.value = list.map(normalizeMatch)
+    totalCount.value = body?.totalCount ?? 0
   } catch {
     matches.value = []
+    totalCount.value = 0
   } finally {
     isLoading.value = false
   }
 }
+
+function goToPage(p) {
+  if (p < 1 || p > totalPages.value) return
+  loadMatches(p)
+}
+
+const visiblePages = computed(() => {
+  const tp = totalPages.value
+  const cp = page.value
+  const pages = []
+  const start = Math.max(1, cp - 2)
+  const end = Math.min(tp, cp + 2)
+  if (start > 1) pages.push(1)
+  if (start > 2) pages.push('...')
+  for (let i = start; i <= end; i++) pages.push(i)
+  if (end < tp - 1) pages.push('...')
+  if (end < tp) pages.push(tp)
+  return pages
+})
 
 function openDetail(match) {
   selectedMatch.value = match
@@ -123,7 +168,7 @@ async function loadDetailData(matchId) {
       matchService.getMatchEvents(matchId),
     ])
     const rawPlayers = playersRes?.data ?? []
-    const list = Array.isArray(rawPlayers)
+    detailPlayers.value = Array.isArray(rawPlayers)
       ? rawPlayers.map((p) => ({
           id: p.PlayerID ?? p.playerID ?? p.id ?? p.Id,
           name: p.PlayerName ?? p.playerName ?? p.FullName ?? p.fullName ?? p.name ?? '',
@@ -135,8 +180,6 @@ async function loadDetailData(matchId) {
           status: (p.recordedStatus ?? p.RecordedStatus) || (p.isAbsent ?? p.IsAbsent ? 'absent' : p.isAlreadyAttended ?? p.IsAlreadyAttended ? 'present' : null),
         }))
       : []
-    detailPlayers.value = list
-
     const rawEvents = eventsRes?.data ?? []
     detailEvents.value = Array.isArray(rawEvents)
       ? rawEvents.map((e) => ({
@@ -173,7 +216,7 @@ onMounted(loadCategories)
             </div>
             <div class="flex flex-col gap-1.5">
               <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">{{ t('matchArchive.squadCategory') }}</label>
-              <select v-model="selectedCategory" @change="loadMatches" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-xs font-bold rounded px-4 py-2.5 focus:ring-1 focus:ring-primary-fixed min-w-[160px] uppercase tracking-wider">
+              <select v-model="selectedCategory" @change="loadMatches(1)" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-xs font-bold rounded px-4 py-2.5 focus:ring-1 focus:ring-primary-fixed min-w-[160px] uppercase tracking-wider">
                 <option value="" disabled>{{ t('matchArchive.selectCategory') }}</option>
                 <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
               </select>
@@ -194,54 +237,71 @@ onMounted(loadCategories)
             <p class="text-sm font-bold uppercase tracking-wider">{{ t('matchArchive.noMatches') }}</p>
           </div>
 
-          <div v-else class="flex-1 overflow-y-auto pb-8 no-scrollbar">
-            <table class="w-full text-left border-separate border-spacing-y-2">
-              <thead>
-                <tr class="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">
-                  <th class="px-4 pb-2">{{ t('matchArchive.opponent') }}</th>
-                  <th class="px-4 pb-2">{{ t('matchArchive.date') }}</th>
-                  <th class="px-4 pb-2 text-center">{{ t('matchArchive.result') }}</th>
-                  <th class="px-4 pb-2">{{ t('matchArchive.stadium') }}</th>
-                  <th class="px-4 pb-2 text-center">{{ t('matchArchive.records') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="m in matches" :key="m.id"
-                  class="bg-surface-container-low/40 hover:bg-surface-container-low transition-colors group cursor-pointer"
-                  @click="openDetail(m)">
-                  <td class="px-4 py-4 border-y border-l border-outline-variant/5 rounded-l">
-                    <div class="flex items-center gap-3">
-                      <span class="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full shrink-0"
-                        :class="m.isHome ? 'bg-primary/10 text-primary' : 'bg-surface-container-highest text-on-surface-variant'">
-                        {{ m.isHome ? t('callUp.home') : t('callUp.away') }}
-                      </span>
-                      <span class="font-headline font-bold text-on-surface text-sm uppercase">{{ m.opponentName || t('callUp.tbd') }}</span>
-                    </div>
-                  </td>
-                  <td class="px-4 py-4 border-y border-outline-variant/5 whitespace-nowrap">
-                    <span class="text-xs font-bold text-on-surface">{{ normalizeDate(m.date) }}</span>
-                    <span v-if="m.kickoffTime" class="text-[10px] text-on-surface-variant font-mono ml-2">{{ m.kickoffTime }}</span>
-                  </td>
-                  <td class="px-4 py-4 border-y border-outline-variant/5 text-center">
-                    <span class="inline-flex items-center gap-2 text-xs font-black">
-                      <span v-if="m.homeScore !== undefined && m.awayScore !== undefined" class="text-on-surface">
-                        {{ m.homeScore }} – {{ m.awayScore }}
-                      </span>
-                      <span v-else class="text-on-surface-variant text-[10px]">–</span>
-                    </span>
-                  </td>
-                  <td class="px-4 py-4 border-y border-outline-variant/5">
-                    <span class="text-xs text-on-surface-variant font-medium">{{ m.stadiumName || '-' }}</span>
-                  </td>
-                  <td class="px-4 py-4 border-y border-r border-outline-variant/5 rounded-r text-center">
-                    <button class="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-fixed px-3 py-1.5 rounded border border-primary/20 hover:border-primary/40 transition-all inline-flex items-center gap-1">
-                      <span class="material-symbols-outlined text-sm">visibility</span>
-                      {{ t('matchArchive.viewRecords') }}
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div v-else class="flex-1 flex flex-col overflow-hidden">
+            <div class="flex-1 overflow-y-auto pb-4 no-scrollbar">
+              <table class="w-full text-left border-separate border-spacing-y-2">
+                <thead>
+                  <tr class="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">
+                    <th class="px-4 pb-2">{{ t('matchArchive.opponent') }}</th>
+                    <th class="px-4 pb-2">{{ t('matchArchive.date') }}</th>
+                    <th class="px-4 pb-2">{{ t('matchArchive.stadium') }}</th>
+                    <th class="px-4 pb-2 text-center">{{ t('matchArchive.records') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="m in matches" :key="m.id"
+                    class="bg-surface-container-low/40 hover:bg-surface-container-low transition-colors group cursor-pointer"
+                    @click="openDetail(m)">
+                    <td class="px-4 py-4 border-y border-l border-outline-variant/5 rounded-l">
+                      <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full shrink-0"
+                          :class="m.isHome ? 'bg-primary/10 text-primary' : 'bg-surface-container-highest text-on-surface-variant'">
+                          {{ m.isHome ? t('callUp.home') : t('callUp.away') }}
+                        </span>
+                        <span class="font-headline font-bold text-on-surface text-sm uppercase">{{ m.opponentName || t('callUp.tbd') }}</span>
+                      </div>
+                    </td>
+                    <td class="px-4 py-4 border-y border-outline-variant/5 whitespace-nowrap">
+                      <span class="text-xs font-bold text-on-surface">{{ normalizeDate(m.date) }}</span>
+                      <span v-if="m.kickoffTime" class="text-[10px] text-on-surface-variant font-mono ml-2">{{ normalizeTime(m.kickoffTime) }}</span>
+                    </td>
+                    <td class="px-4 py-4 border-y border-outline-variant/5">
+                      <span class="text-xs text-on-surface-variant font-medium">{{ m.stadiumName || '-' }}</span>
+                    </td>
+                    <td class="px-4 py-4 border-y border-r border-outline-variant/5 rounded-r text-center">
+                      <button class="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-fixed px-3 py-1.5 rounded border border-primary/20 hover:border-primary/40 transition-all inline-flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">visibility</span>
+                        {{ t('matchArchive.viewRecords') }}
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div v-if="totalPages > 1" class="flex items-center justify-between border-t border-outline-variant/10 pt-4">
+              <span class="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">
+                {{ totalCount }} {{ t('matchArchive.totalMatches') }}
+              </span>
+              <div class="flex items-center gap-1">
+                <button @click="goToPage(page - 1)" :disabled="page <= 1"
+                  class="flex items-center justify-center w-8 h-8 rounded text-[11px] font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-container-high text-on-surface-variant">
+                  <span class="material-symbols-outlined text-sm">chevron_left</span>
+                </button>
+                <template v-for="p in visiblePages" :key="p">
+                  <span v-if="p === '...'" class="px-2 text-[11px] text-on-surface-variant font-bold">...</span>
+                  <button v-else @click="goToPage(p)"
+                    class="flex items-center justify-center min-w-[32px] h-8 px-2 rounded text-[11px] font-bold transition-colors"
+                    :class="p === page ? 'bg-primary text-black' : 'hover:bg-surface-container-high text-on-surface-variant'">
+                    {{ p }}
+                  </button>
+                </template>
+                <button @click="goToPage(page + 1)" :disabled="page >= totalPages"
+                  class="flex items-center justify-center w-8 h-8 rounded text-[11px] font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-container-high text-on-surface-variant">
+                  <span class="material-symbols-outlined text-sm">chevron_right</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -281,13 +341,8 @@ onMounted(loadCategories)
                 <p class="text-sm font-bold text-on-surface">{{ selectedMatch.stadiumName || '-' }}</p>
               </div>
               <div class="bg-surface-container-high rounded-xl p-4">
-                <p class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black mb-1">{{ t('matchArchive.result') }}</p>
-                <p class="text-sm font-black text-on-surface">
-                  <span v-if="selectedMatch.homeScore !== undefined && selectedMatch.awayScore !== undefined">
-                    {{ selectedMatch.homeScore }} – {{ selectedMatch.awayScore }}
-                  </span>
-                  <span v-else class="text-on-surface-variant">-</span>
-                </p>
+                <p class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black mb-1">{{ t('matchArchive.club') }}</p>
+                <p class="text-sm font-bold text-on-surface">{{ selectedMatch.clubName || '-' }}</p>
               </div>
             </div>
 
