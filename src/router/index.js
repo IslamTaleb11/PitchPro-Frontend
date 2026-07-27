@@ -85,6 +85,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/dashboard/training-monitor',
+    name: 'TrainingMonitorDashboard',
+    component: () => import('../views/TrainingMonitorDashboard.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/dashboard/medical',
     name: 'MedicalDashboard',
     component: () => import('../views/MedicalDashboard.vue'),

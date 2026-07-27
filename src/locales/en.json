@@ -110,6 +110,7 @@
     "matchMonitor": "Match Monitor",
     "matchArchive": "Match Archive",
     "playersMonitor": "Players Monitor",
+    "trainingMonitor": "Training Monitor",
     "medical": "Medical",
     "training": "Training",
     "subscription": "Subscription Plans"
@@ -579,6 +580,26 @@
     "redCards": "RC",
     "loadErrorTitle": "Error",
     "loadErrorMsg": "Failed to load players"
+  },
+  "trainingMonitor": {
+    "pageTitle": "Training Monitor",
+    "pageSubtitle": "Track and review training sessions",
+    "squadCategory": "Squad Category",
+    "selectCategory": "Select Category...",
+    "selectCategoryPrompt": "Select a category to view training sessions",
+    "loading": "Loading...",
+    "noSessions": "No training sessions found",
+    "totalSessions": "Total Sessions",
+    "completed": "Completed",
+    "upcoming": "Upcoming",
+    "date": "Date",
+    "sessionType": "Type",
+    "focusArea": "Focus Area",
+    "duration": "Duration",
+    "attended": "Attended",
+    "status": "Status",
+    "loadErrorTitle": "Error",
+    "loadErrorMsg": "Failed to load training sessions"
   },
   "medical": {
     "sectionTitle": "Department Telemetry",

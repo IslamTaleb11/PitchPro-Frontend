@@ -111,6 +111,7 @@
     "matchMonitor": "مراقبة المباراة",
     "matchArchive": "أرشيف المباريات",
     "playersMonitor": "مراقبة اللاعبين",
+    "trainingMonitor": "مراقبة التدريبات",
     "medical": "المركز الطبي",
     "training": "التدريب",
     "subscription": "الاشتراكات"
@@ -576,6 +577,26 @@
     "redCards": "ب.ح",
     "loadErrorTitle": "خطأ",
     "loadErrorMsg": "فشل تحميل اللاعبين"
+  },
+  "trainingMonitor": {
+    "pageTitle": "مراقبة التدريبات",
+    "pageSubtitle": "تتبع ومراجعة جلسات التدريب",
+    "squadCategory": "فئة الفريق",
+    "selectCategory": "اختر الفئة...",
+    "selectCategoryPrompt": "اختر فئة لعرض جلسات التدريب",
+    "loading": "جارٍ التحميل...",
+    "noSessions": "لا توجد جلسات تدريب",
+    "totalSessions": "إجمالي الجلسات",
+    "completed": "مكتملة",
+    "upcoming": "قادمة",
+    "date": "التاريخ",
+    "sessionType": "النوع",
+    "focusArea": "مجال التركيز",
+    "duration": "المدة",
+    "attended": "الحضور",
+    "status": "الحالة",
+    "loadErrorTitle": "خطأ",
+    "loadErrorMsg": "فشل تحميل جلسات التدريب"
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",

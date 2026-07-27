@@ -55,6 +55,7 @@ const items = [
   { key: 'match-monitor', icon: 'analytics', labelKey: 'sidebar.matchMonitor', path: '/dashboard/match-monitor' },
   { key: 'match-archive', icon: 'history', labelKey: 'sidebar.matchArchive', path: '/dashboard/match-archive' },
   { key: 'players-monitor', icon: 'groups', labelKey: 'sidebar.playersMonitor', path: '/dashboard/players-monitor' },
+  { key: 'training-monitor', icon: 'fitness_center', labelKey: 'sidebar.trainingMonitor', path: '/dashboard/training-monitor' },
   { key: 'medical',   icon: 'medical_services', labelKey: 'sidebar.medical', path: '/dashboard/medical'  },
   { key: 'finances',         icon: 'payments',       labelKey: 'sidebar.finances',         path: '/dashboard/finances'         },
   { key: 'subscription',     icon: 'upgrade',        labelKey: 'sidebar.subscription',     path: '/dashboard/subscription'     },
