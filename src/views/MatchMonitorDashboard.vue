@@ -69,6 +69,8 @@ const isResetting = ref(false)
 const isMatchCompleted = ref(false)
 const showCompleteConfirm = ref(false)
 const isCompleting = ref(false)
+const clubScore = ref(0)
+const opponentScore = ref(0)
 
 const EVENT_TYPES = ref([])
 
@@ -385,17 +387,20 @@ async function confirmResetAttendance() {
 
 function completeMatch() {
   if (!matchId.value) return
+  clubScore.value = 0
+  opponentScore.value = 0
   showCompleteConfirm.value = true
 }
 
 async function confirmCompleteMatch() {
-  showCompleteConfirm.value = false
   if (!matchId.value) return
   isCompleting.value = true
   try {
+    await matchService.saveMatchResult(matchId.value, { clubScore: clubScore.value, opponentScore: opponentScore.value })
     await matchService.completeMatch(matchId.value)
     isMatchCompleted.value = true
-    showToast({ title: t('matchMonitor.finalizedTitle'), message: t('matchMonitor.finalizedMessage', { home: selectedMatch.value?.opponentName ?? '', hs: '-', as: '-', away: '' }), mode: 'success' })
+    showCompleteConfirm.value = false
+    showToast({ title: t('matchMonitor.finalizedTitle'), message: t('matchMonitor.finalizedMessage', { home: selectedMatch.value?.opponentName ?? '', hs: clubScore.value, as: opponentScore.value, away: '' }), mode: 'success' })
   } catch (e) {
     const msg = e?.response?.data?.message || t('matchMonitor.attendanceSaveErrorMsg')
     showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: msg, mode: 'error' })
@@ -761,9 +766,22 @@ onMounted(loadCategories)
             <span class="material-symbols-outlined text-3xl text-[#00ff41]">check_circle</span>
           </div>
           <h2 class="font-headline text-lg font-black uppercase tracking-tight text-on-surface">{{ t('matchMonitor.finalizeMatch') }}</h2>
-          <p class="mt-3 text-sm text-on-surface-variant">
-            {{ t('matchMonitor.finalizedMessage', { home: selectedMatch?.opponentName ?? '', hs: '', as: '', away: '' }) }}
-          </p>
+          <p class="mt-2 text-sm text-on-surface-variant">{{ selectedMatch?.opponentName || '' }}</p>
+        </div>
+        <div class="px-6 pb-2">
+          <div class="flex items-center gap-4 justify-center">
+            <div class="flex flex-col items-center gap-1.5">
+              <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">{{ t('matchMonitor.clubScore') }}</label>
+              <input v-model.number="clubScore" type="number" min="0" max="99"
+                class="w-20 bg-surface-container-high border border-outline-variant/20 text-on-surface text-center text-2xl font-black rounded-lg px-3 py-3 focus:ring-2 focus:ring-primary-fixed font-mono" />
+            </div>
+            <span class="text-2xl font-black text-on-surface-variant mt-6">:</span>
+            <div class="flex flex-col items-center gap-1.5">
+              <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">{{ t('matchMonitor.opponentScore') }}</label>
+              <input v-model.number="opponentScore" type="number" min="0" max="99"
+                class="w-20 bg-surface-container-high border border-outline-variant/20 text-on-surface text-center text-2xl font-black rounded-lg px-3 py-3 focus:ring-2 focus:ring-primary-fixed font-mono" />
+            </div>
+          </div>
         </div>
         <div class="flex gap-3 border-t border-outline-variant/10 p-4">
           <button

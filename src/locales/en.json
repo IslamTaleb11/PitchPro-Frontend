@@ -526,7 +526,9 @@
     "playerMustBePresent": "Only present players can be logged as events.",
     "playerNotAttended": "Player attendance must be saved before logging events.",
     "selectEventType": "Select event type...",
-    "changeMatch": "Change Match"
+    "changeMatch": "Change Match",
+    "clubScore": "Club",
+    "opponentScore": "Opponent"
   },
   "matchArchive": {
     "pageTitle": "Match Archive",

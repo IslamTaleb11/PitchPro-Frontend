@@ -523,7 +523,9 @@
     "playerMustBePresent": "فقط اللاعبون الحاضرون يمكن تسجيلهم كأحداث.",
     "playerNotAttended": "يجب حفظ حضور اللاعب قبل تسجيل الأحداث.",
     "selectEventType": "اختر نوع الحدث...",
-    "changeMatch": "تغيير المباراة"
+    "changeMatch": "تغيير المباراة",
+    "clubScore": "نادينا",
+    "opponentScore": "الخصم"
   },
   "matchArchive": {
     "pageTitle": "أرشيف المباريات",

@@ -73,6 +73,12 @@ export const matchService = {
     return api.delete('/match-events', { params: { MatchID: matchId, EventID: eventId } });
   },
 
+  // Save match result (club score & opponent score).
+  // PUT /api/matches/{matchId}/result  body: { clubScore, opponentScore }
+  saveMatchResult(matchId, data) {
+    return api.put(`/matches/${matchId}/result`, data);
+  },
+
   // Mark a match as completed.
   // POST /api/matches/{matchId}/complete
   completeMatch(matchId) {
