@@ -612,7 +612,20 @@
     "sessionReady": "Session Loaded",
     "sessionReadyDesc": "Player data and controls will appear once connected to the API.",
     "loadErrorTitle": "Error",
-    "loadErrorMsg": "Failed to load training sessions"
+    "loadErrorMsg": "Failed to load training sessions",
+    "loadPlayersError": "Failed to load players",
+    "playerList": "Squad Players",
+    "playerListDesc": "Mark attendance for each player in this training session",
+    "player": "Player",
+    "jersey": "Jersey",
+    "position": "Position",
+    "present": "Present",
+    "absent": "Absent",
+    "notMarked": "Not Marked",
+    "presentCount": "Present",
+    "absentCount": "Absent",
+    "totalEligible": "Total Eligible",
+    "attendanceSummary": "Attendance Summary"
   },
   "medical": {
     "sectionTitle": "Department Telemetry",

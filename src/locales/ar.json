@@ -609,7 +609,20 @@
     "sessionReady": "تم تحميل الجلسة",
     "sessionReadyDesc": "بيانات اللاعبين وعناصر التحكم ستظهر بعد الاتصال بالخادم.",
     "loadErrorTitle": "خطأ",
-    "loadErrorMsg": "فشل تحميل جلسات التدريب"
+    "loadErrorMsg": "فشل تحميل جلسات التدريب",
+    "loadPlayersError": "فشل تحميل اللاعبين",
+    "playerList": "لاعبي الفريق",
+    "playerListDesc": "تسجيل حضور كل لاعب في جلسة التدريب هذه",
+    "player": "اللاعب",
+    "jersey": "الرقم",
+    "position": "المركز",
+    "present": "حاضر",
+    "absent": "غائب",
+    "notMarked": "غير محدد",
+    "presentCount": "الحاضرون",
+    "absentCount": "الغائبون",
+    "totalEligible": "الإجمالي",
+    "attendanceSummary": "ملخص الحضور"
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",

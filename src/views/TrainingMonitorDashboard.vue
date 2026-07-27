@@ -5,7 +5,6 @@ import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.
 import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
 import { useUiToast } from '../composables/useUiToast'
 import { lookupService } from '../services/lookupService'
-import { playerService } from '../services/playerService'
 import { trainingService } from '../services/trainingService'
 
 const { t } = useI18n()
@@ -155,7 +154,7 @@ async function onCategoryChange() {
   }
 }
 
-function startSession() {
+async function startSession() {
   if (!selectedCategory.value) {
     showToast({ title: t('trainingMonitor.selectionRequiredTitle'), message: t('trainingMonitor.selectionRequiredMsg'), mode: 'error' })
     return
@@ -165,6 +164,30 @@ function startSession() {
     return
   }
   startupModalOpen.value = false
+  await loadPlayers()
+}
+
+async function loadPlayers() {
+  isLoadingPlayers.value = true
+  try {
+    const res = await trainingService.getPlayersByCategory(selectedCategory.value)
+    const raw = res?.data?.data ?? res?.data ?? []
+    const list = Array.isArray(raw) ? raw : []
+    players.value = list.map((p) => ({
+      id: p.playerID ?? p.PlayerID ?? p.id,
+      name: p.playerName ?? p.PlayerName ?? p.fullName ?? '',
+      jersey: p.jerseyNumber ?? p.JerseyNumber ?? '',
+      image: p.playerImage ?? p.PlayerImage ?? null,
+      positionName: p.positionName ?? p.PositionName ?? null,
+      recordedStatus: null,
+    }))
+    playerStatuses.value = {}
+  } catch {
+    players.value = []
+    showToast({ title: t('trainingMonitor.errorTitle'), message: t('trainingMonitor.loadPlayersError'), mode: 'error' })
+  } finally {
+    isLoadingPlayers.value = false
+  }
 }
 
 function handleCategoryChange() {
@@ -296,11 +319,83 @@ onMounted(loadCategories)
             </div>
           </div>
 
-          <!-- Player list placeholder -->
-          <div v-if="selectedSession" class="flex flex-col items-center justify-center py-20 text-on-surface-variant border border-dashed border-outline-variant/20 rounded-xl">
-            <span class="material-symbols-outlined text-5xl mb-4 opacity-30">fitness_center</span>
-            <p class="text-sm font-bold uppercase tracking-wider">{{ t('trainingMonitor.sessionReady') }}</p>
-            <p class="text-xs text-on-surface-variant/60 mt-2">{{ t('trainingMonitor.sessionReadyDesc') }}</p>
+          <!-- Player list -->
+          <div v-if="selectedSession">
+            <div v-if="isLoadingPlayers" class="flex items-center justify-center py-16">
+              <span class="text-[11px] text-on-surface-variant font-bold uppercase tracking-widest">{{ t('trainingMonitor.loading') }}</span>
+            </div>
+            <div v-else-if="players.length">
+              <!-- Summary -->
+              <div class="flex items-center gap-4 mb-4 p-4 bg-surface-container-high rounded-xl border border-outline-variant/10">
+                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">{{ t('trainingMonitor.attendanceSummary') }}</span>
+                <span class="text-xs font-black text-[#00ff41] flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#00ff41]"></span>{{ t('trainingMonitor.presentCount') }} {{ presentCount }}</span>
+                <span class="text-xs font-black text-[#ff4141] flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#ff4141]"></span>{{ t('trainingMonitor.absentCount') }} {{ absentCount }}</span>
+                <span class="text-xs font-black text-on-surface-variant flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-on-surface-variant"></span>{{ t('trainingMonitor.totalEligible') }} {{ totalEligible }}</span>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black border-b border-outline-variant/10">
+                      <th class="py-3 px-2">{{ t('trainingMonitor.jersey') }}</th>
+                      <th class="py-3 px-2">{{ t('trainingMonitor.player') }}</th>
+                      <th class="py-3 px-2 hidden sm:table-cell">{{ t('trainingMonitor.position') }}</th>
+                      <th class="py-3 px-2 text-center">{{ t('trainingMonitor.status') }}</th>
+                      <th class="py-3 px-2 text-center">{{ t('trainingMonitor.present') }}</th>
+                      <th class="py-3 px-2 text-center">{{ t('trainingMonitor.absent') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="p in playersForTable" :key="p.id"
+                      class="border-b border-outline-variant/5 hover:bg-surface-container-high/50 transition-colors text-sm"
+                      :class="{ 'opacity-40': p.status === 'absent' }">
+                      <td class="py-3 px-2 font-black text-on-surface">{{ p.jersey }}</td>
+                      <td class="py-3 px-2">
+                        <div class="flex items-center gap-3">
+                          <div class="w-9 h-9 rounded-full bg-surface-container-highest overflow-hidden shrink-0 flex items-center justify-center border border-outline-variant/10">
+                            <img v-if="p.image" :src="p.image" class="w-full h-full object-cover" alt="" />
+                            <span v-else class="material-symbols-outlined text-on-surface-variant text-lg">person</span>
+                          </div>
+                          <div>
+                            <p class="font-bold text-on-surface">{{ p.name }}</p>
+                            <p v-if="p.positionName" class="text-[10px] text-on-surface-variant font-medium sm:hidden">{{ localizePosition(p.positionName) }}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="py-3 px-2 hidden sm:table-cell">
+                        <span class="text-[11px] text-on-surface-variant font-medium">{{ localizePosition(p.positionName) }}</span>
+                      </td>
+                      <td class="py-3 px-2 text-center">
+                        <span v-if="p.isLocallyChanged" class="text-[10px] font-black uppercase tracking-wider"
+                          :class="p.status === 'present' ? 'text-[#00ff41]' : p.status === 'absent' ? 'text-[#ff4141]' : 'text-on-surface-variant'">
+                          {{ p.status === 'present' ? t('trainingMonitor.present') : p.status === 'absent' ? t('trainingMonitor.absent') : t('trainingMonitor.notMarked') }}
+                        </span>
+                        <span v-else class="text-[10px] text-on-surface-variant/50 font-bold uppercase tracking-wider">{{ t('trainingMonitor.notMarked') }}</span>
+                      </td>
+                      <td class="py-3 px-2 text-center">
+                        <button @click="updateStatus(p.id, 'present')"
+                          class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded transition-all"
+                          :class="p.status === 'present' ? 'bg-[#00ff41]/20 text-[#00ff41] border border-[#00ff41]/30' : 'bg-surface-container-highest text-on-surface-variant hover:text-[#00ff41] hover:bg-[#00ff41]/10 border border-transparent'">
+                          {{ t('trainingMonitor.present') }}
+                        </button>
+                      </td>
+                      <td class="py-3 px-2 text-center">
+                        <button @click="updateStatus(p.id, 'absent')"
+                          class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded transition-all"
+                          :class="p.status === 'absent' ? 'bg-[#ff4141]/20 text-[#ff4141] border border-[#ff4141]/30' : 'bg-surface-container-highest text-on-surface-variant hover:text-[#ff4141] hover:bg-[#ff4141]/10 border border-transparent'">
+                          {{ t('trainingMonitor.absent') }}
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div v-else class="flex flex-col items-center justify-center py-16 text-on-surface-variant border border-dashed border-outline-variant/20 rounded-xl">
+              <span class="material-symbols-outlined text-5xl mb-4 opacity-30">fitness_center</span>
+              <p class="text-sm font-bold uppercase tracking-wider">{{ t('trainingMonitor.sessionReady') }}</p>
+              <p class="text-xs text-on-surface-variant/60 mt-2">{{ t('trainingMonitor.sessionReadyDesc') }}</p>
+            </div>
           </div>
         </div>
       </div>
