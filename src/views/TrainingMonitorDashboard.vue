@@ -361,7 +361,7 @@ onMounted(loadCategories)
                 <div class="ml-auto">
                   <button @click="saveAttendance" :disabled="savingAttendance"
                     class="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded transition-all"
-                    :class="savingAttendance ? 'bg-surface-container-highest text-on-surface-variant/50' : 'bg-primary-container text-on-primary-container hover:brightness-110'">
+                    :class="savingAttendance ? 'bg-surface-container-highest text-on-surface-variant/50' : 'bg-primary-container text-black hover:brightness-110'">
                     {{ savingAttendance ? t('trainingMonitor.saving') : t('trainingMonitor.saveAttendance') }}
                   </button>
                 </div>
