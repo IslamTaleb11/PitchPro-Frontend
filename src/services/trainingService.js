@@ -14,11 +14,12 @@ export const trainingService = {
     return api.get(`/training-sessions/by-category/${categoryId}`);
   },
 
-  // Get non-injured players in a category for training session attendance.
-  // GET /api/training-sessions/players/{categoryId}
-  // -> { data: [ { playerID, playerName, jerseyNumber, positionName, playerImage } ] }
-  getPlayersByCategory(categoryId) {
-    return api.get(`/training-sessions/players/${categoryId}`);
+  // Get non-injured players in a category for training session attendance,
+  // including their isAttended status for the given session.
+  // GET /api/training-sessions/players/{categoryId}/{trainingSessionId}
+  // -> { data: [ { playerID, playerName, jerseyNumber, positionName, playerImage, isAttended } ] }
+  getPlayersByCategory(categoryId, trainingSessionId) {
+    return api.get(`/training-sessions/players/${categoryId}/${trainingSessionId}`);
   },
 
   // Mark attendance for a training session.

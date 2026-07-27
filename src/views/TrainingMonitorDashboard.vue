@@ -171,7 +171,7 @@ async function startSession() {
 async function loadPlayers() {
   isLoadingPlayers.value = true
   try {
-    const res = await trainingService.getPlayersByCategory(selectedCategory.value)
+    const res = await trainingService.getPlayersByCategory(selectedCategory.value, selectedSession.value.id)
     const raw = res?.data?.data ?? res?.data ?? []
     const list = Array.isArray(raw) ? raw : []
     players.value = list.map((p) => ({
@@ -180,7 +180,7 @@ async function loadPlayers() {
       jersey: p.jerseyNumber ?? p.JerseyNumber ?? '',
       image: p.playerImage ?? p.PlayerImage ?? null,
       positionName: p.positionName ?? p.PositionName ?? null,
-      recordedStatus: null,
+      recordedStatus: p.isAttended === true ? 'present' : p.isAttended === false ? 'absent' : null,
     }))
     playerStatuses.value = {}
   } catch {
