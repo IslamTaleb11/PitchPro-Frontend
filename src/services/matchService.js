@@ -77,5 +77,11 @@ export const matchService = {
   // POST /api/matches/{matchId}/complete
   completeMatch(matchId) {
     return api.post(`/matches/${matchId}/complete`);
+  },
+
+  // Get all completed matches for a category.
+  // GET /api/matches/completed/{categoryId} -> { data: [ { id, opponentName, date, kickoffTime, isHome, stadiumName, ... } ] }
+  getCompletedMatchesByCategory(categoryId) {
+    return api.get(`/matches/completed/${categoryId}`);
   }
 };
