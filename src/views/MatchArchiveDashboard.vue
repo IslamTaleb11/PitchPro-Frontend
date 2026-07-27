@@ -77,6 +77,8 @@ function normalizeMatch(raw) {
     isHome: raw.IsHome ?? raw.isHome ?? false,
     stadiumName: raw.StadiumName ?? raw.stadiumName ?? '',
     clubName: raw.ClubName ?? raw.clubName ?? '',
+    clubScore: raw.ClubScore ?? raw.clubScore,
+    opponentScore: raw.OpponentScore ?? raw.opponentScore,
   }
 }
 
@@ -251,6 +253,7 @@ onMounted(loadCategories)
                   <tr class="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">
                     <th class="px-4 pb-2">{{ t('matchArchive.opponent') }}</th>
                     <th class="px-4 pb-2">{{ t('matchArchive.date') }}</th>
+                    <th class="px-4 pb-2 text-center">{{ t('matchArchive.result') }}</th>
                     <th class="px-4 pb-2">{{ t('matchArchive.stadium') }}</th>
                     <th class="px-4 pb-2 text-center">{{ t('matchArchive.records') }}</th>
                   </tr>
@@ -271,6 +274,12 @@ onMounted(loadCategories)
                     <td class="px-4 py-4 border-y border-outline-variant/5 whitespace-nowrap">
                       <span class="text-xs font-bold text-on-surface">{{ normalizeDate(m.date) }}</span>
                       <span v-if="m.kickoffTime" class="text-[10px] text-on-surface-variant font-mono ml-2">{{ normalizeTime(m.kickoffTime) }}</span>
+                    </td>
+                    <td class="px-4 py-4 border-y border-outline-variant/5 text-center">
+                      <span v-if="m.clubScore !== undefined && m.opponentScore !== undefined" class="text-sm font-black text-on-surface font-mono">
+                        {{ m.clubScore }} : {{ m.opponentScore }}
+                      </span>
+                      <span v-else class="text-[10px] text-on-surface-variant">-</span>
                     </td>
                     <td class="px-4 py-4 border-y border-outline-variant/5">
                       <span class="text-xs text-on-surface-variant font-medium">{{ m.stadiumName || '-' }}</span>
@@ -348,8 +357,13 @@ onMounted(loadCategories)
                 <p class="text-sm font-bold text-on-surface">{{ selectedMatch.stadiumName || '-' }}</p>
               </div>
               <div class="bg-surface-container-high rounded-xl p-4">
-                <p class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black mb-1">{{ t('matchArchive.club') }}</p>
-                <p class="text-sm font-bold text-on-surface">{{ selectedMatch.clubName || '-' }}</p>
+                <p class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black mb-1">{{ t('matchArchive.result') }}</p>
+                <p class="text-sm font-black text-on-surface font-mono">
+                  <span v-if="selectedMatch.clubScore !== undefined && selectedMatch.opponentScore !== undefined">
+                    {{ selectedMatch.clubScore }} : {{ selectedMatch.opponentScore }}
+                  </span>
+                  <span v-else class="text-on-surface-variant">-</span>
+                </p>
               </div>
             </div>
 
