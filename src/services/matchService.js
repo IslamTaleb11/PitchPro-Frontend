@@ -71,5 +71,11 @@ export const matchService = {
   // DELETE /api/match-events?MatchID={matchId}&EventID={eventId}
   deleteMatchEvent(matchId, eventId) {
     return api.delete('/match-events', { params: { MatchID: matchId, EventID: eventId } });
+  },
+
+  // Mark a match as completed.
+  // POST /api/matches/{matchId}/complete
+  completeMatch(matchId) {
+    return api.post(`/matches/${matchId}/complete`);
   }
 };

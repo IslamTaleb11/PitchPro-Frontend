@@ -66,6 +66,9 @@ const showMarkAllConfirm = ref(false)
 const highlightedRow = ref(null)
 const isSaving = ref(false)
 const isResetting = ref(false)
+const isMatchCompleted = ref(false)
+const showCompleteConfirm = ref(false)
+const isCompleting = ref(false)
 
 const EVENT_TYPES = ref([])
 
@@ -242,6 +245,7 @@ function startSession() {
   }
   matchId.value = selectedMatch.value.id
   startupModalOpen.value = false
+  isMatchCompleted.value = false
   loadPlayersByCategory(selectedCategory.value)
 }
 
@@ -376,6 +380,27 @@ async function confirmResetAttendance() {
     showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: msg, mode: 'error' })
   } finally {
     isResetting.value = false
+  }
+}
+
+function completeMatch() {
+  if (!matchId.value) return
+  showCompleteConfirm.value = true
+}
+
+async function confirmCompleteMatch() {
+  showCompleteConfirm.value = false
+  if (!matchId.value) return
+  isCompleting.value = true
+  try {
+    await matchService.completeMatch(matchId.value)
+    isMatchCompleted.value = true
+    showToast({ title: t('matchMonitor.finalizedTitle'), message: t('matchMonitor.finalizedMessage', { home: selectedMatch.value?.opponentName ?? '', hs: '-', as: '-', away: '' }), mode: 'success' })
+  } catch (e) {
+    const msg = e?.response?.data?.message || t('matchMonitor.attendanceSaveErrorMsg')
+    showToast({ title: t('matchMonitor.attendanceSaveErrorTitle'), message: msg, mode: 'error' })
+  } finally {
+    isCompleting.value = false
   }
 }
 
@@ -548,14 +573,17 @@ onMounted(loadCategories)
 
           <div class="flex items-center justify-between bg-surface-container-low border border-outline-variant/10 p-4 rounded mb-2">
             <div class="flex items-center gap-4">
-              <button class="bg-primary-container text-black text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="markAllPresent" :disabled="isSaving || isResetting">
+              <button class="bg-primary-container text-black text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="markAllPresent" :disabled="isSaving || isResetting || isMatchCompleted">
                 <span class="material-symbols-outlined text-sm">done_all</span> {{ t('matchMonitor.markAllPresent') }}
               </button>
-              <button class="bg-primary-container text-black text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="saveAttendance" :disabled="isSaving || isResetting || !pendingPlayers.length">
+              <button class="bg-primary-container text-black text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="saveAttendance" :disabled="isSaving || isResetting || isMatchCompleted || !pendingPlayers.length">
                 <span class="material-symbols-outlined text-sm">save</span> {{ t('matchMonitor.saveAttendance') }}
               </button>
-              <button class="text-[11px] font-black text-on-surface-variant hover:text-on-surface px-4 py-2.5 rounded transition-all flex items-center gap-2 uppercase tracking-widest border border-outline-variant/20 bg-surface-container-high" type="button" @click="resetAll" :disabled="isSaving || isResetting">
+              <button class="text-[11px] font-black text-on-surface-variant hover:text-on-surface px-4 py-2.5 rounded transition-all flex items-center gap-2 uppercase tracking-widest border border-outline-variant/20 bg-surface-container-high" type="button" @click="resetAll" :disabled="isSaving || isResetting || isMatchCompleted">
                 <span class="material-symbols-outlined text-sm">refresh</span> {{ t('matchMonitor.resetAll') }}
+              </button>
+              <button class="bg-[#00ff41] text-black text-[11px] font-black px-6 py-2.5 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-widest" type="button" @click="completeMatch" :disabled="isMatchCompleted || isCompleting">
+                <span class="material-symbols-outlined text-sm">check_circle</span> {{ t('matchMonitor.finalizeMatch') }}
               </button>
             </div>
             <div class="flex items-center gap-4 text-[11px] text-on-surface-variant font-bold uppercase tracking-wider">
@@ -565,6 +593,11 @@ onMounted(loadCategories)
           </div>
 
           <!-- Match Event Logger -->
+          <div v-if="isMatchCompleted" class="bg-[#00ff41]/10 border border-[#00ff41]/30 rounded-xl p-4 mb-4 flex items-center gap-3">
+            <span class="material-symbols-outlined text-[#00ff41]">check_circle</span>
+            <span class="text-sm font-bold text-[#00ff41] uppercase tracking-wider">{{ t('matchMonitor.finalizedTitle') }}</span>
+          </div>
+
           <div v-if="players.length" class="bg-surface-container-low border border-outline-variant/10 rounded-lg p-4 mb-4">
             <div class="flex items-center justify-between mb-3">
               <h3 class="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant">
@@ -574,23 +607,23 @@ onMounted(loadCategories)
             <div class="flex flex-wrap gap-3 items-end">
               <div class="flex flex-col gap-1">
                 <label class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black">{{ t('matchMonitor.player') }}</label>
-                <select v-model="eventPlayer" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-[11px] font-bold rounded px-3 py-2 focus:ring-1 focus:ring-primary-fixed min-w-[150px]">
+                <select v-model="eventPlayer" :disabled="isMatchCompleted" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-[11px] font-bold rounded px-3 py-2 focus:ring-1 focus:ring-primary-fixed min-w-[150px] disabled:opacity-50 disabled:cursor-not-allowed">
                   <option value="" disabled>{{ t('matchMonitor.selectPlayer') }}</option>
                   <option v-for="p in presentPlayers" :key="p.id" :value="p.id">{{ p.name }} ({{ p.jersey }})</option>
                 </select>
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black">{{ t('matchMonitor.eventType') }}</label>
-                <select v-model="eventType" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-[11px] font-bold rounded px-3 py-2 focus:ring-1 focus:ring-primary-fixed min-w-[140px]">
+                <select v-model="eventType" :disabled="isMatchCompleted" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-[11px] font-bold rounded px-3 py-2 focus:ring-1 focus:ring-primary-fixed min-w-[140px] disabled:opacity-50 disabled:cursor-not-allowed">
                   <option value="" disabled>{{ t('matchMonitor.selectEventType') }}</option>
                   <option v-for="e in EVENT_TYPES" :key="e.id" :value="e.id">{{ e.name }}</option>
                 </select>
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black">Min</label>
-                <input v-model="eventMinute" type="number" min="1" max="150" placeholder="'" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-[11px] font-bold rounded px-3 py-2 focus:ring-1 focus:ring-primary-fixed w-20 text-center font-mono" />
+                <input v-model="eventMinute" :disabled="isMatchCompleted" type="number" min="1" max="150" placeholder="'" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-[11px] font-bold rounded px-3 py-2 focus:ring-1 focus:ring-primary-fixed w-20 text-center font-mono disabled:opacity-50 disabled:cursor-not-allowed" />
               </div>
-              <button @click="logEvent" class="bg-primary-container text-black text-[11px] font-black px-5 py-2 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all uppercase tracking-widest whitespace-nowrap">
+              <button @click="logEvent" :disabled="isMatchCompleted" class="bg-primary-container text-black text-[11px] font-black px-5 py-2 rounded shadow-lg hover:brightness-110 active:scale-95 transition-all uppercase tracking-widest whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                 <span class="material-symbols-outlined text-sm align-middle">add</span> {{ t('matchMonitor.logEvent') }}
               </button>
             </div>
@@ -642,12 +675,14 @@ onMounted(loadCategories)
                   <td class="px-4 py-3 border-y border-r border-outline-variant/5">
                     <div v-if="player.isAlreadyAttended" class="flex justify-center gap-2">
                       <button type="button"
+                        :disabled="isMatchCompleted"
                         :class="[
                           'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
                           player.status === 'present' ? 'active-pill-present' : 'border-outline-variant/20 hover:border-primary/40'
                         ]"
                         @click="updateStatus(player.id, 'present')">{{ t('matchMonitor.present') }}</button>
                       <button type="button"
+                        :disabled="isMatchCompleted"
                         :class="[
                           'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
                           player.status === 'absent' ? 'active-pill-absent' : 'border-outline-variant/20 hover:border-error/40'
@@ -656,12 +691,14 @@ onMounted(loadCategories)
                     </div>
                     <div v-else class="flex justify-center gap-2">
                       <button type="button"
+                        :disabled="isMatchCompleted"
                         :class="[
                           'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
                           player.status === 'present' ? 'active-pill-present' : 'border-outline-variant/20 hover:border-primary/40'
                         ]"
                         @click="updateStatus(player.id, 'present')">{{ t('matchMonitor.present') }}</button>
                       <button type="button"
+                        :disabled="isMatchCompleted"
                         :class="[
                           'status-btn flex-1 min-w-[100px] py-2.5 rounded border text-[11px] font-black uppercase tracking-widest',
                           player.status === 'absent' ? 'active-pill-absent' : 'border-outline-variant/20 hover:border-error/40'
@@ -708,6 +745,42 @@ onMounted(loadCategories)
           >
             <span class="material-symbols-outlined text-sm">done_all</span>
             {{ t('matchMonitor.confirmMarkAllPresent') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- ── Complete Match confirmation ── -->
+  <Teleport to="body">
+    <div v-if="showCompleteConfirm" class="fixed inset-0 z-[130] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-background/80 backdrop-blur-md" @click="showCompleteConfirm = false"></div>
+      <div class="relative w-full max-w-md overflow-hidden rounded-xl border border-[#00ff41]/20 bg-surface-container-low shadow-2xl">
+        <div class="flex flex-col items-center p-6 text-center">
+          <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#00ff41]/15">
+            <span class="material-symbols-outlined text-3xl text-[#00ff41]">check_circle</span>
+          </div>
+          <h2 class="font-headline text-lg font-black uppercase tracking-tight text-on-surface">{{ t('matchMonitor.finalizeMatch') }}</h2>
+          <p class="mt-3 text-sm text-on-surface-variant">
+            {{ t('matchMonitor.finalizedMessage', { home: selectedMatch?.opponentName ?? '', hs: '', as: '', away: '' }) }}
+          </p>
+        </div>
+        <div class="flex gap-3 border-t border-outline-variant/10 p-4">
+          <button
+            type="button"
+            @click="showCompleteConfirm = false"
+            class="flex-1 rounded-md py-3 text-[10px] font-black uppercase tracking-widest text-on-surface-variant transition-colors hover:bg-surface-container-high"
+          >
+            {{ t('common.cancel') }}
+          </button>
+          <button
+            type="button"
+            @click="confirmCompleteMatch"
+            :disabled="isCompleting"
+            class="flex-1 rounded-md bg-[#00ff41] py-3 text-[10px] font-black uppercase tracking-widest text-black transition-colors hover:brightness-110 flex items-center justify-center gap-1"
+          >
+            <span class="material-symbols-outlined text-sm">check_circle</span>
+            {{ isCompleting ? t('matchMonitor.loading') : t('matchMonitor.finalizeMatch') }}
           </button>
         </div>
       </div>
