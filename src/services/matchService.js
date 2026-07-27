@@ -91,6 +91,12 @@ export const matchService = {
     return api.get(`/match-attendance/${matchId}/players`, { params: { categoryId } });
   },
 
+  // Get player statistics for a category.
+  // GET /api/players/stats/{categoryId} -> { data: [ { playerID, playerName, jerseyNumber, positionName, playerImage, matchesPlayed, goals, assists, yellowCards, redCards } ] }
+  getPlayerStats(categoryId) {
+    return api.get(`/players/stats/${categoryId}`);
+  },
+
   // Get all completed matches for a category with pagination.
   // GET /api/matches/completed/{categoryId}?page=1&pageSize=10
   // -> { data: [ { id, clubID, categoryID, opponentName, date, kickoffTime, endTime, isCompleted, isHome, stadiumName, clubName } ], totalCount, page, pageSize }

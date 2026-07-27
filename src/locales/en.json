@@ -109,6 +109,7 @@
     "callUp": "Call-Up",
     "matchMonitor": "Match Monitor",
     "matchArchive": "Match Archive",
+    "playerStats": "Player Stats",
     "medical": "Medical",
     "training": "Training",
     "subscription": "Subscription Plans"
@@ -560,6 +561,24 @@
     "draw": "Draw",
     "loadErrorTitle": "Error",
     "loadErrorMsg": "Failed to load match details"
+  },
+  "playerStats": {
+    "pageTitle": "Player Statistics",
+    "pageSubtitle": "Season stats per player",
+    "squadCategory": "Squad Category",
+    "selectCategory": "Select Category...",
+    "selectCategoryPrompt": "Select a category to view player stats",
+    "loading": "Loading...",
+    "noPlayers": "No players found",
+    "player": "Player",
+    "pos": "Pos",
+    "mp": "MP",
+    "goals": "G",
+    "assists": "A",
+    "yellowCards": "YC",
+    "redCards": "RC",
+    "loadErrorTitle": "Error",
+    "loadErrorMsg": "Failed to load player statistics"
   },
   "medical": {
     "sectionTitle": "Department Telemetry",

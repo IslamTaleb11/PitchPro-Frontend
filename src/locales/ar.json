@@ -110,6 +110,7 @@
     "callUp": "استدعاء اللاعبين",
     "matchMonitor": "مراقبة المباراة",
     "matchArchive": "أرشيف المباريات",
+    "playerStats": "إحصائيات اللاعبين",
     "medical": "المركز الطبي",
     "training": "التدريب",
     "subscription": "الاشتراكات"
@@ -557,6 +558,24 @@
     "draw": "تعادل",
     "loadErrorTitle": "خطأ",
     "loadErrorMsg": "فشل تحميل تفاصيل المباراة"
+  },
+  "playerStats": {
+    "pageTitle": "إحصائيات اللاعبين",
+    "pageSubtitle": "إحصائيات الموسم لكل لاعب",
+    "squadCategory": "فئة الفريق",
+    "selectCategory": "اختر الفئة...",
+    "selectCategoryPrompt": "اختر فئة لعرض إحصائيات اللاعبين",
+    "loading": "جارٍ التحميل...",
+    "noPlayers": "لا يوجد لاعبون",
+    "player": "اللاعب",
+    "pos": "المركز",
+    "mp": "م",
+    "goals": "أ",
+    "assists": "ت.ح",
+    "yellowCards": "ب.ص",
+    "redCards": "ب.ح",
+    "loadErrorTitle": "خطأ",
+    "loadErrorMsg": "فشل تحميل إحصائيات اللاعبين"
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",

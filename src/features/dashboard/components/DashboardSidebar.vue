@@ -54,6 +54,7 @@ const items = [
   { key: 'call-up',   icon: 'playlist_add_check', labelKey: 'sidebar.callUp', path: '/dashboard/call-up'  },
   { key: 'match-monitor', icon: 'analytics', labelKey: 'sidebar.matchMonitor', path: '/dashboard/match-monitor' },
   { key: 'match-archive', icon: 'history', labelKey: 'sidebar.matchArchive', path: '/dashboard/match-archive' },
+  { key: 'player-stats', icon: 'bar_chart', labelKey: 'sidebar.playerStats', path: '/dashboard/player-stats' },
   { key: 'medical',   icon: 'medical_services', labelKey: 'sidebar.medical', path: '/dashboard/medical'  },
   { key: 'finances',         icon: 'payments',       labelKey: 'sidebar.finances',         path: '/dashboard/finances'         },
   { key: 'subscription',     icon: 'upgrade',        labelKey: 'sidebar.subscription',     path: '/dashboard/subscription'     },
