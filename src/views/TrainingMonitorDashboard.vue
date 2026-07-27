@@ -5,6 +5,7 @@ import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.
 import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
 import { useUiToast } from '../composables/useUiToast'
 import { lookupService } from '../services/lookupService'
+import { playerService } from '../services/playerService'
 import { trainingService } from '../services/trainingService'
 
 const { t } = useI18n()
