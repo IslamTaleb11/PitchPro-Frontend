@@ -400,11 +400,10 @@ onMounted(loadCategories)
                         <span class="text-[11px] text-on-surface-variant font-medium">{{ localizePosition(p.positionName) }}</span>
                       </td>
                       <td class="py-3 px-2 text-center">
-                        <span v-if="p.isLocallyChanged" class="text-[10px] font-black uppercase tracking-wider"
-                          :class="p.status === 'present' ? 'text-[#00ff41]' : p.status === 'absent' ? 'text-[#ff4141]' : 'text-on-surface-variant'">
+                        <span class="text-[10px] font-black uppercase tracking-wider"
+                          :class="p.status === 'present' ? 'text-[#00ff41]' : p.status === 'absent' ? 'text-[#ff4141]' : 'text-on-surface-variant/50'">
                           {{ p.status === 'present' ? t('trainingMonitor.present') : p.status === 'absent' ? t('trainingMonitor.absent') : t('trainingMonitor.notMarked') }}
                         </span>
-                        <span v-else class="text-[10px] text-on-surface-variant/50 font-bold uppercase tracking-wider">{{ t('trainingMonitor.notMarked') }}</span>
                       </td>
                       <td class="py-3 px-2 text-center">
                         <button @click="updateStatus(p.id, 'present')"
