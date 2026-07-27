@@ -6,7 +6,6 @@ import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue
 import { useUiToast } from '../composables/useUiToast'
 import { lookupService } from '../services/lookupService'
 import { matchService } from '../services/matchService'
-import { playerService } from '../services/playerService'
 
 const { t } = useI18n()
 const { showToast } = useUiToast()
@@ -164,20 +163,20 @@ async function loadDetailData(matchId) {
   isLoadingDetail.value = true
   try {
     const [playersRes, eventsRes] = await Promise.all([
-      playerService.getMatchCallUpPlayersByCategory(selectedCategory.value, matchId),
+      matchService.getAttendancePlayersByMatch(matchId, selectedCategory.value),
       matchService.getMatchEvents(matchId),
     ])
-    const rawPlayers = playersRes?.data ?? []
+    const rawPlayers = playersRes?.data?.data ?? []
     detailPlayers.value = Array.isArray(rawPlayers)
       ? rawPlayers.map((p) => ({
-          id: p.PlayerID ?? p.playerID ?? p.id ?? p.Id,
-          name: p.PlayerName ?? p.playerName ?? p.FullName ?? p.fullName ?? p.name ?? '',
-          position: p.PositionName ?? p.positionName ?? p.position ?? '',
-          jersey: p.JerseyNumber ?? p.jerseyNumber ?? p.jersey ?? '',
-          avatar: p.PlayerImage ?? p.playerImage ?? p.photo ?? p.Photo ?? '',
-          isAlreadyAttended: !!(p.isAlreadyAttended ?? p.IsAlreadyAttended ?? false),
-          isAbsent: !!(p.isAbsent ?? p.IsAbsent ?? false),
-          status: (p.recordedStatus ?? p.RecordedStatus) || (p.isAbsent ?? p.IsAbsent ? 'absent' : p.isAlreadyAttended ?? p.IsAlreadyAttended ? 'present' : null),
+          id: p.playerID ?? p.PlayerID,
+          name: p.playerName ?? p.PlayerName ?? '',
+          position: p.positionName ?? p.PositionName ?? '',
+          jersey: p.jerseyNumber ?? p.JerseyNumber ?? '',
+          avatar: null,
+          isAlreadyAttended: p.attended === true || p.Attended === true,
+          isAbsent: p.attended === false || p.Attended === false,
+          status: p.attended === true || p.Attended === true ? 'present' : 'absent',
         }))
       : []
     const rawEvents = eventsRes?.data ?? []
