@@ -632,9 +632,12 @@
     "saveError": "Failed to save attendance",
     "noChanges": "No changes to save",
     "completeTraining": "Complete Training",
+    "markAsCompleted": "Mark as Completed",
     "completing": "Completing...",
     "completeSuccess": "Training completed successfully",
-    "completeError": "Failed to complete training"
+    "completeError": "Failed to complete training",
+    "completeConfirmTitle": "Complete Training Session",
+    "completeConfirmDesc": "This will mark the session as completed and cannot be undone."
   },
   "medical": {
     "sectionTitle": "Department Telemetry",

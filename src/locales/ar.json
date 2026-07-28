@@ -629,9 +629,12 @@
     "saveError": "فشل حفظ الحضور",
     "noChanges": "لا توجد تغييرات للحفظ",
     "completeTraining": "إكمال التدريب",
+    "markAsCompleted": "تحديد كمكتمل",
     "completing": "جارٍ الإكمال...",
     "completeSuccess": "تم إكمال التدريب بنجاح",
-    "completeError": "فشل إكمال التدريب"
+    "completeError": "فشل إكمال التدريب",
+    "completeConfirmTitle": "إكمال جلسة التدريب",
+    "completeConfirmDesc": "سيؤدي هذا إلى تحديد الجلسة كمكتملة ولا يمكن التراجع عن ذلك."
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",

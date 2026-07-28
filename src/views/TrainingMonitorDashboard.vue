@@ -51,6 +51,7 @@ const isLoadingSessions = ref(false)
 const isLoadingPlayers = ref(false)
 const savingAttendance = ref(false)
 const completingTraining = ref(false)
+const showCompleteConfirm = ref(false)
 
 const categories = ref([])
 const selectedCategory = ref('')
@@ -232,7 +233,11 @@ async function saveAttendance() {
   }
 }
 
-async function completeTraining() {
+function completeTraining() {
+  showCompleteConfirm.value = true
+}
+
+async function confirmCompleteTraining() {
   if (!selectedSession.value) return
   completingTraining.value = true
   try {
@@ -241,6 +246,7 @@ async function completeTraining() {
     selectedSession.value.status = 'Completed'
     const found = sessions.value.find((s) => s.id === selectedSession.value.id)
     if (found) found.status = 'Completed'
+    showCompleteConfirm.value = false
   } catch {
     showToast({ title: t('trainingMonitor.completeError'), mode: 'error' })
   } finally {
@@ -363,7 +369,7 @@ onMounted(loadCategories)
                   ? 'bg-[#00ff41]/10 text-[#00ff41] cursor-not-allowed'
                   : 'bg-primary-container text-black hover:brightness-110'">
                 <span class="material-symbols-outlined text-sm">check_circle</span>
-                {{ completingTraining ? t('trainingMonitor.completing') : t('trainingMonitor.completeTraining') }}
+                {{ completingTraining ? t('trainingMonitor.completing') : t('trainingMonitor.markAsCompleted') }}
               </button>
               <button @click="startupModalOpen = true" class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface px-3 py-1.5 rounded border border-outline-variant/20 hover:border-outline-variant/40 transition-all flex items-center gap-1">
                 <span class="material-symbols-outlined text-sm">swap_horiz</span> {{ t('trainingMonitor.changeSession') }}
@@ -459,6 +465,34 @@ onMounted(loadCategories)
       </div>
     </main>
   </div>
+
+  <!-- ── Complete Training confirmation ── -->
+  <Teleport to="body">
+    <div v-if="showCompleteConfirm" class="fixed inset-0 z-[130] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-background/80 backdrop-blur-md" @click="showCompleteConfirm = false"></div>
+      <div class="relative w-full max-w-md overflow-hidden rounded-xl border border-[#00ff41]/20 bg-surface-container-low shadow-2xl">
+        <div class="flex flex-col items-center p-6 text-center">
+          <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#00ff41]/15">
+            <span class="material-symbols-outlined text-3xl text-[#00ff41]">check_circle</span>
+          </div>
+          <h2 class="font-headline text-lg font-black uppercase tracking-tight text-on-surface">{{ t('trainingMonitor.completeConfirmTitle') }}</h2>
+          <p class="mt-2 text-sm text-on-surface-variant">{{ selectedSession?.sessionTypeName || t('trainingMonitor.session') }}</p>
+          <p class="mt-1 text-xs text-on-surface-variant/70">{{ t('trainingMonitor.completeConfirmDesc') }}</p>
+        </div>
+        <div class="flex gap-3 border-t border-outline-variant/10 p-4">
+          <button type="button" @click="showCompleteConfirm = false"
+            class="flex-1 rounded-md py-3 text-[10px] font-black uppercase tracking-widest text-on-surface-variant transition-colors hover:bg-surface-container-high">
+            {{ t('common.cancel') }}
+          </button>
+          <button type="button" @click="confirmCompleteTraining" :disabled="completingTraining"
+            class="flex-1 rounded-md bg-[#00ff41] py-3 text-[10px] font-black uppercase tracking-widest text-black transition-colors hover:brightness-110 flex items-center justify-center gap-1">
+            <span class="material-symbols-outlined text-sm">check_circle</span>
+            {{ completingTraining ? t('trainingMonitor.completing') : t('trainingMonitor.markAsCompleted') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
