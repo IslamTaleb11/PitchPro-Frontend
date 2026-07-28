@@ -103,6 +103,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/dashboard/training-archive',
+    name: 'TrainingArchiveDashboard',
+    component: () => import('../views/TrainingArchiveDashboard.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/dashboard/subscription',
     name: 'SubscriptionDashboard',
     component: SubscriptionDashboard,
