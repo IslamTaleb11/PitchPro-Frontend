@@ -37,6 +37,6 @@ export const trainingService = {
   // PUT /api/training-sessions/complete
   // Body: { id: trainingSessionId }
   completeSession(trainingSessionId) {
-    return api.put('/training-sessions/complete', { id: trainingSessionId });
+    return api.put('/training-sessions/complete', { TrainingSessionID: trainingSessionId });
   }
 };
