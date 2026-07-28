@@ -100,7 +100,7 @@ const items = [
       </div>
     </div>
 
-    <nav class="flex-1 space-y-1 px-4">
+    <nav class="flex-1 overflow-y-auto space-y-1 px-4 no-scrollbar">
       <router-link
         v-for="item in items"
         :key="item.key"
@@ -128,3 +128,8 @@ const items = [
     </div>
   </aside>
 </template>
+
+<style scoped>
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
