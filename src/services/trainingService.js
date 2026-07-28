@@ -14,6 +14,13 @@ export const trainingService = {
     return api.get(`/training-sessions/by-category/${categoryId}`);
   },
 
+  // Get paginated completed training sessions for a category.
+  // GET /api/training-sessions/completed/{categoryId}?page=1&pageSize=10
+  // -> { data: [ { ID, ClubID, CategoryID, Date, StartTime, EndTime, Location, SessionTypeName } ], totalCount, page, pageSize }
+  getCompletedSessionsByCategory(categoryId, page = 1, pageSize = 10) {
+    return api.get(`/training-sessions/completed/${categoryId}`, { params: { page, pageSize } });
+  },
+
   // Get non-injured players in a category for training session attendance,
   // including their isAttended status for the given session.
   // GET /api/training-sessions/players/{categoryId}/{trainingSessionId}

@@ -69,11 +69,6 @@ function normalizeSession(raw) {
     categoryID: raw.CategoryID ?? raw.categoryID,
     date: raw.Date ?? raw.date,
     sessionTypeName: raw.SessionTypeName ?? raw.sessionTypeName ?? '',
-    focusArea: raw.FocusArea ?? raw.focusArea ?? '',
-    duration: raw.Duration ?? raw.duration,
-    playersAttended: raw.PlayersAttended ?? raw.playersAttended ?? 0,
-    totalPlayers: raw.TotalPlayers ?? raw.totalPlayers ?? 0,
-    status: raw.Status ?? raw.status ?? 'scheduled',
     location: raw.Location ?? raw.location ?? '',
     startTime: raw.StartTime ?? raw.startTime,
     endTime: raw.EndTime ?? raw.endTime,
@@ -113,11 +108,11 @@ async function loadSessions(newPage) {
   isLoading.value = true
   sessions.value = []
   try {
-    const res = await trainingService.getSessionsByCategory(selectedCategory.value)
+    const res = await trainingService.getCompletedSessionsByCategory(selectedCategory.value, page.value, pageSize.value)
     const body = res?.data
-    const list = Array.isArray(body?.data) ? body.data : (Array.isArray(body) ? body : [])
+    const list = Array.isArray(body?.data) ? body.data : []
     sessions.value = list.map(normalizeSession)
-    totalCount.value = sessions.value.length
+    totalCount.value = body?.totalCount ?? 0
   } catch {
     sessions.value = []
     totalCount.value = 0
@@ -126,15 +121,9 @@ async function loadSessions(newPage) {
   }
 }
 
-const paginatedSessions = computed(() => {
-  const start = (page.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return sessions.value.slice(start, end)
-})
-
 function goToPage(p) {
   if (p < 1 || p > totalPages.value) return
-  page.value = p
+  loadSessions(p)
 }
 
 const visiblePages = computed(() => {
@@ -234,15 +223,12 @@ onMounted(loadCategories)
                   <tr class="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">
                     <th class="px-4 pb-2">{{ t('trainingArchive.date') }}</th>
                     <th class="px-4 pb-2">{{ t('trainingArchive.sessionType') }}</th>
-                    <th class="px-4 pb-2">{{ t('trainingArchive.focusArea') }}</th>
-                    <th class="px-4 pb-2 text-center">{{ t('trainingArchive.duration') }}</th>
-                    <th class="px-4 pb-2 text-center">{{ t('trainingArchive.attendance') }}</th>
-                    <th class="px-4 pb-2 text-center">{{ t('trainingArchive.status') }}</th>
+                    <th class="px-4 pb-2">{{ t('trainingArchive.location') }}</th>
                     <th class="px-4 pb-2 text-center">{{ t('trainingArchive.records') }}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="s in paginatedSessions" :key="s.id"
+                  <tr v-for="s in sessions" :key="s.id"
                     class="bg-surface-container-low/40 hover:bg-surface-container-low transition-colors group cursor-pointer"
                     @click="openDetail(s)">
                     <td class="px-4 py-4 border-y border-l border-outline-variant/5 rounded-l whitespace-nowrap">
@@ -253,17 +239,7 @@ onMounted(loadCategories)
                       <span class="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-primary/10 text-primary">{{ s.sessionTypeName || '-' }}</span>
                     </td>
                     <td class="px-4 py-4 border-y border-outline-variant/5">
-                      <span class="text-xs text-on-surface-variant font-medium">{{ s.focusArea || '-' }}</span>
-                    </td>
-                    <td class="px-4 py-4 border-y border-outline-variant/5 text-center">
-                      <span class="text-xs font-bold text-on-surface font-mono">{{ s.duration ? s.duration + 'm' : '-' }}</span>
-                    </td>
-                    <td class="px-4 py-4 border-y border-outline-variant/5 text-center">
-                      <span class="text-xs font-bold text-on-surface font-mono">{{ s.playersAttended }} / {{ s.totalPlayers }}</span>
-                    </td>
-                    <td class="px-4 py-4 border-y border-outline-variant/5 text-center">
-                      <span v-if="s.status === 'completed'" class="text-[9px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded-full">{{ t('trainingArchive.completed') }}</span>
-                      <span v-else class="text-[9px] font-black uppercase tracking-widest text-on-surface-variant bg-surface-container-highest px-2 py-0.5 rounded-full">{{ t('trainingArchive.scheduled') }}</span>
+                      <span class="text-xs text-on-surface-variant font-medium">{{ s.location || '-' }}</span>
                     </td>
                     <td class="px-4 py-4 border-y border-r border-outline-variant/5 rounded-r text-center">
                       <button class="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-fixed px-3 py-1.5 rounded border border-primary/20 hover:border-primary/40 transition-all inline-flex items-center gap-1">
@@ -327,15 +303,14 @@ onMounted(loadCategories)
               <div class="bg-surface-container-high rounded-xl p-4">
                 <p class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black mb-1">{{ t('trainingArchive.date') }}</p>
                 <p class="text-sm font-bold text-on-surface">{{ normalizeDate(selectedSession.date) }}</p>
-                <p v-if="selectedSession.startTime" class="text-xs text-on-surface-variant font-mono">{{ normalizeTime(selectedSession.startTime) }} - {{ normalizeTime(selectedSession.endTime) }}</p>
               </div>
               <div class="bg-surface-container-high rounded-xl p-4">
-                <p class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black mb-1">{{ t('trainingArchive.focusArea') }}</p>
-                <p class="text-sm font-bold text-on-surface">{{ selectedSession.focusArea || '-' }}</p>
+                <p class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black mb-1">{{ t('trainingArchive.time') }}</p>
+                <p class="text-sm font-bold text-on-surface font-mono">{{ normalizeTime(selectedSession.startTime) }} - {{ normalizeTime(selectedSession.endTime) }}</p>
               </div>
               <div class="bg-surface-container-high rounded-xl p-4">
-                <p class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black mb-1">{{ t('trainingArchive.duration') }}</p>
-                <p class="text-sm font-black text-on-surface font-mono">{{ selectedSession.duration ? selectedSession.duration + ' min' : '-' }}</p>
+                <p class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black mb-1">{{ t('trainingArchive.location') }}</p>
+                <p class="text-sm font-bold text-on-surface">{{ selectedSession.location || '-' }}</p>
               </div>
             </div>
 
