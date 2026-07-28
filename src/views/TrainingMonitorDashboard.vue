@@ -52,6 +52,7 @@ const isLoadingPlayers = ref(false)
 const savingAttendance = ref(false)
 const completingTraining = ref(false)
 const showCompleteConfirm = ref(false)
+const isSessionCompleted = ref(false)
 
 const categories = ref([])
 const selectedCategory = ref('')
@@ -204,6 +205,7 @@ function handleCategoryChange() {
 }
 
 function updateStatus(playerId, type) {
+  if (isSessionCompleted.value) return
   playerStatuses.value = { ...playerStatuses.value, [playerId]: type }
 }
 
@@ -246,6 +248,7 @@ async function confirmCompleteTraining() {
     selectedSession.value.status = 'Completed'
     const found = sessions.value.find((s) => s.id === selectedSession.value.id)
     if (found) found.status = 'Completed'
+    isSessionCompleted.value = true
     showCompleteConfirm.value = false
   } catch {
     showToast({ title: t('trainingMonitor.completeError'), mode: 'error' })
@@ -332,7 +335,7 @@ onMounted(loadCategories)
             <div class="flex gap-4">
               <div class="flex flex-col gap-1.5">
                 <label class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-black">{{ t('trainingMonitor.squadCategory') }}</label>
-                <select v-model="selectedCategory" @change="handleCategoryChange" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-xs font-bold rounded px-4 py-2.5 focus:ring-1 focus:ring-primary-fixed min-w-[160px] uppercase tracking-wider">
+                <select v-model="selectedCategory" @change="handleCategoryChange" :disabled="isSessionCompleted" class="bg-surface-container-high border border-outline-variant/20 text-on-surface text-xs font-bold rounded px-4 py-2.5 focus:ring-1 focus:ring-primary-fixed min-w-[160px] uppercase tracking-wider disabled:opacity-50">
                   <option value="" disabled>{{ t('trainingMonitor.selectCategory') }}</option>
                   <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                 </select>
@@ -363,9 +366,9 @@ onMounted(loadCategories)
               </div>
             </div>
             <div class="flex items-center gap-2 ml-auto shrink-0 mt-3">
-              <button @click="completeTraining" :disabled="completingTraining || selectedSession.status === 'Completed' || selectedSession.status === 'completed'"
+              <button @click="completeTraining" :disabled="completingTraining || isSessionCompleted"
                 class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded transition-all flex items-center gap-1"
-                :class="selectedSession.status === 'Completed' || selectedSession.status === 'completed'
+                :class="isSessionCompleted
                   ? 'bg-[#00ff41]/10 text-[#00ff41] cursor-not-allowed'
                   : 'bg-primary-container text-black hover:brightness-110'">
                 <span class="material-symbols-outlined text-sm">check_circle</span>
@@ -390,9 +393,9 @@ onMounted(loadCategories)
                 <span class="text-xs font-black text-[#ff4141] flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#ff4141]"></span>{{ t('trainingMonitor.absentCount') }} {{ absentCount }}</span>
                 <span class="text-xs font-black text-on-surface-variant flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-on-surface-variant"></span>{{ t('trainingMonitor.totalEligible') }} {{ totalEligible }}</span>
                 <div class="ml-auto">
-                  <button @click="saveAttendance" :disabled="savingAttendance"
+                  <button @click="saveAttendance" :disabled="savingAttendance || isSessionCompleted"
                     class="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded transition-all"
-                    :class="savingAttendance ? 'bg-surface-container-highest text-on-surface-variant/50' : 'bg-primary-container text-black hover:brightness-110'">
+                    :class="savingAttendance || isSessionCompleted ? 'bg-surface-container-highest text-on-surface-variant/50 cursor-not-allowed' : 'bg-primary-container text-black hover:brightness-110'">
                     {{ savingAttendance ? t('trainingMonitor.saving') : t('trainingMonitor.saveAttendance') }}
                   </button>
                 </div>
@@ -437,15 +440,15 @@ onMounted(loadCategories)
                         </span>
                       </td>
                       <td class="py-3 px-2 text-center">
-                        <button @click="updateStatus(p.id, 'present')"
-                          class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded transition-all"
+                        <button @click="updateStatus(p.id, 'present')" :disabled="isSessionCompleted"
+                          class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                           :class="p.status === 'present' ? 'bg-[#00ff41]/20 text-[#00ff41] border border-[#00ff41]/30' : 'bg-surface-container-highest text-on-surface-variant hover:text-[#00ff41] hover:bg-[#00ff41]/10 border border-transparent'">
                           {{ t('trainingMonitor.present') }}
                         </button>
                       </td>
                       <td class="py-3 px-2 text-center">
-                        <button @click="updateStatus(p.id, 'absent')"
-                          class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded transition-all"
+                        <button @click="updateStatus(p.id, 'absent')" :disabled="isSessionCompleted"
+                          class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                           :class="p.status === 'absent' ? 'bg-[#ff4141]/20 text-[#ff4141] border border-[#ff4141]/30' : 'bg-surface-container-highest text-on-surface-variant hover:text-[#ff4141] hover:bg-[#ff4141]/10 border border-transparent'">
                           {{ t('trainingMonitor.absent') }}
                         </button>
