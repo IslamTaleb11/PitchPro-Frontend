@@ -48,6 +48,7 @@ defineProps({
 })
 
 const items = [
+  { key: 'home', icon: 'home', labelKey: 'sidebar.home', path: '/dashboard/home' },
   { key: 'staff-management', icon: 'groups',         labelKey: 'sidebar.staffManagement', path: '/dashboard/staff-management' },
   { key: 'players',          icon: 'sports_soccer',  labelKey: 'sidebar.players',         path: '/dashboard/players'          },
   { key: 'schedule',  icon: 'calendar_month', labelKey: 'sidebar.schedule',  path: '/dashboard/schedule'  },

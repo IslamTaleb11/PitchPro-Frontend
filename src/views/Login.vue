@@ -54,7 +54,7 @@ async function handleLogin() {
       mode: 'success'
     })
 
-    await router.push('/dashboard/staff-management')
+    await router.push('/dashboard/home')
   } catch (error) {
     showToast({
       title: t('login.toast.accessingTerminalTitle'),

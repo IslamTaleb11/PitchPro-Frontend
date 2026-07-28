@@ -115,7 +115,8 @@
     "trainingArchive": "أرشيف التدريبات",
     "medical": "المركز الطبي",
     "training": "التدريب",
-    "subscription": "الاشتراكات"
+    "subscription": "الاشتراكات",
+    "home": "لوحة التحكم"
   },
   "topbar": {
     "staffAndRoleConfig": "إعداد الطاقم والأدوار",
@@ -586,6 +587,26 @@
     "session": "جلسة تدريب",
     "loadErrorTitle": "خطأ",
     "loadErrorMsg": "فشل تحميل تفاصيل الجلسة"
+  },
+  "homeDashboard": {
+    "pageTitle": "لوحة التحكم",
+    "pageSubtitle": "نظرة عامة على النادي والمؤشرات الرئيسية",
+    "loading": "جارٍ التحميل...",
+    "loadError": "فشل تحميل بيانات لوحة التحكم",
+    "totalPlayers": "إجمالي اللاعبين",
+    "totalStaff": "الموظفون",
+    "totalCategories": "فئات الفرق",
+    "injuries": "الإصابات",
+    "categories": "فئة",
+    "coaching": "تدريب",
+    "medical": "طبي",
+    "fitness": "لياقة",
+    "requiresApi": "اختر فئة للعرض",
+    "upcomingEvents": "الأحداث القادمة",
+    "noUpcomingEvents": "لا توجد أحداث قادمة",
+    "squadOverview": "نظرة عامة على الفرق",
+    "noCategories": "لا توجد فئات فرق",
+    "players": "لاعب"
   },
   "playersMonitor": {
     "pageTitle": "مراقبة اللاعبين",

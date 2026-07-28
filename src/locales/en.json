@@ -114,7 +114,8 @@
     "trainingArchive": "Training Archive",
     "medical": "Medical",
     "training": "Training",
-    "subscription": "Subscription Plans"
+    "subscription": "Subscription Plans",
+    "home": "Dashboard"
   },
   "topbar": {
     "staffAndRoleConfig": "STAFF & ROLE CONFIG",
@@ -589,6 +590,26 @@
     "session": "Training Session",
     "loadErrorTitle": "Error",
     "loadErrorMsg": "Failed to load session details"
+  },
+  "homeDashboard": {
+    "pageTitle": "Dashboard",
+    "pageSubtitle": "Club overview & key metrics",
+    "loading": "Loading...",
+    "loadError": "Failed to load dashboard data",
+    "totalPlayers": "Total Players",
+    "totalStaff": "Staff",
+    "totalCategories": "Squad Categories",
+    "injuries": "Injuries",
+    "categories": "categories",
+    "coaching": "Coaching",
+    "medical": "Medical",
+    "fitness": "Fitness",
+    "requiresApi": "Select a category to view",
+    "upcomingEvents": "Upcoming Events",
+    "noUpcomingEvents": "No upcoming events",
+    "squadOverview": "Squad Overview",
+    "noCategories": "No squad categories",
+    "players": "players"
   },
   "playersMonitor": {
     "pageTitle": "Players Monitor",

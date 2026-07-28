@@ -37,6 +37,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/dashboard/home',
+    name: 'HomeDashboard',
+    component: () => import('../views/HomeDashboard.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/dashboard/categories',
     name: 'CategoryManagementDashboard',
     component: CategoryManagementDashboard,
@@ -183,7 +189,7 @@ router.beforeEach(async (to) => {
   }
 
   if (getAuthToken() && authPages.includes(to.name)) {
-    return { name: 'StaffManagementDashboard' }
+    return { name: 'HomeDashboard' }
   }
 
   return true
