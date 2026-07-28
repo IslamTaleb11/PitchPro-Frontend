@@ -12,20 +12,12 @@ const { showToast } = useUiToast()
 
 const isSidebarOpen = ref(true)
 
-// Total squad size used to derive the readiness matrix.
-const SQUAD_TOTAL = 28
-
 // ── Active injury ledger ──────────────────────────────────────────────────────
 // Loaded from GET /api/player-injuries/by-category/{categoryId} when a category
 // filter is selected (see the watch on selectedInjuryCategory). The API does not
 // return a fit/injured status, so every listed injury counts as unavailable.
 const categoryInjuries = ref([])
 const isLoadingCategoryInjuries = ref(false)
-
-// ── Readiness matrix (derived from the injuries shown for the selected category) ─
-const unavailableCount = computed(() => categoryInjuries.value.length)
-const matchFit = computed(() => SQUAD_TOTAL - unavailableCount.value)
-const squadAvailability = computed(() => `${Math.round((matchFit.value / SQUAD_TOTAL) * 100)}%`)
 
 // ── Category filter for the injury ledger ────────────────────────────────────
 // `selectedInjuryCategory` holds the API category *id*, passed straight to the
@@ -528,36 +520,10 @@ onMounted(loadCategories)
           <p class="text-on-surface-variant text-sm font-body max-w-2xl">{{ $t('medical.description') }}</p>
         </div>
 
-        <!-- ── Readiness Matrix ── -->
-        <div class="col-span-12 lg:col-span-4 bg-surface-container-low p-5 rounded-lg flex flex-col justify-between">
-          <div class="flex justify-between items-center mb-4">
-            <span class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">{{ $t('medical.readinessMatrix') }}</span>
-            <span class="material-symbols-outlined text-green-400 text-lg">monitoring</span>
-          </div>
-          <div class="flex gap-4">
-            <div class="flex-1 bg-surface-container-lowest p-3 rounded">
-              <div class="text-xs text-on-surface-variant mb-1 uppercase tracking-tighter">{{ $t('medical.matchFit') }}</div>
-              <div class="text-3xl font-headline font-black text-green-400">{{ matchFit }}</div>
-            </div>
-            <div class="flex-1 bg-surface-container-lowest p-3 rounded">
-              <div class="text-xs text-on-surface-variant mb-1 uppercase tracking-tighter">{{ $t('medical.unavailable') }}</div>
-              <div class="text-3xl font-headline font-black text-error">{{ unavailableCount.toString().padStart(2, '0') }}</div>
-            </div>
-          </div>
-        </div>
-
         <!-- ── Active Injury Tracking (full width) ── -->
         <div class="col-span-12 space-y-4">
           <div class="flex items-center justify-between">
             <h2 class="text-lg font-headline font-bold text-white uppercase tracking-wider">{{ $t('medical.activeInjury') }}</h2>
-            <div class="flex gap-2">
-              <div class="bg-surface-container-high px-3 py-1 rounded text-[10px] font-bold text-on-surface-variant flex items-center gap-1">
-                <span class="w-2 h-2 rounded-full bg-error"></span> {{ $t('medical.highRisk') }}
-              </div>
-              <div class="bg-surface-container-high px-3 py-1 rounded text-[10px] font-bold text-on-surface-variant flex items-center gap-1">
-                <span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span> {{ $t('medical.recovery') }}
-              </div>
-            </div>
           </div>
 
           <!-- Category filter (driven by the API-loaded categories) -->
