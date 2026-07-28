@@ -31,5 +31,12 @@ export const trainingService = {
       trainingSessionID: trainingSessionId,
       playersAttendance
     });
+  },
+
+  // Mark a training session as completed.
+  // PUT /api/training-sessions/complete
+  // Body: { id: trainingSessionId }
+  completeSession(trainingSessionId) {
+    return api.put('/training-sessions/complete', { id: trainingSessionId });
   }
 };

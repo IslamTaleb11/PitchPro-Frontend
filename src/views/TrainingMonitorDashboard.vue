@@ -50,6 +50,7 @@ const isLoadingCategories = ref(false)
 const isLoadingSessions = ref(false)
 const isLoadingPlayers = ref(false)
 const savingAttendance = ref(false)
+const completingTraining = ref(false)
 
 const categories = ref([])
 const selectedCategory = ref('')
@@ -231,6 +232,22 @@ async function saveAttendance() {
   }
 }
 
+async function completeTraining() {
+  if (!selectedSession.value) return
+  completingTraining.value = true
+  try {
+    await trainingService.completeSession(selectedSession.value.id)
+    showToast({ title: t('trainingMonitor.completeSuccess'), mode: 'success' })
+    selectedSession.value.status = 'Completed'
+    const found = sessions.value.find((s) => s.id === selectedSession.value.id)
+    if (found) found.status = 'Completed'
+  } catch {
+    showToast({ title: t('trainingMonitor.completeError'), mode: 'error' })
+  } finally {
+    completingTraining.value = false
+  }
+}
+
 watch(startupModalOpen, (open) => {
   if (open && selectedCategory.value) {
     onCategoryChange()
@@ -340,6 +357,14 @@ onMounted(loadCategories)
               </div>
             </div>
             <div class="flex items-center gap-2 ml-auto shrink-0 mt-3">
+              <button @click="completeTraining" :disabled="completingTraining || selectedSession.status === 'Completed' || selectedSession.status === 'completed'"
+                class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded transition-all flex items-center gap-1"
+                :class="selectedSession.status === 'Completed' || selectedSession.status === 'completed'
+                  ? 'bg-[#00ff41]/10 text-[#00ff41] cursor-not-allowed'
+                  : 'bg-primary-container text-black hover:brightness-110'">
+                <span class="material-symbols-outlined text-sm">check_circle</span>
+                {{ completingTraining ? t('trainingMonitor.completing') : t('trainingMonitor.completeTraining') }}
+              </button>
               <button @click="startupModalOpen = true" class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface px-3 py-1.5 rounded border border-outline-variant/20 hover:border-outline-variant/40 transition-all flex items-center gap-1">
                 <span class="material-symbols-outlined text-sm">swap_horiz</span> {{ t('trainingMonitor.changeSession') }}
               </button>

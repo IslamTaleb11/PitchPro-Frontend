@@ -627,7 +627,11 @@
     "saving": "جارٍ الحفظ...",
     "saveSuccess": "تم حفظ الحضور بنجاح",
     "saveError": "فشل حفظ الحضور",
-    "noChanges": "لا توجد تغييرات للحفظ"
+    "noChanges": "لا توجد تغييرات للحفظ",
+    "completeTraining": "إكمال التدريب",
+    "completing": "جارٍ الإكمال...",
+    "completeSuccess": "تم إكمال التدريب بنجاح",
+    "completeError": "فشل إكمال التدريب"
   },
   "medical": {
     "sectionTitle": "قياس الأداء الطبي",

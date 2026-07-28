@@ -630,7 +630,11 @@
     "saving": "Saving...",
     "saveSuccess": "Attendance saved successfully",
     "saveError": "Failed to save attendance",
-    "noChanges": "No changes to save"
+    "noChanges": "No changes to save",
+    "completeTraining": "Complete Training",
+    "completing": "Completing...",
+    "completeSuccess": "Training completed successfully",
+    "completeError": "Failed to complete training"
   },
   "medical": {
     "sectionTitle": "Department Telemetry",
