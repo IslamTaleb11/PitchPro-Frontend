@@ -4,8 +4,8 @@ import { useI18n } from 'vue-i18n'
 import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.vue'
 import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
 import { useUiToast } from '../composables/useUiToast'
+import { dashboardService } from '../services/dashboardService'
 import { lookupService } from '../services/lookupService'
-import { staffService } from '../services/staffService'
 import { playerService } from '../services/playerService'
 import { scheduleService } from '../services/scheduleService'
 
@@ -15,15 +15,18 @@ const { showToast } = useUiToast()
 const isSidebarOpen = ref(true)
 const isLoading = ref(true)
 
-const staffCounts = ref(null)
+const dashboardCounts = ref(null)
 const categories = ref([])
 const playersByCategory = ref({})
 const upcomingEvents = ref([])
-const totalPlayers = computed(() => {
-  return Object.values(playersByCategory.value).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0)
-})
-const totalCategories = computed(() => categories.value.length)
-const totalStaff = computed(() => staffCounts.value?.totalActiveStaff ?? 0)
+
+const totalPlayers = computed(() => dashboardCounts.value?.totalPlayers ?? 0)
+const totalCategories = computed(() => dashboardCounts.value?.totalCategories ?? 0)
+const totalStaff = computed(() => dashboardCounts.value?.totalActiveStaff ?? 0)
+const totalMatches = computed(() => dashboardCounts.value?.totalMatches ?? 0)
+const totalUpcomingMatches = computed(() => dashboardCounts.value?.totalUpcomingMatches ?? 0)
+const totalTrainingSessions = computed(() => dashboardCounts.value?.totalTrainingSessions ?? 0)
+const totalUpcomingTrainingSessions = computed(() => dashboardCounts.value?.totalUpcomingTrainingSessions ?? 0)
 
 function normalizeLookupItem(item) {
   if (!item) return { id: 'Unknown', name: 'Unknown' }
@@ -53,14 +56,14 @@ function normalizeLookupArray(data) {
 async function loadDashboard() {
   isLoading.value = true
   try {
-    const [staffRes, catRes, schedRes] = await Promise.allSettled([
-      staffService.getStaffCounts(),
+    const [dashRes, catRes, schedRes] = await Promise.allSettled([
+      dashboardService.getCounts(),
       lookupService.getCategories(),
       scheduleService.getUpcoming(1, 5),
     ])
 
-    if (staffRes.status === 'fulfilled') {
-      staffCounts.value = staffRes.value?.data ?? null
+    if (dashRes.status === 'fulfilled') {
+      dashboardCounts.value = dashRes.value?.data ?? null
     }
 
     if (catRes.status === 'fulfilled') {
@@ -132,19 +135,20 @@ onMounted(loadDashboard)
               <p class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black mb-1">{{ t('homeDashboard.totalStaff') }}</p>
               <p class="text-3xl font-black text-on-surface font-headline">{{ totalStaff }}</p>
               <p class="text-[10px] text-on-surface-variant mt-1">
-                {{ staffCounts?.totalCoachingStaff ?? 0 }} {{ t('homeDashboard.coaching') }} &middot;
-                {{ staffCounts?.totalMedicalStaff ?? 0 }} {{ t('homeDashboard.medical') }} &middot;
-                {{ staffCounts?.totalFitnessStaff ?? 0 }} {{ t('homeDashboard.fitness') }}
+                {{ dashboardCounts?.totalCoachingStaff ?? 0 }} {{ t('homeDashboard.coaching') }} &middot;
+                {{ dashboardCounts?.totalMedicalStaff ?? 0 }} {{ t('homeDashboard.medical') }} &middot;
+                {{ dashboardCounts?.totalFitnessStaff ?? 0 }} {{ t('homeDashboard.fitness') }}
               </p>
             </div>
             <div class="bg-surface-container-low rounded-xl p-5 border-l-4 border-tertiary">
-              <p class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black mb-1">{{ t('homeDashboard.totalCategories') }}</p>
-              <p class="text-3xl font-black text-on-surface font-headline">{{ totalCategories }}</p>
+              <p class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black mb-1">{{ t('homeDashboard.totalMatches') }}</p>
+              <p class="text-3xl font-black text-on-surface font-headline">{{ totalMatches }}</p>
+              <p class="text-[10px] text-on-surface-variant mt-1">{{ totalUpcomingMatches }} {{ t('homeDashboard.upcoming') }}</p>
             </div>
             <div class="bg-surface-container-low rounded-xl p-5 border-l-4 border-error">
-              <p class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black mb-1">{{ t('homeDashboard.injuries') }}</p>
-              <p class="text-3xl font-black text-on-surface font-headline">-</p>
-              <p class="text-[10px] text-on-surface-variant mt-1">{{ t('homeDashboard.requiresApi') }}</p>
+              <p class="text-[9px] uppercase tracking-[0.15em] text-on-surface-variant font-black mb-1">{{ t('homeDashboard.totalTraining') }}</p>
+              <p class="text-3xl font-black text-on-surface font-headline">{{ totalTrainingSessions }}</p>
+              <p class="text-[10px] text-on-surface-variant mt-1">{{ totalUpcomingTrainingSessions }} {{ t('homeDashboard.upcoming') }}</p>
             </div>
           </div>
 
