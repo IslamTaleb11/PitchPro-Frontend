@@ -63,7 +63,7 @@ async function loadDashboard() {
     ])
 
     if (dashRes.status === 'fulfilled') {
-      dashboardCounts.value = dashRes.value?.data ?? null
+      dashboardCounts.value = dashRes.value?.data?.data ?? dashRes.value?.data ?? null
     }
 
     if (catRes.status === 'fulfilled') {
