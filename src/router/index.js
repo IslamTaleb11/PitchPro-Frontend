@@ -156,42 +156,38 @@ const router = createRouter({
   routes
 })
 
+async function ensureSession() {
+  const token = getAuthToken()
+  const refreshTokenValue = getRefreshToken()
+
+  // No session at all — go to login.
+  if (!token && !refreshTokenValue) {
+    return false
+  }
+
+  // A still-valid access token needs no refresh.
+  if (token && !isAccessTokenExpired(token)) {
+    return true
+  }
+
+  // No (or expired) access token — try to refresh. A transient refresh failure
+  // (500/timeout/offline) preserves the stored tokens, so the user should stay
+  // put and let the next action retry instead of bouncing to /login.
+  // refreshAuthToken() only clears the session on a definitive 401.
+  try {
+    await refreshAuthToken()
+    return Boolean(getAuthToken())
+  } catch {
+    return Boolean(getAuthToken() || getRefreshToken())
+  }
+}
+
 router.beforeEach(async (to) => {
   const authPages = ['Login', 'ClubRegistration', 'ClubPresidentRegistration']
 
   if (to.meta.requiresAuth) {
-    const token = getAuthToken()
-    const refreshTokenValue = getRefreshToken()
-
-    if (token && refreshTokenValue && isAccessTokenExpired(token)) {
-      try {
-        await refreshAuthToken()
-        if (getAuthToken()) {
-          return true
-        }
-      } catch {
-        return { name: 'Login' }
-      }
-      return { name: 'Login' }
-    }
-
-    if (!token && refreshTokenValue) {
-      try {
-        await refreshAuthToken()
-        if (getAuthToken()) {
-          return true
-        }
-      } catch {
-        return { name: 'Login' }
-      }
-      return { name: 'Login' }
-    }
-
-    if (!token) {
-      return { name: 'Login' }
-    }
-
-    return true
+    const ok = await ensureSession()
+    return ok ? true : { name: 'Login' }
   }
 
   if (getAuthToken() && authPages.includes(to.name)) {

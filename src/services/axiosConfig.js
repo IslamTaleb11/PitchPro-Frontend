@@ -402,6 +402,26 @@ function getResponseHeader(headers, headerName) {
   return headers[normalizedHeaderName] || headers[headerName];
 }
 
+async function doRefresh(refreshToken) {
+  const response = await api.post('/auth/refresh', { refreshToken });
+
+  const nextAccessToken =
+    response?.data?.accessToken || response?.data?.token || response?.data?.access_token;
+  const nextRefreshToken =
+    response?.data?.refreshToken || response?.data?.refresh_token || refreshToken;
+
+  if (!nextAccessToken) {
+    throw new Error('Refresh succeeded but no access token was returned.');
+  }
+
+  // Keep the same storage type (local vs session) as the current session.
+  const persist = Boolean(localStorage.getItem(authTokenKey));
+  setAuthToken(nextAccessToken, persist);
+  setRefreshToken(nextRefreshToken);
+
+  return response;
+}
+
 async function refreshAuthToken() {
   const refreshToken = getRefreshToken();
 
@@ -418,26 +438,31 @@ async function refreshAuthToken() {
 
   refreshRequestPromise = (async () => {
     try {
-      const response = await api.post('/auth/refresh', { refreshToken });
+      return await doRefresh(refreshToken);
+    } catch (error) {
+      // Only a definitive 401 (invalid/revoked/expired refresh token) ends the
+      // session. Transient failures — 500, 429 rate-limit, timeout, offline —
+      // keep the stored tokens so the next navigation or timer tick can simply
+      // retry instead of throwing the user back to /login.
+      if (error?.response?.status === 401) {
+        // Multi-tab safety: another tab may have rotated the refresh token while
+        // this request was in flight. Before logging out, retry once with the
+        // newest token if a different one has appeared.
+        const latestToken = getRefreshToken();
+        if (latestToken && latestToken !== refreshToken) {
+          try {
+            return await doRefresh(latestToken);
+          } catch (retryError) {
+            clearAuthToken();
+            redirectToLogin();
+            throw retryError;
+          }
+        }
 
-      const nextAccessToken =
-        response?.data?.accessToken || response?.data?.token || response?.data?.access_token;
-      const nextRefreshToken =
-        response?.data?.refreshToken || response?.data?.refresh_token || refreshToken;
-
-      if (!nextAccessToken) {
-        throw new Error('Refresh succeeded but no access token was returned.');
+        clearAuthToken();
+        redirectToLogin();
       }
 
-      // Keep the same storage type (local vs session) as the current session.
-      const persist = Boolean(localStorage.getItem(authTokenKey));
-      setAuthToken(nextAccessToken, persist);
-      setRefreshToken(nextRefreshToken);
-
-      return response;
-    } catch (error) {
-      clearAuthToken();
-      redirectToLogin();
       throw error;
     } finally {
       refreshRequestPromise = null;
@@ -529,15 +554,22 @@ api.interceptors.response.use(
     }
 
     if (status === 401) {
-      if (tokenExpired) {
-        console.info('Authentication token expired. Redirecting to login.');
-      }
+      // Only force a logout when the session is genuinely unrecoverable — no
+      // refresh token left to restore it with. A 401 while a refresh token
+      // still exists is either a transient hiccup or a business-level rejection
+      // (e.g. insufficient role); logging the user out there would destroy a
+      // perfectly healthy session.
+      if (!getRefreshToken()) {
+        if (tokenExpired) {
+          console.info('Authentication token expired. Redirecting to login.');
+        }
 
-      clearTimeout(loginRedirectTimer);
-      loginRedirectTimer = setTimeout(() => {
-        clearAuthToken();
-        redirectToLogin();
-      }, 2200);
+        clearTimeout(loginRedirectTimer);
+        loginRedirectTimer = setTimeout(() => {
+          clearAuthToken();
+          redirectToLogin();
+        }, 2200);
+      }
     }
 
     return Promise.reject(error);

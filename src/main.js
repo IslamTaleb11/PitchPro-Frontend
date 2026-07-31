@@ -61,14 +61,16 @@ async function bootstrapSession() {
   try {
     await refreshAuthToken()
   } catch {
-    // refreshAuthToken() already clears the session and redirects to /login
-    // when the refresh token is invalid/expired, so there is nothing to do here.
+    // refreshAuthToken() only clears the session and redirects to /login when
+    // the refresh token is definitively invalid/expired (401). Transient
+    // failures keep the stored tokens so the router can retry on next
+    // navigation instead of logging the user out.
   }
 }
 
 // Always mount the app. With no session the router shows the login page;
 // with a valid session the refreshed token is already in place. If the
-// refresh failed, refreshAuthToken() already cleared the session and
+// refresh failed fatally, refreshAuthToken() already cleared the session and
 // redirected to /login (which reloads the app), so mounting is harmless.
 bootstrapSession().finally(() => {
   app.mount('#app')
