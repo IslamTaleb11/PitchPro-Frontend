@@ -91,6 +91,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/dashboard/player-control',
+    name: 'PlayerControlDashboard',
+    component: () => import('../views/PlayerControlDashboard.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/dashboard/training-monitor',
     name: 'TrainingMonitorDashboard',
     component: () => import('../views/TrainingMonitorDashboard.vue'),
