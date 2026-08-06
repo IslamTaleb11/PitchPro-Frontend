@@ -106,6 +106,17 @@ function formatDateForInput(value) {
   return `${y}-${m}-${day}`
 }
 
+// Coerce a lookup FK into a valid positive option id before it is sent back to
+// the API. Stored values can be 0/absent for players created with incomplete
+// data; submitting 0 would fail the backend's [Range(1, ...)] validation with a
+// 400. Fall back to the first available option (mirrors the create form's
+// defaults) so the request always carries a valid id.
+function coerceRequiredSelectId(value, options) {
+  const n = Number(value)
+  if (Number.isFinite(n) && n > 0) return n
+  return Number(options?.[0]?.id ?? 0)
+}
+
 async function loadLookups() {
   const [catRes, posRes, feetRes, bloodRes] = await Promise.allSettled([
     lookupService.getCategories(),
@@ -162,6 +173,7 @@ async function openActionModal(player, mode = 'select') {
       const details = response?.data?.data ?? response?.data ?? player
 
       const genderValue = details.gender === false || details.gender === 'Female' ? 'Female' : 'Male'
+      const secondaryRaw = details.secondaryPositionID ?? details.SecondaryPositionID
 
       updateForm.value = {
         id: details.id ?? details.ID ?? details.playerId ?? details.PlayerID ?? playerId,
@@ -170,13 +182,13 @@ async function openActionModal(player, mode = 'select') {
         lastName: details.lastName ?? details.LastName ?? '',
         gender: genderValue,
         birthDate: formatDateForInput(details.birthDate ?? details.BirthDate),
-        primaryPositionID: Number(details.primaryPositionID ?? details.PrimaryPositionID ?? 0),
-        secondaryPositionID: details.secondaryPositionID ?? details.SecondaryPositionID ? Number(details.secondaryPositionID ?? details.SecondaryPositionID) : '',
-        preferredFootID: Number(details.preferredFootID ?? details.PreferredFootID ?? 0),
+        primaryPositionID: coerceRequiredSelectId(details.primaryPositionID ?? details.PrimaryPositionID, positions.value),
+        secondaryPositionID: secondaryRaw ? Number(secondaryRaw) : '',
+        preferredFootID: coerceRequiredSelectId(details.preferredFootID ?? details.PreferredFootID, preferredFeetOptions.value),
         jerseyNumber: details.jerseyNumber ?? details.JerseyNumber ?? '',
         address: details.address ?? details.Address ?? '',
-        categoryID: Number(details.categoryID ?? details.CategoryID ?? 0),
-        bloodTypeID: Number(details.bloodTypeID ?? details.BloodTypeID ?? 0),
+        categoryID: coerceRequiredSelectId(details.categoryID ?? details.CategoryID, categories.value),
+        bloodTypeID: coerceRequiredSelectId(details.bloodTypeID ?? details.BloodTypeID, bloodTypes.value),
         allergies: details.allergies ?? details.Allergies ?? '',
         medicalNotes: details.medicalNotes ?? details.MedicalNotes ?? '',
         phone: details.phone ?? details.Phone ?? '',
