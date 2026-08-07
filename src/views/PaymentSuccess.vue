@@ -5,16 +5,18 @@ import { useI18n } from 'vue-i18n'
 import { useUiToast } from '../composables/useUiToast'
 import { upgradeToken } from '../services/authService'
 import { getAuthTokenStorageType, setAuthToken } from '../services/axiosConfig'
-import DashboardSidebar from '../features/dashboard/components/DashboardSidebar.vue'
-import StaffTopbar from '../features/staff-management/components/StaffTopbar.vue'
 
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
 const { showToast } = useUiToast()
-const isSidebarOpen = ref(true)
 
-const checkoutId = computed(() => route.query.checkout_id || route.query.checkoutId || null)
+const isRefreshing = ref(true)
+const refreshError = ref('')
+
+const checkoutId = computed(() => route.query.checkout_id || route.query.checkoutId || route.query.invoice_id || null)
+
+const displayedId = computed(() => checkoutId.value || 'TXN_8829_PPRO_TACTICAL')
 
 onMounted(async () => {
   try {
@@ -28,11 +30,25 @@ onMounted(async () => {
 
     setAuthToken(newToken, storageType === 'local')
   } catch (error) {
-    const message = error?.response?.data?.message || error?.message || t('paymentSuccess.upgradeErrorMessage') || 'Unable to refresh subscription token.'
-    showToast({ title: t('paymentSuccess.upgradeFailed') || 'Upgrade failed', message, mode: 'error', duration: 4000 })
-    console.error('Upgrade token failed:', error)
+    refreshError.value =
+      error?.response?.data?.message ||
+      error?.message ||
+      t('paymentSuccess.upgradeErrorMessage') ||
+      'Unable to refresh subscription token.'
+    showToast({
+      title: t('paymentSuccess.upgradeFailed') || 'Upgrade failed',
+      message: refreshError.value,
+      mode: 'error',
+      duration: 4000
+    })
+  } finally {
+    isRefreshing.value = false
   }
 })
+
+function goToDashboard() {
+  router.push({ name: 'StaffManagementDashboard' })
+}
 
 function goToSubscription() {
   router.push({ name: 'SubscriptionDashboard' })
@@ -40,131 +56,162 @@ function goToSubscription() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background text-on-background">
-     <DashboardSidebar active-item="subscription" :is-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
-    <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
+  <main class="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-4 py-10 text-on-surface">
+    <div
+      class="pointer-events-none absolute inset-0"
+      style="
+        background-image:
+          linear-gradient(to right, rgba(0, 230, 57, 0.05) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(0, 230, 57, 0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
+      "
+    />
+    <div class="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 bg-primary-container/10 blur-[120px]" />
 
-    <main
-      :class="[
-          'pt-0 min-h-screen overflow-y-auto bg-background p-4 sm:p-6 lg:p-8 transition-all duration-300 lg:flex-1',
-          'ms-0',
-      ]"
-    >
-      <div class="scanline"></div>
-      <div class="absolute inset-x-0 top-0 h-[420px] bg-primary-container/5 blur-[120px] pointer-events-none"></div>
+    <div class="relative z-10 w-full max-w-md">
+      <!-- Brand header -->
+      <div class="mb-10 flex items-center gap-4">
+        <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-surface-container-highest shadow-[0_0_30px_rgba(0,230,57,0.15)]">
+          <img alt="PitchPro Club Logo" class="h-8 w-8 object-contain" src="/assets/club-logo.svg" />
+        </div>
+        <div class="flex-1 border-l-2 border-primary-fixed-dim pl-4">
+          <h1 class="font-headline text-xl font-bold tracking-tighter text-white">PitchPro</h1>
+          <p class="font-headline text-[10px] font-medium uppercase tracking-[0.2em] text-primary-fixed">
+            {{ t('paymentSuccess.tagline') }}
+          </p>
+        </div>
+      </div>
 
-      <div class="relative flex justify-center py-2 sm:py-4 lg:py-6">
-        <div class="w-full max-w-5xl grid gap-8 md:grid-cols-12 items-start">
-          <div class="md:col-span-5 flex flex-col items-center text-center gap-8">
-            <div class="relative mb-8">
-              <div class="w-32 h-32 rounded-full border-4 border-primary flex items-center justify-center glow-effect animate-pulse">
-                <span class="material-symbols-outlined text-7xl text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
-              </div>
-              <div class="absolute -top-4 -right-4 w-12 h-12 bg-surface-container-highest border border-outline-variant/20 rounded flex items-center justify-center">
-                <span class="material-symbols-outlined text-primary text-xl">verified</span>
-              </div>
-            </div>
+      <!-- Success hero -->
+      <div class="mb-6 flex flex-col items-center gap-6 rounded-xl border-t-2 border-primary-fixed-dim/40 bg-surface-container-low/80 p-8 text-center shadow-2xl backdrop-blur-xl">
+        <div class="relative">
+          <div class="flex h-28 w-28 items-center justify-center rounded-full border-2 border-primary-fixed-dim bg-primary-container/20 glow-effect">
+            <span class="material-symbols-outlined text-6xl text-primary-fixed-dim" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+          </div>
+          <div class="absolute -right-2 -top-2 flex h-10 w-10 items-center justify-center rounded-full border border-primary-fixed-dim/30 bg-surface-container-highest">
+            <span class="material-symbols-outlined text-primary-fixed-dim text-xl">verified</span>
+          </div>
+        </div>
 
+        <transition name="fade-slide" mode="out-in">
+          <div v-if="isRefreshing" class="flex flex-col items-center gap-3">
+            <span class="h-5 w-5 animate-spin rounded-full border-2 border-primary-fixed/30 border-t-primary-fixed" />
+            <p class="font-headline text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+              {{ t('paymentSuccess.upgrading') }}
+            </p>
+          </div>
+          <div v-else class="space-y-3">
+            <p class="font-headline text-[11px] font-black uppercase tracking-[0.3em] text-primary-fixed">
+              {{ t('paymentSuccess.paymentCompleted') }}
+            </p>
+            <h2 class="font-headline text-3xl font-black uppercase leading-tight tracking-tight text-white">
+              {{ t('paymentSuccess.upgradeSuccessful') }}
+            </h2>
+            <p class="mx-auto max-w-xs text-sm leading-relaxed text-on-surface-variant">
+              {{ t('paymentSuccess.description') }}
+            </p>
+          </div>
+        </transition>
+      </div>
+
+      <!-- Receipt card -->
+      <div
+        class="relative mb-6 overflow-hidden rounded-xl border-t-2 border-primary-fixed-dim/40 bg-surface-container-low/80 p-6 shadow-2xl backdrop-blur-xl"
+      >
+        <div class="mb-5 flex items-center justify-between">
+          <div>
+            <p class="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">
+              {{ t('paymentSuccess.activeLicense') }}
+            </p>
+            <h3 class="font-headline text-lg font-bold text-white">{{ t('paymentSuccess.planName') }}</h3>
+          </div>
+          <span class="flex items-center gap-1.5 rounded-full bg-primary-container px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-primary-container">
+            <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-on-primary-container" />
+            {{ t('paymentSuccess.statusLive') }}
+          </span>
+        </div>
+
+        <!-- Unlocked features -->
+        <div class="mb-5 space-y-2.5">
+          <div class="flex items-center gap-3 rounded-lg bg-surface-container-lowest p-3.5">
+            <span class="material-symbols-outlined text-primary-fixed-dim">dashboard_customize</span>
             <div>
-              <p class="text-sm tracking-[0.2em] uppercase text-primary-fixed font-black mb-4">{{ t('paymentSuccess.paymentCompleted') }}</p>
-              <h2 class="font-headline text-4xl md:text-5xl font-black uppercase tracking-tight leading-tight text-primary-fixed">
-                {{ t('paymentSuccess.upgradeSuccessful') }}
-              </h2>
-              <p class="text-on-surface-variant/80 text-sm max-w-xs leading-relaxed mt-4">
-                {{ t('paymentSuccess.description') }}
-              </p>
+              <p class="text-xs font-bold text-on-surface">{{ t('paymentSuccess.tacticsBoard') }}</p>
+              <p class="text-[11px] text-on-surface-variant/70">{{ t('paymentSuccess.tacticsBoardDescription') }}</p>
             </div>
           </div>
-
-          <div class="md:col-span-7 relative">
-            <div class="bg-surface-container-high rounded-[1.25rem] p-8 border-l-4 border-primary relative overflow-hidden">
-              <div class="flex justify-between items-start mb-10">
-                <div>
-                  <p class="text-[10px] uppercase tracking-[0.2em] text-primary-fixed font-black mb-1">{{ t('paymentSuccess.activeLicense') }}</p>
-                  <h3 class="font-headline text-2xl font-bold text-on-surface uppercase italic tracking-tight">{{ t('paymentSuccess.proTacticalPlan') }}</h3>
-                </div>
-                <div class="bg-surface-container-lowest px-4 py-2 rounded-lg border border-outline-variant/20 text-right">
-                  <p class="text-[10px] text-on-surface-variant font-bold uppercase mb-0.5">{{ t('paymentSuccess.transaction') }}</p>
-                  <p class="text-xl font-headline font-black text-primary tracking-tighter">4,000 DA</p>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-2 gap-4 mb-10">
-                <div class="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant/10 group hover:border-primary/40 transition-colors">
-                  <div class="flex items-center gap-3 mb-2">
-                    <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">dashboard_customize</span>
-                    <span class="text-[10px] font-black uppercase text-on-surface-variant">{{ t('paymentSuccess.tacticsBoard') }}</span>
-                  </div>
-                  <p class="text-xs text-on-surface-variant/60">{{ t('paymentSuccess.tacticsBoardDescription') }}</p>
-                </div>
-                <div class="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant/10 group hover:border-primary/40 transition-colors">
-                  <div class="flex items-center gap-3 mb-2">
-                    <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">medical_services</span>
-                    <span class="text-[10px] font-black uppercase text-on-surface-variant">{{ t('paymentSuccess.medicalCenter') }}</span>
-                  </div>
-                  <p class="text-xs text-on-surface-variant/60">{{ t('paymentSuccess.medicalCenterDescription') }}</p>
-                </div>
-                <div class="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant/10 group hover:border-primary/40 transition-colors col-span-2">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                      <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">all_inclusive</span>
-                      <span class="text-[10px] font-black uppercase text-on-surface-variant">{{ t('paymentSuccess.unlimitedCategories') }}</span>
-                    </div>
-                    <span class="px-2 py-0.5 bg-primary-container text-on-primary-container text-[8px] font-black rounded uppercase">{{ t('paymentSuccess.statusLive') }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex flex-col sm:flex-row gap-4">
-                <button
-                  class="flex-1 bg-gradient-to-br from-primary to-primary-container text-on-primary px-8 py-4 rounded font-headline font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:brightness-110 active:scale-95 transition-all glow-effect"
-                  type="button"
-                  @click="router.push({ name: 'StaffManagementDashboard' })"
-                >
-                  {{ t('paymentSuccess.goToDashboard') }}
-                  <span class="material-symbols-outlined text-lg">arrow_forward</span>
-                </button>
-                <button
-                  class="px-8 py-4 bg-transparent border border-outline-variant/30 text-on-surface-variant font-headline font-bold text-sm uppercase tracking-widest hover:bg-surface-container-highest transition-all active:scale-95 flex items-center justify-center gap-3"
-                  type="button"
-                  @click="goToSubscription"
-                >
-                  <span class="material-symbols-outlined text-lg">receipt_long</span>
-                  {{ t('paymentSuccess.viewReceipt') }}
-                </button>
-              </div>
-
-              <div class="absolute -bottom-4 -right-12 text-[80px] font-black text-on-surface-variant/5 pointer-events-none select-none italic font-headline">
-                {{ t('paymentSuccess.completed') }}
-              </div>
+          <div class="flex items-center gap-3 rounded-lg bg-surface-container-lowest p-3.5">
+            <span class="material-symbols-outlined text-primary-fixed-dim">medical_services</span>
+            <div>
+              <p class="text-xs font-bold text-on-surface">{{ t('paymentSuccess.medicalCenter') }}</p>
+              <p class="text-[11px] text-on-surface-variant/70">{{ t('paymentSuccess.medicalCenterDescription') }}</p>
             </div>
-
-            <div class="mt-6 flex items-center gap-2 text-[10px] text-on-surface-variant/40 font-mono uppercase tracking-widest">
-              <span class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
-              {{ t('paymentSuccess.encryptedTransactionId') }}: {{ checkoutId || 'TXN_8829_PPRO_TACTICAL' }}
+          </div>
+          <div class="flex items-center gap-3 rounded-lg bg-surface-container-lowest p-3.5">
+            <span class="material-symbols-outlined text-primary-fixed-dim">all_inclusive</span>
+            <div>
+              <p class="text-xs font-bold text-on-surface">{{ t('paymentSuccess.unlimitedCategories') }}</p>
+              <p class="text-[11px] text-on-surface-variant/70">{{ t('paymentSuccess.unlimitedCategoriesDescription') }}</p>
             </div>
           </div>
         </div>
+
+        <!-- Transaction footer -->
+        <div class="flex items-center justify-between border-t border-outline-variant/20 pt-4">
+          <p class="font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+            {{ t('paymentSuccess.encryptedTransactionId') }}
+          </p>
+          <p class="font-mono text-[11px] font-bold tracking-tight text-primary-fixed">{{ displayedId }}</p>
+        </div>
       </div>
-    </main>
-  </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col gap-3">
+        <button
+          type="button"
+          class="pressable w-full rounded-md bg-linear-to-br from-primary to-primary-container p-px"
+          @click="goToDashboard"
+        >
+          <div class="flex items-center justify-center gap-3 bg-primary-container py-4 transition-colors hover:bg-primary-fixed-dim">
+            <span class="font-headline text-sm font-black uppercase tracking-widest text-on-primary-container">
+              {{ t('paymentSuccess.goToDashboard') }}
+            </span>
+            <span class="material-symbols-outlined text-[18px] font-bold text-on-primary-container">arrow_forward</span>
+          </div>
+        </button>
+        <button
+          type="button"
+          class="pressable flex w-full items-center justify-center gap-3 rounded-md border border-outline-variant/20 bg-surface-container-high py-4 transition-colors hover:bg-surface-container-highest"
+          @click="goToSubscription"
+        >
+          <span class="material-symbols-outlined text-[18px] text-on-surface-variant">receipt_long</span>
+          <span class="font-headline text-sm font-bold uppercase tracking-widest text-on-surface-variant">
+            {{ t('paymentSuccess.viewSubscription') }}
+          </span>
+        </button>
+      </div>
+
+      <p class="mt-8 text-center font-mono text-[10px] uppercase tracking-widest text-on-surface-variant/40">
+        {{ t('paymentSuccess.secureConfirmation') }}
+      </p>
+    </div>
+  </main>
 </template>
-<style>
-.scanline {
-  width: 100%;
-  height: 2px;
-  background: rgba(0, 255, 65, 0.1);
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 10;
-  animation: scan 4s linear infinite;
-}
-@keyframes scan {
-  0% { top: 0; }
-  100% { top: 100%; }
-}
+
+<style scoped>
 .glow-effect {
-  box-shadow: 0 0 40px -10px rgba(0, 255, 65, 0.3);
+  box-shadow: 0 0 40px -10px rgba(0, 255, 65, 0.35);
+}
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 </style>

@@ -910,11 +910,19 @@
     "medicalCenter": "Medical Center",
     "medicalCenterDescription": "Injury prediction & recovery metrics active.",
     "unlimitedCategories": "Unlimited Categories",
+    "unlimitedCategoriesDescription": "Manage unlimited player categories and squads.",
     "statusLive": "Status: Live",
     "goToDashboard": "Go to Dashboard",
     "viewReceipt": "View Receipt",
+    "viewSubscription": "View Subscription",
     "completed": "COMPLETED",
-    "encryptedTransactionId": "Encrypted Transaction ID"
+    "encryptedTransactionId": "Encrypted Transaction ID",
+    "tagline": "Subscription Command",
+    "upgrading": "Upgrading your license...",
+    "planName": "Pro Tactical Plan",
+    "secureConfirmation": "Transaction Secured & Verified",
+    "upgradeFailed": "Upgrade failed",
+    "upgradeErrorMessage": "Unable to refresh subscription token."
   },
   "paymentFailure": {
     "transactionCancelled": "TRANSACTION CANCELLED",

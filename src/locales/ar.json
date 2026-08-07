@@ -903,11 +903,19 @@
     "medicalCenter": "المركز الطبي",
     "medicalCenterDescription": "تم تنشيط التنبؤ بالإصابات ومؤشرات التعافي.",
     "unlimitedCategories": "فئات غير محدودة",
+    "unlimitedCategoriesDescription": "إدارة فئات وتشكيلات لاعبيين غير محدودة.",
     "statusLive": "الحالة: مباشر",
     "goToDashboard": "الذهاب إلى لوحة التحكم",
     "viewReceipt": "عرض الإيصال",
+    "viewSubscription": "عرض الاشتراك",
     "completed": "مكتمل",
-    "encryptedTransactionId": "معرّف المعاملة المشفر"
+    "encryptedTransactionId": "معرّف المعاملة المشفر",
+    "tagline": "قيادة الاشتراك",
+    "upgrading": "جارٍ ترقية ترخيصك...",
+    "planName": "الخطة التكتيكية الاحترافية",
+    "secureConfirmation": "تم تأمين المعاملة والتحقق منها",
+    "upgradeFailed": "فشلت الترقية",
+    "upgradeErrorMessage": "تعذر تحديث رمز الاشتراك."
   },
   "paymentFailure": {
     "transactionCancelled": "تم إلغاء المعاملة",
