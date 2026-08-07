@@ -947,7 +947,9 @@
     "errorTitle": "Verification Failed",
     "invalidLink": "This verification link is invalid or has expired.",
     "missingToken": "No verification token was provided.",
-    "goToLogin": "Go to Login"
+    "goToLogin": "Go to Login",
+    "toastTitle": "Email Not Verified",
+    "toastMessage": "Please verify your email address before continuing."
   },
   "staffManagement": {
     "onboardingTerminal": "Onboarding Terminal",

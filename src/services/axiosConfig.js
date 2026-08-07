@@ -1,4 +1,8 @@
 import axios from 'axios';
+import { useUiToast } from '../composables/useUiToast';
+import enMessages from '../locales/en.json';
+import arMessages from '../locales/ar.json';
+const { showToast: showGlobalToast } = useUiToast();
 
 // 1. Get the domain straight from Vercel. 
 // Example value in Vercel: https://pitchprobackend-production.up.railway.app
@@ -535,6 +539,25 @@ api.interceptors.response.use(
     const status = error?.response?.status;
     const tokenExpired = Boolean(getResponseHeader(error?.response?.headers, 'Token-Expired'));
     const isRetry = Boolean(error?.config?._retry);
+
+    // Email verification gate: the backend returns 403 with emailNotVerified:true
+    // for unverified Presidents hitting business endpoints. Notify the user.
+    if (status === 403 && error?.response?.data?.emailNotVerified === true) {
+      const savedLocale =
+        typeof localStorage !== 'undefined' &&
+        (localStorage.getItem('pitchpro-locale') === 'en' || localStorage.getItem('pitchpro-locale') === 'ar')
+          ? localStorage.getItem('pitchpro-locale')
+          : 'ar';
+      const messages = savedLocale === 'en' ? enMessages : arMessages;
+      const verifyEmailT = messages.verifyEmail || {};
+
+      showGlobalToast({
+        title: verifyEmailT.toastTitle || 'Email Not Verified',
+        message: verifyEmailT.toastMessage || 'Please verify your email address before continuing.',
+        mode: 'error',
+        duration: 5000
+      });
+    }
 
     if (status === 401 && !isRetry && getRefreshToken()) {
       error.config._retry = true;
