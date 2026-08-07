@@ -7,6 +7,7 @@ import CategoryManagementDashboard from '../views/CategoryManagementDashboard.vu
 import SubscriptionDashboard from '../views/SubscriptionDashboard.vue'
 import PaymentSuccess from '../views/PaymentSuccess.vue'
 import PaymentFailure from '../views/PaymentFailure.vue'
+import VerifyEmail from '../views/VerifyEmail.vue'
 import ComingSoon from '../views/ComingSoon.vue'
 import { getAuthToken, getRefreshToken, refreshAuthToken, isAccessTokenExpired } from '../services/axiosConfig'
 
@@ -148,6 +149,11 @@ const routes = [
     path: '/payment-failure',
     name: 'PaymentFailure',
     component: PaymentFailure
+  },
+  {
+    path: '/verify-email',
+    name: 'VerifyEmail',
+    component: VerifyEmail
   }
 ]
 

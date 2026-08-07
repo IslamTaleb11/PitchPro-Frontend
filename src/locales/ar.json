@@ -917,6 +917,16 @@
     "systemId": "معرّف النظام: PX-8800",
     "cancelledLabel": "تم الإلغاء"
   },
+  "verifyEmail": {
+    "tagline": "التحقق من البريد الإلكتروني",
+    "verifying": "جارٍ التحقق من بريدك الإلكتروني...",
+    "successTitle": "تم التحقق من البريد",
+    "successMessage": "تم التحقق من بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول.",
+    "errorTitle": "فشل التحقق",
+    "invalidLink": "رابط التحقق هذا غير صالح أو منتهي الصلاحية.",
+    "missingToken": "لم يتم توفير رمز تحقق.",
+    "goToLogin": "الانتقال إلى تسجيل الدخول"
+  },
   "staffManagement": {
     "onboardingTerminal": "محطة الإلحاق",
     "createPersonnel": "إنشاء موظف",

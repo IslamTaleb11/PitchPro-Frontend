@@ -12,4 +12,8 @@ export async function upgradeToken() {
   return api.post('/payment/upgrade-token')
 }
 
+export async function verifyEmail(token) {
+  return api.get('/verify-email', { params: { token } })
+}
+
 export { refreshAuthToken }
