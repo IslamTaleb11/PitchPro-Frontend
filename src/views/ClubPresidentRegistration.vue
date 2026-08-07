@@ -57,8 +57,15 @@ function goToLogin() {
   setTimeout(() => router.push('/login'), 900)
 }
 
+function goToLoginAfterVerify() {
+  showVerifyModal.value = false
+  router.push('/login')
+}
+
 const clubData = ref(null)
 const crestPreview = ref('')
+const showVerifyModal = ref(false)
+const verifiedEmail = ref('')
 
 onMounted(() => {
   // Access the state sent from the previous page
@@ -195,9 +202,8 @@ const handleRegistration = async () => {
       mode: 'success',
       duration: 1200
     })
-    setTimeout(() => {
-      router.push('/login')
-    }, 1200)
+    verifiedEmail.value = form.email
+    showVerifyModal.value = true
   } catch (error) {
     const apiMessage = getApiErrorMessage(error)
     showToast({
@@ -484,6 +490,63 @@ const handleRegistration = async () => {
         {{ t('presidentRegistration.strategyLabel') }}
       </div>
     </div>
+
+    <!-- Verify email modal -->
+    <Teleport to="body">
+      <div v-if="showVerifyModal" class="fixed inset-0 z-[150] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+        <div class="w-full max-w-md rounded-xl border-t-2 border-primary-fixed-dim bg-surface-container-low p-8 shadow-2xl">
+          <div class="flex flex-col items-center gap-6 text-center">
+            <div class="relative">
+              <div class="flex h-24 w-24 items-center justify-center rounded-full border-2 border-primary-fixed-dim bg-primary-container/20">
+                <span class="material-symbols-outlined text-5xl text-primary-fixed-dim">mail</span>
+              </div>
+              <span class="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary-fixed text-on-primary-fixed">
+                <span class="material-symbols-outlined text-sm">mark_email_read</span>
+              </span>
+            </div>
+
+            <div class="space-y-3">
+              <h2 class="font-headline text-2xl font-bold uppercase tracking-tight text-white">
+                {{ t('presidentRegistration.verifyModal.title') }}
+              </h2>
+              <p class="text-sm leading-relaxed text-on-surface-variant">
+                {{ t('presidentRegistration.verifyModal.description') }}
+              </p>
+              <p class="rounded-md bg-surface-container-lowest px-3 py-2 font-mono text-sm font-bold text-primary-fixed break-all">
+                {{ verifiedEmail }}
+              </p>
+              <p class="text-xs text-on-surface-variant/70">
+                {{ t('presidentRegistration.verifyModal.spamHint') }}
+              </p>
+            </div>
+
+            <div class="flex w-full flex-col gap-3 pt-2">
+              <button
+                type="button"
+                class="pressable w-full rounded-md bg-linear-to-br from-primary to-primary-container p-px"
+                @click="goToLoginAfterVerify"
+              >
+                <div class="flex items-center justify-center gap-3 bg-primary-container py-4 transition-colors hover:bg-primary-fixed-dim">
+                  <span class="font-headline text-sm font-bold uppercase tracking-widest text-on-primary-container">
+                    {{ t('presidentRegistration.verifyModal.goToLogin') }}
+                  </span>
+                  <span class="material-symbols-outlined text-[18px] font-bold text-on-primary-container">arrow_forward</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                class="pressable w-full rounded-md border border-outline-variant/20 bg-surface-container-high py-4 transition-colors hover:bg-surface-container-highest"
+                @click="showVerifyModal = false"
+              >
+                <span class="font-headline text-sm font-bold uppercase tracking-widest text-on-surface-variant">
+                  {{ t('presidentRegistration.verifyModal.close') }}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </main>
 </template>
 

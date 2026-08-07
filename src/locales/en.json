@@ -889,6 +889,13 @@
       "loginReadyTitle": "Login ready",
       "loginReadyMessage": "Welcome back to PitchPro Hub.",
       "apiErrorTitle": "API Error"
+    },
+    "verifyModal": {
+      "title": "Verify Your Email",
+      "description": "We've sent a verification link to your email. Please check your inbox and click the link to activate your account before logging in.",
+      "spamHint": "Didn't receive it? Check your spam or junk folder.",
+      "goToLogin": "Go to Login",
+      "close": "Close"
     }
   },
   "paymentSuccess": {
