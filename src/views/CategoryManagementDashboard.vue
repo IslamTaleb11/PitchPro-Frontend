@@ -93,8 +93,8 @@ async function fetchCategories(options = {}) {
       return
     }
   } catch (error) {
-    const message = error?.response?.data?.message || error?.message || 'Failed to fetch categories.'
-    showToast({ title: 'Error', message, mode: 'error' })
+    const message = error?.response?.data?.message || error?.message || $t('categoryManagement.fetchFailed')
+    showToast({ title: $t('common.error'), message, mode: 'error' })
     categories.value = []
     totalCount.value = 0
   } finally {
@@ -176,8 +176,8 @@ async function submitCategory() {
     ageRange.value = [6, 18]
     fetchCategories()
   } catch (error) {
-    const message = error?.response?.data?.message || error?.message || 'Failed to create category.'
-    showToast({ title: 'Error', message, mode: 'error', duration: 4000 })
+    const message = error?.response?.data?.message || error?.message || $t('categoryManagement.createFailed')
+    showToast({ title: $t('common.error'), message, mode: 'error', duration: 4000 })
   }
 }
 
@@ -238,11 +238,11 @@ function openEditModal(cat) {
 
 async function submitEdit() {
   if (!editForm.value.name.trim()) {
-    showToast({ title: 'Missing fields', message: 'Please enter a category name.', mode: 'error', duration: 4000 })
+    showToast({ title: $t('common.missingFields'), message: $t('categoryManagement.categoryNameRequired'), mode: 'error', duration: 4000 })
     return
   }
   if (!editForm.value.capacity) {
-    showToast({ title: 'Missing fields', message: 'Please enter a capacity.', mode: 'error', duration: 4000 })
+    showToast({ title: $t('common.missingFields'), message: $t('categoryManagement.capacityRequired'), mode: 'error', duration: 4000 })
     return
   }
   try {
@@ -260,7 +260,7 @@ async function submitEdit() {
     showEditModal.value = false
     fetchCategories()
   } catch (error) {
-    const message = error?.response?.data?.message || error?.message || 'Failed to update category.'
+    const message = error?.response?.data?.message || error?.message || $t('categoryManagement.updateFailedMessage')
     showToast({ title: $t('categoryManagement.updateFailed'), message, mode: 'error', duration: 4000 })
   } finally {
     isEditing.value = false
@@ -290,8 +290,8 @@ async function confirmDelete() {
     deleteTarget.value = null
     fetchCategories({ fallbackOnEmpty: true })
   } catch (error) {
-    const message = error?.response?.data?.message || error?.message || 'Failed to delete category.'
-    showToast({ title: 'Error', message, mode: 'error', duration: 4000 })
+    const message = error?.response?.data?.message || error?.message || $t('categoryManagement.deleteFailedMessage')
+    showToast({ title: $t('common.error'), message, mode: 'error', duration: 4000 })
   } finally {
     isDeleting.value = false
   }

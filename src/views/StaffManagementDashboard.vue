@@ -25,7 +25,7 @@ async function onDeployStaff() {
   if (failed.length > 0) {
     showToast({
       title: $t('common.error'),
-      message: $t('staffManagement.refreshError') || 'Failed to refresh staff data.',
+      message: $t('staffManagement.refreshError') || $t('common.error'),
       mode: 'error',
       duration: 4000
     })

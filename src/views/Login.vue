@@ -40,7 +40,7 @@ async function handleLogin() {
     const refreshToken = response?.data?.refreshToken || response?.data?.refresh_token
 
     if (!accessToken) {
-      throw new Error('Login succeeded but no access token was returned.')
+      throw new Error(t('login.toast.noAccessToken'))
     }
 
     setAuthToken(accessToken, form.stayLoggedIn)
@@ -58,7 +58,7 @@ async function handleLogin() {
   } catch (error) {
     showToast({
       title: t('login.toast.accessingTerminalTitle'),
-      message: error?.response?.data || error?.message || 'Login failed',
+      message: error?.response?.data || error?.message || t('login.toast.loginFailed'),
       mode: 'error'
     })
   } finally {

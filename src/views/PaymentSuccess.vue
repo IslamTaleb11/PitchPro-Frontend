@@ -34,9 +34,9 @@ onMounted(async () => {
       error?.response?.data?.message ||
       error?.message ||
       t('paymentSuccess.upgradeErrorMessage') ||
-      'Unable to refresh subscription token.'
+      t('common.error')
     showToast({
-      title: t('paymentSuccess.upgradeFailed') || 'Upgrade failed',
+      title: t('paymentSuccess.upgradeFailed') || t('common.error'),
       message: refreshError.value,
       mode: 'error',
       duration: 4000

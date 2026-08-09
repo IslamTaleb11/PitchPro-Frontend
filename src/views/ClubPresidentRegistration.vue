@@ -97,7 +97,7 @@ const fileToBase64 = (file) => {
 const getApiErrorMessage = (error) => {
   const responseData = error?.response?.data
   if (!responseData) {
-    return error?.message || 'An unexpected error occurred.'
+    return error?.message || t('presidentRegistration.toast.unexpectedError')
   }
 
   // Check for message field first (new structure)

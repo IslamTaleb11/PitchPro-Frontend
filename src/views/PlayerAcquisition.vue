@@ -274,7 +274,7 @@ async function submitPlayerAcquisition() {
 
     showToast({
       title: $t('playerAcquisition.dossierInitialized'),
-      message: response.data?.message || `Player #${jerseyNumber.value} registered successfully.`,
+      message: response.data?.message || $t('playerAcquisition.registeredSuccess', { jerseyNumber: jerseyNumber.value }),
       mode: 'success',
       duration: 3500
     })
@@ -301,7 +301,7 @@ async function submitPlayerAcquisition() {
     removePhoto()
 
   } catch (error) {
-    const message = error.response?.data?.message || error.message || 'Check network connection to global node.'
+    const message = error.response?.data?.message || error.message || $t('playerAcquisition.networkError')
     showToast({
       title: $t('playerAcquisition.syncFailure'),
       message,

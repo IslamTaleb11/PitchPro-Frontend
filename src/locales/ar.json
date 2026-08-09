@@ -61,7 +61,10 @@
     "oneNumber": "رقم واحد",
     "oneSpecialChar": "حرف خاص واحد",
     "selectCategories": "اختر الفئات",
-    "pleaseWait": "يرجى الانتظار..."
+    "pleaseWait": "يرجى الانتظار...",
+    "processingRequest": "جارٍ معالجة الطلب",
+    "done": "تم",
+    "actionCompleted": "اكتمل الإجراء"
   },
   "languages": {
     "en": "English",
@@ -93,7 +96,9 @@
       "launchingSsoSuccessTitle": "تم الاتصال بـ SSO",
       "launchingSsoSuccessMessage": "استجاب مزود الهوية بنجاح.",
       "biometricRequiredTitle": "المطلوب قياسات حيوية",
-      "biometricRequiredMessage": "واجهة برمجة تطبيقات القياسات الحيوية غير متصلة بعد في هذا العرض."
+      "biometricRequiredMessage": "واجهة برمجة تطبيقات القياسات الحيوية غير متصلة بعد في هذا العرض.",
+      "loginFailed": "فشل تسجيل الدخول",
+      "noAccessToken": "تم تسجيل الدخول بنجاح ولكن لم يتم إرجاع رمز الوصول."
     }
   },
   "sidebar": {
@@ -322,7 +327,8 @@
       "creatingSessionTitle": "جارٍ إنشاء الجلسة...",
       "creatingSessionMessage": "جارٍ حفظ جلسة التدريب في قاعدة البيانات.",
       "sessionCreatedTitle": "تم إنشاء الجلسة",
-      "sessionCreatedMessage": "تم حفظ جلسة التدريب بنجاح."
+      "sessionCreatedMessage": "تم حفظ جلسة التدريب بنجاح.",
+      "genericError": "حدث خطأ."
     }
   },
   "callUp": {
@@ -881,7 +887,8 @@
       "incompleteMessage": "يرجى ملء جميع الحقول المطلوبة والتأكد من أن كلمة المرور تلبي المتطلبات.",
       "loginReadyTitle": "تسجيل الدخول جاهز",
       "loginReadyMessage": "مرحبًا بعودتك إلى مركز PitchPro.",
-      "apiErrorTitle": "خطأ في واجهة برمجة التطبيقات"
+      "apiErrorTitle": "خطأ في واجهة برمجة التطبيقات",
+      "unexpectedError": "حدث خطأ غير متوقع."
     },
     "verifyModal": {
       "title": "تحقق من بريدك الإلكتروني",
@@ -1033,7 +1040,9 @@
     "failedLoadDetails": "فشل في تحميل بيانات الموظف.",
     "updatedTitle": "تم التحديث",
     "updatedMessage": "تم تحديث الموظف بنجاح.",
-    "updateFailedMessage": "فشل في تحديث الموظف."
+    "updateFailedMessage": "فشل في تحديث الموظف.",
+    "refreshError": "فشل في تحديث بيانات الموظف.",
+    "password": "كلمة المرور"
   },
   "categoryManagement": {
     "squadCategories": "فئات الفريق",
@@ -1081,7 +1090,13 @@
     "fee": "الرسوم (دج)",
     "minPlayers": "الحد الأدنى للاعبين",
     "maxPlayers": "الحد الأقصى للاعبين",
-    "yrs": "سنة"
+    "yrs": "سنة",
+    "fetchFailed": "فشل في جلب الفئات.",
+    "createFailed": "فشل في إنشاء الفئة.",
+    "updateFailedMessage": "فشل في تحديث الفئة.",
+    "deleteFailedMessage": "فشل في حذف الفئة.",
+    "categoryNameRequired": "يرجى إدخال اسم الفئة.",
+    "capacityRequired": "يرجى إدخال الطاقة الاستيعابية."
   },
   "playerControl": {
     "pageTitle": "التحكم باللاعبين",
@@ -1203,7 +1218,9 @@
     "syncingDossier": "جارٍ مزامنة الملف...",
     "syncingDossierMsg": "جارٍ تهيئة سجل أداء اللاعب في قاعدة البيانات.",
     "dossierInitialized": "تم تهيئة الملف",
-    "syncFailure": "فشل مزامنة قاعدة البيانات"
+    "registeredSuccess": "تم تسجيل اللاعب #{jerseyNumber} بنجاح.",
+    "syncFailure": "فشل مزامنة قاعدة البيانات",
+    "networkError": "تحقق من اتصال الشبكة بالعقدة العامة."
   },
   "comingSoon": {
     "title": "قريباً",

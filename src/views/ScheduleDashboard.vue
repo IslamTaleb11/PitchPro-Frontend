@@ -226,7 +226,7 @@ async function saveEdit() {
     fetchEvents()
 
   } catch (error) {
-    const message = error.response?.data?.message || error.message || 'An error occurred.'
+    const message = error.response?.data?.message || error.message || $t('schedule.toast.genericError')
     showToast({ title: $t('common.error'), message, mode: 'error', duration: 4000 })
   } finally {
     isSubmittingEdit.value = false
@@ -316,7 +316,7 @@ async function deployMatch() {
     fetchEvents()
 
   } catch (error) {
-    const message = error.response?.data?.message || error.message || 'An error occurred.'
+    const message = error.response?.data?.message || error.message || $t('schedule.toast.genericError')
     showToast({ title: $t('common.error'), message, mode: 'error', duration: 4000 })
   } finally {
     isSubmittingMatch.value = false
@@ -376,8 +376,8 @@ async function deployTraining() {
     fetchEvents()
 
   } catch (error) {
-    const message = error.response?.data?.message || error.message || 'An error occurred.'
-    showToast({ title: 'Error', message, mode: 'error', duration: 4000 })
+    const message = error.response?.data?.message || error.message || $t('schedule.toast.genericError')
+    showToast({ title: $t('common.error'), message, mode: 'error', duration: 4000 })
   } finally {
     isSubmittingTraining.value = false
   }

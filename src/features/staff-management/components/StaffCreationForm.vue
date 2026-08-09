@@ -209,23 +209,23 @@ async function submitForm(event) {
   }
 
   const requiredFields = [
-    { name: 'First name', value: firstName.value },
-    { name: 'Last name', value: lastName.value },
-    { name: 'Gender', value: gender.value },
-    { name: 'Birth date', value: birthDate.value },
-    { name: 'Email', value: email.value },
-    { name: 'Password', value: password.value },
-    { name: 'Phone number', value: phoneNumber.value },
-    { name: 'Address', value: address.value },
-    { name: 'Primary role', value: primaryRoleID.value },
-    { name: 'Role classification', value: roleClassificationID.value },
-    { name: 'Category', value: selectedCategories.value.length > 0 ? 'selected' : '' },
-    { name: 'Photo', value: photoFile.value }
+    { name: $t('staffManagement.firstName'), value: firstName.value },
+    { name: $t('staffManagement.lastName'), value: lastName.value },
+    { name: $t('staffManagement.gender'), value: gender.value },
+    { name: $t('staffManagement.birthDate'), value: birthDate.value },
+    { name: $t('staffManagement.email'), value: email.value },
+    { name: $t('staffManagement.password'), value: password.value },
+    { name: $t('staffManagement.phoneNumber'), value: phoneNumber.value },
+    { name: $t('staffManagement.address'), value: address.value },
+    { name: $t('staffManagement.primaryRole'), value: primaryRoleID.value },
+    { name: $t('staffManagement.classification'), value: roleClassificationID.value },
+    { name: $t('staffManagement.category'), value: selectedCategories.value.length > 0 ? 'selected' : '' },
+    { name: $t('staffManagement.photo'), value: photoFile.value }
   ];
   const missing = requiredFields.filter(f => !f.value || f.value === '' );
   if (missing.length) {
     const names = missing.map(f => f.name).join(', ');
-    showToast({ title: $t('common.missingFields'), message: `${$t('common.pleaseFill')}: ${names}`, mode: 'error', duration: 4000 });
+    showToast({ title: $t('common.missingFields'), message: $t('common.pleaseFill') + ': ' + names, mode: 'error', duration: 4000 });
     return;
   }
   // Password strength validation

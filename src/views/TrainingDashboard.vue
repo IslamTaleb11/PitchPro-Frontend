@@ -46,7 +46,7 @@ const sessions = ref([])
 // ── Submit ────────────────────────────────────────────────────────────────────
 async function submitSession() {
   if (!categoryID.value || !sessionDate.value || !startTime.value || !endTime.value || !location.value.trim() || !sessionTypeID.value) {
-    showToast({ title: 'Missing Fields', message: 'Please fill in all required fields.', mode: 'error', duration: 4000 })
+    showToast({ title: $t('schedule.toast.missingFieldsTitle'), message: $t('schedule.toast.fillAllFieldsMessage'), mode: 'error', duration: 4000 })
     return
   }
 
@@ -56,7 +56,7 @@ async function submitSession() {
   today.setHours(0, 0, 0, 0)
 
   if (selectedDate < today) {
-    showToast({ title: 'Invalid Date', message: 'Training date must be today or in the future.', mode: 'error', duration: 4000 })
+    showToast({ title: $t('schedule.toast.invalidDateTitle'), message: $t('schedule.toast.trainingDateFutureMessage'), mode: 'error', duration: 4000 })
     return
   }
 
@@ -65,12 +65,12 @@ async function submitSession() {
   const end = new Date(`2000-01-01 ${endTime.value}`)
 
   if (end <= start) {
-    showToast({ title: 'Invalid Time', message: 'End time must be after start time.', mode: 'error', duration: 4000 })
+    showToast({ title: $t('schedule.toast.invalidTimeTitle'), message: $t('schedule.toast.endAfterStartMessage'), mode: 'error', duration: 4000 })
     return
   }
 
   try {
-    showToast({ title: 'Creating Session...', message: 'Saving training session to database.', mode: 'loading', duration: 0 })
+    showToast({ title: $t('schedule.toast.creatingSessionTitle'), message: $t('schedule.toast.creatingSessionMessage'), mode: 'loading', duration: 0 })
 
     const payload = {
       ClubID:        7,
@@ -100,7 +100,7 @@ async function submitSession() {
       category: cat?.name ?? '—',
     })
 
-    showToast({ title: 'Session Created', message: response.data?.message || 'Training session saved successfully.', mode: 'success', duration: 3000 })
+    showToast({ title: $t('schedule.toast.sessionCreatedTitle'), message: response.data?.message || $t('schedule.toast.sessionCreatedMessage'), mode: 'success', duration: 3000 })
 
     // Reset form
     categoryID.value    = ''
@@ -111,8 +111,8 @@ async function submitSession() {
     sessionTypeID.value = ''
 
   } catch (error) {
-    const message = error.response?.data?.message || error.message || 'An error occurred.'
-    showToast({ title: 'Error', message, mode: 'error', duration: 4000 })
+    const message = error.response?.data?.message || error.message || $t('schedule.toast.genericError')
+    showToast({ title: $t('common.error'), message, mode: 'error', duration: 4000 })
   }
 }
 </script>

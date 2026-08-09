@@ -1,4 +1,6 @@
 import { reactive } from 'vue'
+import enMessages from '../locales/en.json'
+import arMessages from '../locales/ar.json'
 
 const toastState = reactive({
   visible: false,
@@ -8,6 +10,15 @@ const toastState = reactive({
 })
 
 let hideTimer = null
+
+function currentMessages() {
+  const saved =
+    typeof localStorage !== 'undefined' &&
+    (localStorage.getItem('pitchpro-locale') === 'en' || localStorage.getItem('pitchpro-locale') === 'ar')
+      ? localStorage.getItem('pitchpro-locale')
+      : 'ar'
+  return saved === 'en' ? enMessages : arMessages
+}
 
 function showToast({ title, message = '', mode = 'info', duration = 1800 }) {
   if (hideTimer) clearTimeout(hideTimer)
@@ -30,19 +41,26 @@ function hideToast() {
 }
 
 function showLoadingToast({
-  title = 'Processing request',
-  message = 'Please wait...',
-  successTitle = 'Done',
-  successMessage = 'Action completed',
+  title,
+  message,
+  successTitle,
+  successMessage,
   loadingDuration = 900,
   successDuration = 1400
 } = {}) {
-  showToast({ title, message, mode: 'loading', duration: loadingDuration })
+  const common = currentMessages().common || {}
+
+  const loadingTitle = title ?? common.processingRequest ?? 'Processing request'
+  const loadingMessage = message ?? common.pleaseWait ?? 'Please wait...'
+  const successTitleText = successTitle ?? common.done ?? 'Done'
+  const successMessageText = successMessage ?? common.actionCompleted ?? 'Action completed'
+
+  showToast({ title: loadingTitle, message: loadingMessage, mode: 'loading', duration: loadingDuration })
 
   setTimeout(() => {
     showToast({
-      title: successTitle,
-      message: successMessage,
+      title: successTitleText,
+      message: successMessageText,
       mode: 'success',
       duration: successDuration
     })
