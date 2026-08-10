@@ -21,7 +21,7 @@ defineProps({
 
 <template>
   <div class="min-h-screen bg-background text-on-background lg:flex lg:items-stretch">
-    <DashboardSidebar active-item="coming-soon" :is-open="isSidebarOpen" />
+    <DashboardSidebar active-item="coming-soon" :is-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
     <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
 
     <main

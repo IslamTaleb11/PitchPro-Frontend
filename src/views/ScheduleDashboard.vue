@@ -386,7 +386,7 @@ async function deployTraining() {
 
 <template>
   <div class="min-h-screen bg-background text-on-surface lg:flex lg:items-stretch">
-    <DashboardSidebar active-item="schedule" :is-open="isSidebarOpen" />
+    <DashboardSidebar active-item="schedule" :is-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
     <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
 
     <main

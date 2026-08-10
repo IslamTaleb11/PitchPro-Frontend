@@ -315,7 +315,7 @@ async function submitPlayerAcquisition() {
 <template>
   <div class="min-h-screen overflow-hidden bg-background text-on-surface lg:flex lg:items-stretch">
     <!-- Club Sidebar Navigation -->
-    <DashboardSidebar active-item="players" :is-open="isSidebarOpen" />
+    <DashboardSidebar active-item="players" :is-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
     
     <!-- Club Top Navigation Header -->
     <StaffTopbar :sidebar-open="isSidebarOpen" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
