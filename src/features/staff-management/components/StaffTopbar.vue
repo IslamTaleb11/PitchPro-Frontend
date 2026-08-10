@@ -170,16 +170,8 @@ async function logout() {
         <span>{{ remainingDaysLabel }}</span>
       </div>
     </div>
-    <div class="flex items-center gap-2 md:gap-4 lg:gap-6">
-      <div class="relative hidden xl:block">
-        <span class="material-symbols-outlined absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 text-lg text-slate-500">search</span>
-        <input
-          type="text"
-          :placeholder="$t('topbar.searchStaff')"
-          class="w-64 rounded-lg border-none bg-slate-900 py-2 ltr:pl-10 ltr:pr-4 rtl:pr-10 rtl:pl-4 text-xs text-white transition-all focus:ring-1 focus:ring-green-400/50"
-        />
-      </div>
-      <div class="flex items-center gap-2 md:gap-4">
+<div class="flex items-center gap-2 md:gap-4 lg:gap-6">
+        <div class="flex items-center gap-2 md:gap-4">
         <router-link
           v-if="!isPremiumPlan"
           to="/dashboard/subscription"
@@ -190,9 +182,6 @@ async function logout() {
         </router-link>
         <button type="button" class="pressable hidden text-slate-400 transition-opacity hover:text-green-400 active:opacity-80 md:inline-flex">
           <span class="material-symbols-outlined">notifications</span>
-        </button>
-        <button type="button" class="pressable hidden text-slate-400 transition-opacity hover:text-green-400 active:opacity-80 md:inline-flex">
-          <span class="material-symbols-outlined">analytics</span>
         </button>
 
         <!-- Language Switcher -->
