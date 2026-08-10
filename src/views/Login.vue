@@ -7,7 +7,7 @@ import { login } from '../services/authService'
 import { setAuthToken, setRefreshToken } from '../services/axiosConfig'
 
 const router = useRouter()
-const { showToast, showLoadingToast } = useUiToast()
+const { showToast } = useUiToast()
 const { t } = useI18n()
 
 const showPassword = ref(false)
@@ -66,22 +66,7 @@ async function handleLogin() {
   }
 }
 
-function handleSsoLogin() {
-  showLoadingToast({
-    title: t('login.toast.launchingSsoTitle'),
-    message: t('login.toast.launchingSsoMessage'),
-    successTitle: t('login.toast.launchingSsoSuccessTitle'),
-    successMessage: t('login.toast.launchingSsoSuccessMessage')
-  })
-}
 
-function handleBiometricLogin() {
-  showToast({
-    title: t('login.toast.biometricRequiredTitle'),
-    message: t('login.toast.biometricRequiredMessage'),
-    mode: 'info'
-  })
-}
 </script>
 
 <template>
@@ -215,44 +200,13 @@ function handleBiometricLogin() {
               </div>
             </button>
 
-            <div class="flex items-center gap-4 py-2">
-              <div class="h-px flex-1 bg-outline-variant/30" />
-              <span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{{ t('login.systemCheck') }}</span>
-              <div class="h-px flex-1 bg-outline-variant/30" />
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                class="pressable group flex items-center justify-center gap-2 rounded-sm border border-outline-variant/20 bg-surface-container-high py-3 transition-colors hover:bg-surface-container-highest"
-                @click="handleSsoLogin"
-              >
-                <img
-                  alt="Google icon"
-                  class="h-4 w-4 opacity-70 transition-opacity group-hover:opacity-100"
-                  src="/assets/google-icon.svg"
-                />
-                <span class="text-xs font-medium text-on-surface-variant">{{ t('login.ssoLogin') }}</span>
-              </button>
-              <button
-                type="button"
-                class="pressable group flex items-center justify-center gap-2 rounded-sm border border-outline-variant/20 bg-surface-container-high py-3 transition-colors hover:bg-surface-container-highest"
-                @click="handleBiometricLogin"
-              >
-                <span class="material-symbols-outlined text-[18px] text-on-surface-variant transition-colors group-hover:text-primary-fixed-dim">
-                  fingerprint
-                </span>
-                <span class="text-xs font-medium text-on-surface-variant">{{ t('login.biometric') }}</span>
-              </button>
-            </div>
-
             <p class="pt-2 text-center text-xs text-on-surface-variant">
-              New to PitchPro?
+              {{ t('login.newToPitchPro') }}
               <RouterLink
                 to="/club-registration"
                 class="font-semibold text-primary-fixed transition-colors hover:text-primary-fixed-dim"
               >
-                Register here
+                {{ t('login.registerHere') }}
               </RouterLink>
             </p>
           </div>
