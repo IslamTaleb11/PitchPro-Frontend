@@ -349,7 +349,7 @@ onMounted(loadCategories)
 
 <template>
   <!-- Startup modal — category selection before entering the terminal -->
-  <div v-if="startupModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+  <div v-if="startupModalOpen" class="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-4">
     <div class="w-full max-w-2xl rounded-3xl bg-surface-container-lowest border border-outline-variant/10 p-8 shadow-2xl">
       <h2 class="font-headline text-2xl font-black uppercase tracking-tighter text-on-surface">Select Squad &amp; Match</h2>
       <p class="mt-2 text-sm text-on-surface-variant">Choose your category and the next session before entering the operations terminal.</p>
