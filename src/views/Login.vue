@@ -192,7 +192,7 @@ async function handleLogin() {
                 class="flex items-center justify-center gap-3 bg-primary-container py-4 transition-colors group-hover:bg-primary-fixed-dim"
               >
                 <span class="font-headline text-sm font-bold uppercase tracking-widest text-on-primary-container">
-                  {{ isSubmitting ? 'Signing in...' : t('login.accessTerminal') }}
+                  {{ isSubmitting ? t('login.signingIn') : t('login.accessTerminal') }}
                 </span>
                 <span class="material-symbols-outlined text-[18px] font-bold text-on-primary-container">
                   {{ isSubmitting ? 'hourglass_top' : 'arrow_forward' }}
