@@ -502,8 +502,8 @@ onMounted(loadCategories)
         </div>
       </div>
 
-      <div class="mt-8 flex items-center justify-between">
-        <button @click="startSession" :disabled="isLoadingPlayers || !selectedMatch" class="w-full sm:w-auto bg-primary-container text-on-primary-container text-[11px] font-black uppercase tracking-widest px-6 py-3 rounded shadow-lg hover:brightness-110 transition-all disabled:opacity-50">
+      <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <button @click="startSession" :disabled="isLoadingPlayers || !selectedMatch" class="bg-primary-container text-on-primary-container text-[11px] font-black uppercase tracking-widest px-6 py-3 rounded shadow-lg hover:brightness-110 transition-all disabled:opacity-50">
           {{ isLoadingPlayers ? t('matchMonitor.loading') : t('matchMonitor.startSession') }}
         </button>
         <p class="text-[11px] text-on-surface-variant">{{ selectedMatch ? t('matchMonitor.ready') : (selectedCategory ? t('matchMonitor.selectMatch') : t('matchMonitor.selectRequired')) }}</p>
