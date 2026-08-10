@@ -147,11 +147,7 @@ async function confirmRecover() {
 // ── Categories (loaded from /lookups/categories, same as the rest of app) ────
 // Stored as `{ id, name }` objects so we can resolve the category id needed by
 // the `/players/by-category/{categoryId}` endpoint when recording an incident.
-const categories = ref([
-  { id: 'first-team', name: 'First Team' },
-  { id: 'u21', name: 'U-21 Squad' },
-  { id: 'u18', name: 'U-18 Squad' },
-])
+const categories = ref([])
 const isLoadingCategories = ref(false)
 
 function normalizeLookupItem(item) {
@@ -186,9 +182,7 @@ async function loadCategories() {
   try {
     const response = await lookupService.getCategories()
     const list = normalizeLookupArray(response?.data)
-    if (list.length) {
-      categories.value = list
-    }
+    categories.value = list
   } catch (error) {
     console.warn('Medical: could not load categories from /lookups/categories, using defaults.', error)
   } finally {
@@ -543,8 +537,8 @@ onMounted(loadCategories)
             >{{ cat.name }}</button>
           </div>
 
-          <div class="bg-surface-container-low overflow-hidden rounded-lg">
-            <table class="w-full text-left font-body">
+          <div class="bg-surface-container-low overflow-x-auto rounded-lg">
+            <table class="w-full min-w-[820px] text-left font-body">
               <thead>
                 <tr class="bg-surface-container-high/50 text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">
                   <th class="px-6 py-4">{{ $t('medical.colPlayer') }}</th>
