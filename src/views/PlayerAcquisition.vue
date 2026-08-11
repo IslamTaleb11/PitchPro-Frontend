@@ -333,19 +333,6 @@ async function submitPlayerAcquisition() {
           <h1 class="font-headline text-4xl font-black italic tracking-tighter text-white mb-2 uppercase">
             {{ $t('playerAcquisition.title') }}
           </h1>
-          <div class="flex items-center gap-2">
-            <div class="h-1 w-12 bg-green-400"></div>
-            <p class="font-headline text-xs font-bold uppercase tracking-widest text-slate-500">
-              {{ $t('playerAcquisition.subtitle') }}
-            </p>
-          </div>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="font-label text-[10px] uppercase font-bold text-neutral-500">{{ $t('playerAcquisition.systemStatus') }}:</span>
-          <div class="flex items-center gap-2 bg-surface-container-low px-3 py-1 rounded-full border border-white/5">
-            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-            <span class="text-[10px] font-black text-green-400 uppercase tracking-tighter">{{ $t('playerAcquisition.readyForSync') }}</span>
-          </div>
         </div>
       </div>
 
