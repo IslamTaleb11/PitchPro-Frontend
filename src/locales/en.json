@@ -810,6 +810,8 @@
     "colorPreview": "COLOR PREVIEW",
     "selectedClubColor": "Selected Club Color",
     "fileSpecs": "JPG, PNG OR WEBP (MAX 2MB)",
+    "alreadyRegistered": "Already have an account?",
+    "loginNow": "Log in",
     "backToLogin": "BACK TO LOGIN",
     "proceedToCredentials": "PROCEED TO CREDENTIALS",
     "errors": {

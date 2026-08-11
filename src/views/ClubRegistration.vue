@@ -280,23 +280,19 @@ function goToPresidentRegistration() {
         <div class="lg:col-span-7">
           <div class="rounded-lg bg-surface-container-high p-5 shadow-2xl md:p-8 lg:p-12">
             <header class="mb-8 space-y-2">
-              <div
-                class="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-md border border-outline-variant/60 bg-surface-container-low px-4 py-3"
-              >
-                <div>
-                  <p class="font-body text-[10px] tracking-[0.16em] text-on-surface-variant">
-                    {{ t('clubRegistration.tacticalOnboarding') }}
-                  </p>
-                  <p class="font-headline text-sm font-bold text-on-surface">Club Setup Intelligence</p>
-                </div>
-                <div class="flex items-center gap-2 rounded-full bg-surface-container-lowest px-3 py-1.5">
-                  <span class="h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: selectedColor }" />
-                  <span class="font-body text-[10px] tracking-[0.12em] text-primary-fixed">IDENTITY READY</span>
-                </div>
-              </div>
               <h2 class="font-headline text-3xl font-bold text-on-surface md:text-4xl">{{ t('clubRegistration.title') }}</h2>
               <p class="max-w-xl font-body text-sm leading-relaxed text-on-surface-variant md:text-base">
                 {{ t('clubRegistration.description') }}
+              </p>
+              <p class="pt-2 text-xs text-on-surface-variant">
+                {{ t('clubRegistration.alreadyRegistered') }}
+                <a
+                  href="#"
+                  class="font-semibold text-primary-fixed transition-colors hover:text-primary-fixed-dim"
+                  @click.prevent="goToLogin"
+                >
+                  {{ t('clubRegistration.loginNow') }}
+                </a>
               </p>
             </header>
 

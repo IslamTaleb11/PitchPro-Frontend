@@ -807,6 +807,8 @@
     "colorPreview": "معاينة اللون",
     "selectedClubColor": "اللون المختار للنادي",
     "fileSpecs": "JPG أو PNG أو WebP (أقصى 2 ميغابايت)",
+    "alreadyRegistered": "هل لديك حساب بالفعل؟",
+    "loginNow": "تسجيل الدخول",
     "backToLogin": "العودة إلى تسجيل الدخول",
     "proceedToCredentials": "المتابعة إلى بيانات الرئيس",
     "errors": {
