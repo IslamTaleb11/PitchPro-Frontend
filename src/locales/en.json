@@ -72,7 +72,7 @@
   },
   "login": {
     "tacticalDirector": "Technical Director",
-    "tacticalIdEmail": "Tactical ID (Email)",
+    "tacticalIdEmail": "Email",
     "emailPlaceholder": "director{'@'}pitchpro.io",
     "securityKey": "Security Key (Password)",
     "passwordPlaceholder": "••••••••••••",

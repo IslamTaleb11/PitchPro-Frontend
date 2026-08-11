@@ -72,7 +72,7 @@
   },
   "login": {
     "tacticalDirector": "المدير التقني",
-    "tacticalIdEmail": "معرف تكتيكي (البريد الإلكتروني)",
+    "tacticalIdEmail": "البريد الإلكتروني",
     "emailPlaceholder": "director{'@'}pitchpro.io",
     "securityKey": "مفتاح الأمان (كلمة المرور)",
     "passwordPlaceholder": "••••••••••••",

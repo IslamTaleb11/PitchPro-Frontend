@@ -177,9 +177,6 @@ async function handleLogin() {
               </div>
               <span class="text-xs text-on-surface-variant transition-colors group-hover:text-on-surface">{{ t('login.stayLoggedIn') }}</span>
             </label>
-            <a href="#" class="text-xs font-medium text-primary-fixed/80 transition-colors hover:text-primary-fixed-dim">
-              {{ t('login.forgotPassword') }}
-            </a>
           </div>
 
           <div class="space-y-4 pt-4">
