@@ -326,20 +326,9 @@ onMounted(() => {
           </h1>
           <div class="mt-2 flex items-center gap-2">
             <div class="h-1 w-12 bg-green-400"></div>
-            <span class="font-headline text-xs font-bold uppercase tracking-widest text-slate-500">
-              {{ totalCount }} {{ $t('categoryManagement.activeClassifications') }}{{ totalCount !== 1 ? 's' : '' }}
-            </span>
           </div>
         </div>
-        <div class="hidden lg:block">
-          <div class="text-right">
-            <span class="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">{{ $t('categoryManagement.clubCapacity') }}</span>
-            <div class="font-headline text-2xl font-bold text-white">
-              84% <span class="text-sm tracking-normal text-green-400">{{ $t('categoryManagement.optimal') }}</span>
-            </div>
-          </div>
-        </div>
-      </header>
+        </header>
 
       <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <!-- Category Entry Panel -->
