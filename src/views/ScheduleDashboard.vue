@@ -829,15 +829,6 @@ async function deployTraining() {
                   {{ $t('schedule.bottomStatsSubtitle') }}
                 </p>
                 <div class="flex gap-6">
-                  <div class="flex flex-col">
-                    <span class="text-2xl font-black font-headline text-white">{{ filteredEvents.length }}</span>
-                    <span class="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">{{ $t('schedule.eventsThisWeek') }}</span>
-                  </div>
-                  <div class="w-px h-8 bg-white/10 self-center"></div>
-                  <div class="flex flex-col">
-                    <span class="text-2xl font-black font-headline text-white">98%</span>
-                    <span class="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">{{ $t('schedule.pitchUtilization') }}</span>
-                  </div>
                 </div>
               </div>
               <div class="relative w-full md:w-auto">
