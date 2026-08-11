@@ -416,13 +416,6 @@ onMounted(() => {
               </button>
             </form>
           </div>
-
-          <div class="rounded border-l-2 border-green-400/30 bg-surface-container-high p-6">
-            <div class="mb-2 text-[10px] font-bold uppercase tracking-widest text-green-400">{{ $t('categoryManagement.tacticalNote') }}</div>
-            <p class="text-xs font-medium leading-relaxed text-slate-400">
-              {{ $t('categoryManagement.tacticalNoteText') }}
-            </p>
-          </div>
         </section>
 
         <!-- Category Ledger -->
