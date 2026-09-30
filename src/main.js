@@ -8,12 +8,12 @@ import ar from './locales/ar.json'
 import { getAuthToken, getRefreshToken, refreshAuthToken, isAccessTokenExpired, syncServerTime } from './services/axiosConfig'
 
 const savedLocaleValue = localStorage.getItem('pitchpro-locale')
-const savedLocale = savedLocaleValue === 'en' || savedLocaleValue === 'ar' ? savedLocaleValue : 'ar'
+const savedLocale = savedLocaleValue === 'en' || savedLocaleValue === 'ar' ? savedLocaleValue : 'en'
 
 const i18n = createI18n({
   legacy: false,
   locale: savedLocale,
-  fallbackLocale: 'ar',
+  fallbackLocale: 'en',
   messages: { en, ar }
 })
 
